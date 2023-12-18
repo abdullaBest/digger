@@ -1,13 +1,20 @@
 import * as THREE from './lib/three.module.js';
 
+class AppCache {
+    constructor() {
+        this.vec2_0 = new THREE.Vector2();
+    }
+    vec2_0: THREE.Vector2
+}
+
 class App {
     constructor() {
         this.active = false;
+        this.cache = new AppCache();
     }
     init() {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-        
         const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector("canvas#rootcanvas"), alpha: true });
         renderer.setSize( window.innerWidth, window.innerHeight );
         
@@ -40,12 +47,26 @@ class App {
             return;
         }
 
-        this.cube.rotation.x += 0.01;
-        this.cube.rotation.y += 0.01;
+        this.updateSize();
+
+        this.cube.rotateX(0.01);
+        this.cube.rotateY(0.01);
     
         this.renderer.render( this.scene, this.camera );
 
         requestAnimationFrame( this.loop.bind(this) );
+    }
+
+    private updateSize() {
+        this.renderer.getSize(this.cache.vec2_0);
+        if (
+            this.cache.vec2_0.width != window.innerWidth ||
+            this.cache.vec2_0.height != window.innerHeight 
+            ) {
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+            }
     }
 
     private cube: THREE.Mesh;
@@ -54,5 +75,6 @@ class App {
     private camera: THREE.PerspectiveCamera;
 
     private active: Boolean;
+    private cache: AppCache;
 }
 export default App;
