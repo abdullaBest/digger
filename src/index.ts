@@ -1,5 +1,9 @@
+import App from "./app"
+
+
 function main() {
-    console.warn('231518 test app ran.');
+    const app = new App();
+    app.init().run();
 }
 
 

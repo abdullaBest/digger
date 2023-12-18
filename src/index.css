@@ -7,7 +7,13 @@ body {
   margin: 0;
 }
 
-.d231218 {
+body.d231218 {
     flex-direction: column;
     padding: 8px;
+}
+
+canvas#rootcanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
 }
