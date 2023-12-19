@@ -1,4 +1,5 @@
 import Scene from "./scene";
+import { listenUploadsForm } from "./assets";
 
 class App {
     constructor() {
@@ -14,10 +15,12 @@ class App {
         this.stop();
     }
     run() {
-
+        // tynroar todo: unlisten
         addEventListener("hashchange", (event) => {
             this.page(window.location.hash);
         });
+        listenUploadsForm(document.querySelector("#assets_upload"));
+
         if (!this.page(window.location.hash)) {
             this.page("#scene_view");
         }

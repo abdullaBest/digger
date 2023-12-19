@@ -67,8 +67,12 @@ canvas#rootcanvas {
 
 }
 
-#assets_view .view {
-  padding: 16px;
+#assets_view {
+  overflow: hidden;
+  .view {
+    padding: 16px;
+    overflow: auto;
+  }
 }
 
 tilegrid {

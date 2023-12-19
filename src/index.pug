@@ -19,7 +19,7 @@ body
 				ul
 					li нужно как следует проработать систему панелей и переключений между ними
 					li даже пока ничего не сделано уже чувствуется необходимость в конструировании самых разнообразных лейаутов
-
+					li ОБЯЗАТЕЛЬНО все ответы сервера отлавливать и писать в строку состояния
 			.view: canvas#rootcanvas
 			.footer
 				o v231219
@@ -38,8 +38,10 @@ body
 					tileicon 
 					tileicon
 				ul
-					li todo 1:
-					
+					li todo 1: при загрузке сохранять всю необходимую информацию по жсонкам
+					form#assets_upload
+						input#assets_upload_files(type="file" name="files" multiple)
+						input(type="submit") 
 			.footer
 				o v231219
 				o assets
