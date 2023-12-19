@@ -4,7 +4,7 @@ class AppCache {
     constructor() {
         this.vec2_0 = new THREE.Vector2();
     }
-    vec2_0: THREE.Vector2
+    vec2_0: THREE.Vector2;
 }
 
 class App {

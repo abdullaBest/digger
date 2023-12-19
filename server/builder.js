@@ -10,7 +10,6 @@ export default class Builder {
      */
     init(dest) {
         this.dest = dest;
-        this.building = false;
 
         this.bundler = new Parcel({
             entries: './src/index.pug',
@@ -55,13 +54,41 @@ export default class Builder {
     }
 
     /**
+     * Starts to watch source folder
+     */
+    async watch() {
+        console.log("Builder: start watching sources");
+        this.subscription = await this.bundler.watch((err, event) => {
+            if (err) {
+                // fatal error
+                throw err;
+            }
+            
+            if (event.type === 'buildSuccess') {
+                let bundles = event.bundleGraph.getBundles();
+                console.log(`✨ Built ${bundles.length} bundles in ${event.buildTime}ms!`);
+            } else if (event.type === 'buildFailure') {
+                console.log(event.diagnostics);
+            }
+        });
+    }
+
+    /**
+     * Stops to watch source folder
+     */
+    async stop() {
+        console.log("Builder: stop watching sources");
+        await this.subscription.unsubscribe();
+    }
+
+    /**
+     * runs bundler unce
      */
     async build() {
-        this.building = true;
+        console.log("Builder: start build")
+
         this.cleanup(this.dest);
         await this.copyDir('res', this.dest);
-
-        console.log("Builder: start build dir " + path)
         
         // https://parceljs.org/features/parcel-api/
         try {
@@ -69,10 +96,9 @@ export default class Builder {
             let bundles = bundleGraph.getBundles();
             console.log(`✨ Built ${bundles.length} bundles in ${buildTime}ms!`);
         } catch (err) {
-        console.log(err.diagnostics);
+            console.log(err.diagnostics);
         }
 
         console.log("Builder: build finished.")
-        this.building = false;
     }
 }

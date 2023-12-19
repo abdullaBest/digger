@@ -7,10 +7,7 @@ const port = 3000
 
 app.use('/editor', express.static('./dist'));
 
-let builder = new Builder().init("./dist/");
-
 app.get('/', async (req, res) => {
-    await builder.build();
     res.redirect("/editor")
 })
 
@@ -21,12 +18,16 @@ wsServer.on('connection', socket => {
   socket.on('message', message => console.log(message));
 });
 
-const server = app.listen(port, () => {
-  console.log(`Degger server app listening on port ${port}`)
+const server = app.listen(port, async() => {
+  let builder = new Builder().init("./dist/");
+  await builder.build();
+  await builder.watch();
+
+  console.log(`Digger server app listening on port ${port}`)
 })
 
 server.on('upgrade', (request, socket, head) => {
     wsServer.handleUpgrade(request, socket, head, socket => {
       wsServer.emit('connection', socket, request);
     });
-  });
+});
