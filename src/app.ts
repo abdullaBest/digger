@@ -1,5 +1,5 @@
 import Scene from "./scene";
-import { listenUploadsForm } from "./assets";
+import { listenUploadsForm, loadAllAssets } from "./assets";
 
 class App {
     constructor() {
@@ -20,7 +20,7 @@ class App {
             this.page(window.location.hash);
         });
         listenUploadsForm(document.querySelector("#assets_upload"));
-
+        loadAllAssets(document.querySelector("#assets_list"));
         if (!this.page(window.location.hash)) {
             this.page("#scene_view");
         }

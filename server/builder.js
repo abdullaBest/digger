@@ -17,7 +17,10 @@ export default class Builder {
             targets: {
                 default: {
                   distDir: this.dest,
-                  publicUrl: "./"
+                  publicUrl: "./",
+                  engines: {
+                    browsers: ['> 0.5%, last 2 versions, not dead']
+                  }
                 }
               },
           });
@@ -26,7 +29,6 @@ export default class Builder {
     }
 
     /**
-     * 
      * @param {String} path directory path to cleanup
      */
     cleanup(path) {
@@ -37,6 +39,10 @@ export default class Builder {
         mkdirSync(path, { recursive: true });
     }
 
+    /**
+     * @param {String} src srt folder
+     * @param {String} dest destination folder
+     */
     async copyDir(src, dest) {
         console.log(`Builder: copy dir ${src} > ${dest}`);
         let entries = await fs.readdir(src, { recursive: true, withFileTypes: true })
@@ -55,6 +61,7 @@ export default class Builder {
 
     /**
      * Starts to watch source folder
+     * @async
      */
     async watch() {
         console.log("Builder: start watching sources");
@@ -75,6 +82,7 @@ export default class Builder {
 
     /**
      * Stops to watch source folder
+     * @async
      */
     async stop() {
         console.log("Builder: stop watching sources");
@@ -83,6 +91,7 @@ export default class Builder {
 
     /**
      * runs bundler unce
+     * @async
      */
     async build() {
         console.log("Builder: start build")
