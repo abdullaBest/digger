@@ -7,13 +7,63 @@ body {
   margin: 0;
 }
 
-body.d231218 {
-    flex-direction: column;
-    padding: 8px;
+canvas#rootcanvas {
+  position: absolute;
 }
 
-canvas#rootcanvas {
-    position: absolute;
-    top: 0;
-    left: 0;
+#rootlayout {
+  #header {
+    border-bottom: 1px solid #000;
+  }
+  .footer {
+    border-top: 1px solid #000;
+  }
+  .sidebar_l {
+    border-right: 1px solid #000;
+  }
+  o, btn, a {
+    margin: auto 2px;
+  }
+}
+
+#rootlayout { 
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+
+  .hidden {
+    display: none;
+  }
+
+  #header, .footer {
+    height: 2em;
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+  }
+
+  page {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 20vw auto auto 10vw;
+    grid-template-rows: minmax(0, 1fr) 2em;
+    grid-template-areas: 
+      "sidebar_l main main main"
+      "sidebar_l footer footer footer";
+
+      
+    .sidebar_l {
+      grid-area: sidebar_l;
+    }
+    .footer {
+      grid-area: footer;
+    }
+
+    .view {
+      grid-area: main;
+      display: flex;
+    }
+  }
+
 }

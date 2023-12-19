@@ -8,7 +8,22 @@ html(lang="en")
 	link(rel="stylesheet", href="./index.less")
 	script(type="module", src="./index.ts" async defer)
 
-body.d231218
-	h1 DIGGER 231218
-	h2 Тут будет редактор карт
-	canvas#rootcanvas
+body
+	#rootlayout
+		#header
+			o digger toolbox █
+			a.btn(href="#scene_view") scene
+			a.btn(href="#assets_view") assets
+		page#scene_view
+			.sidebar_l
+			.view: canvas#rootcanvas
+			.footer
+				o v231219
+				o scene
+		page#assets_view
+			.sidebar_l
+			.view
+			.footer
+				o v231219
+				o assets
+	
