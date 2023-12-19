@@ -62,8 +62,24 @@ canvas#rootcanvas {
 
     .view {
       grid-area: main;
-      display: flex;
     }
   }
 
+}
+
+#assets_view .view {
+  padding: 16px;
+}
+
+tilegrid {
+  display: flex;
+  gap: 16px;
+
+  tileicon {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    background: #666;
+    box-shadow: 0px -4px 0px inset #0005;
+  }
 }

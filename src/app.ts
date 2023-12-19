@@ -14,10 +14,14 @@ class App {
         this.stop();
     }
     run() {
+
         addEventListener("hashchange", (event) => {
             this.page(window.location.hash);
         });
-        this.page("#scene_view");
+        if (!this.page(window.location.hash)) {
+            this.page("#scene_view");
+        }
+        
         this.scene.run();
         this.active = true;
     }
@@ -26,13 +30,23 @@ class App {
         this.active = false;
     }
 
-    page(id: String) {
+    /**
+     * @param id id of page to switch to
+     */
+    page(id: String) : boolean {
+        let pageFound = false;
         const pages = document.body.querySelectorAll("#rootlayout page");
         pages.forEach((v) => {
-            id.includes(v.id) ? 
-                v.classList.remove('hidden') :
+            if (id.includes(v.id)) {
+                v.classList.remove('hidden');
+                pageFound = true;
+            } else {
                 v.classList.add('hidden');
+
+            }
         })
+
+        return pageFound;
     }
 
     private active: Boolean;
