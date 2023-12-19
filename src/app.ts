@@ -12,7 +12,7 @@ class App {
         this.active = false;
         this.cache = new AppCache();
     }
-    init() {
+    init() : App {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
         const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector("canvas#rootcanvas"), alpha: true });
@@ -23,7 +23,7 @@ class App {
         const cube = new THREE.Mesh( geometry, material );
         scene.add( cube );
         
-        camera.position.z = 5;
+        (camera as any).position.z = 5;
 
         this.cube = cube;
         this.renderer = renderer;
