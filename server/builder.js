@@ -1,4 +1,4 @@
-import { build_js, build_less, build_pug } from "./build.js";
+import {Parcel} from '@parcel/core';
 import fs from 'node:fs/promises';
 import { existsSync, rmSync, mkdirSync } from 'node:fs';
 import path from "path";
@@ -11,6 +11,17 @@ export default class Builder {
     init(dest) {
         this.dest = dest;
         this.building = false;
+
+        this.bundler = new Parcel({
+            entries: './src/index.pug',
+            defaultConfig: '@parcel/config-default',
+            targets: {
+                default: {
+                  distDir: this.dest,
+                  publicUrl: "./"
+                }
+              },
+          });
 
         return this;
     }
@@ -44,17 +55,23 @@ export default class Builder {
     }
 
     /**
-     * @param {String} path relative files path
      */
-    async build(path) {
+    async build() {
         this.building = true;
         this.cleanup(this.dest);
         await this.copyDir('res', this.dest);
 
         console.log("Builder: start build dir " + path)
-        await build_js(path + "index.ts", this.dest);
-        await build_less(path + "index.less", this.dest);
-        await build_pug(path + "index.pug", this.dest);
+        
+        // https://parceljs.org/features/parcel-api/
+        try {
+            let {bundleGraph, buildTime} = await this.bundler.run();
+            let bundles = bundleGraph.getBundles();
+            console.log(`✨ Built ${bundles.length} bundles in ${buildTime}ms!`);
+        } catch (err) {
+        console.log(err.diagnostics);
+        }
+
         console.log("Builder: build finished.")
         this.building = false;
     }

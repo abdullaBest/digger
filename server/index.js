@@ -9,25 +9,9 @@ app.use('/editor', express.static('./dist'));
 
 let builder = new Builder().init("./dist/");
 
-app.set('view engine', 'pug');
-app.set('views', './server/views');
 app.get('/', async (req, res) => {
-    if (req.query.rebuild != null && !builder.building) {
-        builder.build('./src/');
-    } 
-    
-    res.render('index', { buildstatus: builder.building ? 'building' : 'built' });
-})
-
-app.get('/build', async (req, res) => {
-    try {
-        //res.write("building...");
-        await builder.build('./src/');
-        res.redirect("/editor")
-    } catch (err) {
-        console.error(err);
-        res.send(err);
-    }
+    await builder.build();
+    res.redirect("/editor")
 })
 
 // Set up a headless websocket server that prints any
