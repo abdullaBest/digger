@@ -10,6 +10,7 @@ export default class Builder {
      */
     init(dest) {
         this.dest = dest;
+        this.building = false;
 
         return this;
     }
@@ -46,6 +47,7 @@ export default class Builder {
      * @param {String} path relative files path
      */
     async build(path) {
+        this.building = true;
         this.cleanup(this.dest);
         await this.copyDir('res', this.dest);
 
@@ -54,5 +56,6 @@ export default class Builder {
         await build_less(path + "index.less", this.dest);
         await build_pug(path + "index.pug", this.dest);
         console.log("Builder: build finished.")
+        this.building = false;
     }
 }
