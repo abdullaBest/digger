@@ -2,19 +2,21 @@
   "name": "digger",
   "version": "1.0.0",
   "description": "",
-  "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
-    "start": "parcel src/index.html --no-cache",
-    "build": "parcel build src/index.html --no-cache  --public-url ./"
+    "start": "node server/index.js"
   },
-  "staticFiles": {
-    "staticPath": "res",
-    "staticOutPath": "res"
-  },
+  "type": "module",
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "parcel": "^2.10.3",
-    "parcel-reporter-static-files-copy": "^1.5.3"
+  "dependencies": {
+    "@babel/preset-env": "^7.23.6",
+    "babelify": "^10.0.0",
+    "browserify": "^17.0.0",
+    "express": "^4.18.2",
+    "less": "^4.2.0",
+    "pug": "^3.0.2",
+    "stringify": "^5.2.0",
+    "tsify": "^5.0.4",
+    "typescript": "^5.3.3"
   }
 }
