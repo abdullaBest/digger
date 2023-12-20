@@ -23,11 +23,14 @@ export default class AssetsView {
     }
 
     private click(event: MouseEvent) {
-        const id = (event.target as HTMLElement).dataset["assetid"];
+        const id = (event.target as HTMLElement).id;
         if(!id) {
             return;
         }
         const asset = this.assets.get(id);
+        if(!asset) {
+            return;
+        }
         const info = asset.info;
         this.props_container.innerHTML = `
         <form id="asset_props">
@@ -38,23 +41,34 @@ export default class AssetsView {
         <input type="submit" />
         </form>
         `
-        listenFormSubmit(
-            this.props_container.firstElementChild as HTMLFormElement,
-            `/assets/upload/${id}`,
-            ["name", "extension"],
-            ["file"]
-            );
+        listenFormSubmit({
+            form: this.props_container.firstElementChild as HTMLFormElement,
+            url: `/assets/upload/${id}`,
+            fields: ["name", "extension"],
+            files: ["file"]
+        }, async (s, res) => {
+            await this.assets.loadAsset(id);
+            this.draw(id);
+        });
+    }
+
+    draw(id: string) {
+        const asset = this.assets.list[id];
+        if (!asset) {
+            return;
+        }
+
+        const el = (this.list_container.querySelector('#' + id) || document.createElement('entry')) as HTMLElement;
+        el.id = asset.info.id;
+        el.dataset["name"] = asset.info.name; 
+        this.list_container.appendChild(el);
     }
 
     propagate() {
         this.list_container.innerHTML = "";
 
         for(const k in this.assets.list) {
-            const asset = this.assets.list[k];
-            const el = document.createElement('entry');
-            el.innerHTML = asset.info.id;
-            el.dataset["assetid"] = asset.info.id;
-            this.list_container.appendChild(el);
+            this.draw(k);
         }
     }
 

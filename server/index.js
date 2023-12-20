@@ -60,20 +60,21 @@ function updateFiles(req, res) {
 }
 
 function uploadFiles(req, res) {
-  //console.log(req.body);
-  //console.log(req.files);
+  const ids = [];
   for(const k in req.files) {
     const f = req.files[k];
+    const id = "a0_" + f.filename;
     assets.register({
-      id: f.filename, 
+      id: id, 
       filename: f.filename, 
       name: f.originalname, 
       type: f.mimetype, 
       size: f.size,
       extension: f.originalname.split('.').pop(),
     })
+    ids.push(id);
   }
-  res.send();
+  res.json(ids);
 }
 
 // files access

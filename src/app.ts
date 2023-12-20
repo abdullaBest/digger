@@ -23,7 +23,18 @@ class App {
         addEventListener("hashchange", (event) => {
             this.page(window.location.hash);
         });
-        listenFormSubmit(document.querySelector("#assets_upload"), "/assets/upload", null, ["files"]);
+        listenFormSubmit({
+            form: document.querySelector("#assets_upload"), 
+            url: "/assets/upload", 
+            files: ["files"]
+        }, async (s, res) => {
+            const ids = await res.json();
+            for(const i in ids) {
+                const id = ids[i];
+                await this.assets.loadAsset(id);
+                this.assets_view.draw(id);
+            }
+        });
         this.assets_view.init(document.querySelector("#assets_list"), document.querySelector("#asset_view"))
         this.load();
 

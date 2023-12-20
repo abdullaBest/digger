@@ -33,12 +33,22 @@ function listenUploadsForm(form: HTMLFormElement | null) {
 
 /**
  * starts to listen form "submit" and posts request on such
- * @param form form to work with
- * @param url url path to post
- * @param fields input names
- * @param files file input names
+ * @param opts func options
+ * @param opts.form form to work with
+ * @param opts.url url path to post
+ * @param opts.fields input names
+ * @param opts.files file input names
+ * @param callback callback of form response
  */
-function listenFormSubmit(form: HTMLFormElement | null, url: string, fields?: Array<string> | null, files?: Array<string> | null) {
+function listenFormSubmit(
+    opts: { form: HTMLFormElement | null, url: string, fields?: Array<string> | null, files?: Array<string> | null },
+    callback: (success: boolean, response: Response) => void
+    ) {
+    const form = opts.form;
+    const url = opts.url;
+    const fields = opts.fields;
+    const files = opts.files;
+
     if (!form) {
         throw new Error("form is null");
     }
@@ -82,8 +92,7 @@ function listenFormSubmit(form: HTMLFormElement | null, url: string, fields?: Ar
             body: formData,
             headers: {}
         })
-            .then((res) => console.log(res))
-            .catch((err) => console.error(err));
+        callback(res.ok, res);
     }
 }
 
@@ -155,7 +164,6 @@ class Assets {
             type: data.type,
             extension: data.extension
         });
-        console.log(data);
         this.list[id] = asset;
     }
 
