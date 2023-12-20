@@ -1,7 +1,7 @@
 doctype html
 html(lang="en")
 	head
-	title Digger █▮ 231219
+	title Digger █▮
 	meta(name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0")
 	meta(charset="utf-8")
 	
@@ -14,6 +14,7 @@ body
 			o digger toolbox █
 			a.btn(href="#scene_view") scene
 			a.btn(href="#assets_view") assets
+			a.btn(href="#dev_view") dev
 		page#scene_view
 			.sidebar_l
 				ul
@@ -22,33 +23,41 @@ body
 					li ОБЯЗАТЕЛЬНО все ответы сервера отлавливать и писать в строку состояния
 			.view: canvas#rootcanvas
 			.footer
-				o v231219
+				o v231220
 				o scene
 		page#assets_view
 			.sidebar_l#asset_details
 			.view
+				form#assets_upload
+					input#assets_upload_files(type="file" name="files" multiple)
+					input(type="submit")
+				hr
+				tilegrid#assets_list
+					entry(id="dev")
 				ul
 					li ✔️ todo 1: при загрузке сохранять всю необходимую информацию по жсонкам
 					li ✔️ todo 2: редактировать всевозможные параметры ресурсов - имя, расположение, теги, т.п.
-					li todo 3: файлы поддерживают версии ревизий но работать с ними пока нельзя, используется последняя
+					li (да и пофиг) todo 3: файлы поддерживают версии ревизий но работать с ними пока нельзя, используется последняя
 					li todo 4: предпросмотр изображений
-				ul
-					li тут список всех загруженных ассетов
-					li и кнопка загрузки новых
-				tilegrid#assets_list
-						entry
-						entry 
-						entry
-				form#assets_upload
-					input#assets_upload_files(type="file" name="files" multiple)
-					input(type="submit") 
 				ul
 					li отображаем список загруженных ассетов (вероятно всех, с фильтрами)
 					li сцены тоже должны показываться где-то в этом списке (?)
 					li где-то показываем превьюшку для моделей
 					li нужно иметь возможность (возможности, блин. Чо тут хотел дописать хз)
-				
 			.footer
-				o v231219
 				o assets
+		page#dev_view
+			.sidebar_l
+			.view
+				h3 запросы:
+				ul
+					li /, /editor - alias для папки сборки ./dist
+					li /assets/upload - загрузка новых файлов. Возвращает массив новых id
+					li /assets/upload/:id - обновление параметров уже существующих файлов
+					li /assets/list - массив id всех загруженных файлов
+					li /assets/get/:id - объект информации о ассете
+					li /assets/load/:id/:revision - отправляет файл по id ассета. revision - номер ревизии. Отправляеть last для загрузки последней версии
+					
+			.footer
+				o dev section
 	
