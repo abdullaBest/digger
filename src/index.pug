@@ -25,23 +25,28 @@ body
 				o v231219
 				o scene
 		page#assets_view
-			.sidebar_l
+			.sidebar_l#asset_view
 			.view
+				ul
+					li ✔️ todo 1: при загрузке сохранять всю необходимую информацию по жсонкам
+					li todo 2: редактировать всевозможные параметры ресурсов - имя, расположение, теги, т.п.
+				ul
+					li тут список всех загруженных ассетов
+					li и кнопка загрузки новых
+				tilegrid#assets_list
+						entry
+						entry 
+						entry
+				form#assets_upload
+					input#assets_upload_files(type="file" name="files" multiple)
+					input(type="submit") 
 				ul
 					li отображаем список загруженных ассетов (вероятно всех, с фильтрами)
 					li сцены тоже должны показываться где-то в этом списке (?)
 					li где-то показываем превьюшку для моделей
-					li нужно иметь возможность редактировать всевозможные параметры ресурсов - имя, расположение, теги, т.п.
+					li нужно иметь возможность 
 					li ассеты, например, списом иконок:
-				tilegrid#assets_list
-					tileicon
-					tileicon 
-					tileicon
-				ul
-					li todo 1: при загрузке сохранять всю необходимую информацию по жсонкам
-					form#assets_upload
-						input#assets_upload_files(type="file" name="files" multiple)
-						input(type="submit") 
+				
 			.footer
 				o v231219
 				o assets

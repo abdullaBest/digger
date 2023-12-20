@@ -32,16 +32,48 @@ const server = app.listen(port, async() => {
 
 // files upload
 app.post("/assets/upload", upload.array("files"), uploadFiles);
+app.post("/assets/upload/:id", upload.single("file"), updateFiles);
+
+function updateFiles(req, res) {
+  const id = req.params.id;
+  const asset = assets.data[id];
+  if (!asset) {
+    res.statusCode = 500;
+    res.send(`Asset ${id} wasn't found. Cant update`);
+  }
+
+  const file = req.file;
+  const name = req.body.name;
+  const extension = req.body.extension;
+
+  if (file) {
+    asset.filename = file.filename;
+    asset.revision += 1;
+    asset.revisions.push(file.filename);
+  }
+  if (name) {
+    asset.name = name;
+  }
+  assets.save();
+
+  res.send();
+}
 
 function uploadFiles(req, res) {
-    //console.log(req.body);
-    //console.log(req.files);
-    for(const k in req.files) {
-      const f = req.files[k];
-      assets.register({
-        id: f.filename, filename: f.filename, name: f.originalname, type: f.mimetype, size: f.size
-      })
-    }
+  //console.log(req.body);
+  //console.log(req.files);
+  for(const k in req.files) {
+    const f = req.files[k];
+    assets.register({
+      id: f.filename, 
+      filename: f.filename, 
+      name: f.originalname, 
+      type: f.mimetype, 
+      size: f.size,
+      extension: f.originalname.split('.').pop(),
+    })
+  }
+  res.send();
 }
 
 // files access
@@ -50,7 +82,11 @@ app.get('/assets/list', async (req, res) => {
 })
 
 app.get('/assets/get/:id', async (req, res) => {
-  res.json(assets.data[req.params.id]);
+  const id = req.params.id;
+  const info = Object.assign(
+    { url: `/assets/load/${id}` }, 
+    assets.data[id]);
+  res.json(info);
 })
 
 app.get('/assets/load/:id', async (req, res, next) => {

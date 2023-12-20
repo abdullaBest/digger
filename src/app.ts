@@ -1,9 +1,13 @@
 import Scene from "./scene";
-import { listenUploadsForm, loadAllAssets } from "./assets";
+import Assets from "./assets";
+import AssetsView from "./views/assets_view";
+import { listenFormSubmit } from "./assets";
 
 class App {
     constructor() {
         this.scene = new Scene();
+        this.assets = new Assets();
+        this.assets_view = new AssetsView(this.assets);
         this.active = false;
     }
     init() : App {
@@ -19,8 +23,11 @@ class App {
         addEventListener("hashchange", (event) => {
             this.page(window.location.hash);
         });
-        listenUploadsForm(document.querySelector("#assets_upload"));
-        loadAllAssets(document.querySelector("#assets_list"));
+        listenFormSubmit(document.querySelector("#assets_upload"), "/assets/upload", null, ["files"]);
+        this.assets_view.init(document.querySelector("#assets_list"), document.querySelector("#asset_view"))
+        this.load();
+
+        // switch root page
         if (!this.page(window.location.hash)) {
             this.page("#scene_view");
         }
@@ -28,12 +35,18 @@ class App {
         this.scene.run();
         this.active = true;
     }
+    async load() {
+        await this.assets.load();
+        this.assets_view.propagate();
+    }
     stop() {
         this.scene.stop();
         this.active = false;
     }
 
     /**
+     * tynroar todo: move into page control logic
+     * 
      * @param id id of page to switch to
      */
     page(id: String) : boolean {
@@ -54,6 +67,8 @@ class App {
 
     private active: Boolean;
     private scene: Scene;
+    private assets: Assets;
+    private assets_view: AssetsView;
 }
 
 export default App;

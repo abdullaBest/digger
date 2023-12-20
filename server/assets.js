@@ -21,7 +21,7 @@ export default class Assets {
      * @param {import('node:fs').PathOrFileDescriptor} path file path to save
      * @param {Object} json data to write 
      */
-    async save(path, json) {
+    async write(path, json) {
         fs.writeFile(path, JSON.stringify(json));
     }
 
@@ -32,19 +32,27 @@ export default class Assets {
      * @param {String} opts.filename file name on disk
      * @param {String} opts.name display name
      * @param {String} opts.type data type
+     * @param {String} opts.extension file extension based on filename
      * @param {Number} opts.size data size
      */
-    async register({ id, filename, name, type, size }) {
+    async register({ id, filename, name, type, size, extension }) {
         this.data[id] = {
             id,
             filename,
             name,
             type,
-            size
+            size,
+            extension,
+            revision: 1,
+            revisions: [filename]
         }
 
+        await this.save();
+    }
+
+    async save() {
         const filepath = path.join(this.directory, this.filename);
-        await this.save(filepath, this.data);
+        await this.write(filepath, this.data);
     }
 
     /**
