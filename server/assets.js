@@ -43,7 +43,7 @@ export default class Assets {
             type,
             size,
             extension,
-            revision: 1,
+            revision: 0,
             revisions: [filename]
         }
 

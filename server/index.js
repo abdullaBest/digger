@@ -84,19 +84,25 @@ app.get('/assets/list', async (req, res) => {
 
 app.get('/assets/get/:id', async (req, res) => {
   const id = req.params.id;
+  const asset = assets.data[id];
+  const revision = asset.revision;
   const info = Object.assign(
-    { url: `/assets/load/${id}` }, 
-    assets.data[id]);
+    { url: `/assets/load/${id}/${revision}` }, 
+    asset);
   res.json(info);
 })
 
-app.get('/assets/load/:id', async (req, res, next) => {
-  const fileinfo = assets.data[req.params.id];
-  const filename = fileinfo.filename;
+app.get('/assets/load/:id/:revision', async (req, res, next) => {
+  const id = req.params.id;
+  const revision = req.params.revision || -1;
+  const asset = assets.data[id]
+
+  const filename = asset.revisions[revision] || asset.revisions[assets.data.revision];
+
   const options = {
     root: assets.directory,
     headers: {
-      'Content-Type': fileinfo.type
+      'Content-Type': asset.type
     }
   }
   res.sendFile(filename, options, function (err) {
@@ -104,7 +110,7 @@ app.get('/assets/load/:id', async (req, res, next) => {
     if (err.status !== 404) return next(err); // non-404 error
     // file for download not found
     res.statusCode = 404;
-    res.send(`File ${req.params.id} not found`);
+    res.send(`File ${id}  rev ${revision} not found`);
   });
 })
 

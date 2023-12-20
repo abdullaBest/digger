@@ -17,16 +17,17 @@ export default class AssetsView {
         this.list_container = list_container;
         this.props_container = props_container;
 
-        this.list_container.addEventListener('click', this.click.bind(this));
+        this.list_container.addEventListener('click', (ev) => {
+            const id = (ev.target as HTMLElement).id;
+            if(id) {
+                this.drawDetails(id);
+            }
+        });
 
         return this;
     }
 
-    private click(event: MouseEvent) {
-        const id = (event.target as HTMLElement).id;
-        if(!id) {
-            return;
-        }
+    private drawDetails(id: string) {
         const asset = this.assets.get(id);
         if(!asset) {
             return;
@@ -40,6 +41,7 @@ export default class AssetsView {
         <input id="assets_upload_files" type="file" name="file" accept=".${info.extension}">
         <input type="submit" />
         </form>
+        <img src='${asset.thumbnail}'></img>
         `
         listenFormSubmit({
             form: this.props_container.firstElementChild as HTMLFormElement,
@@ -49,6 +51,7 @@ export default class AssetsView {
         }, async (s, res) => {
             await this.assets.loadAsset(id);
             this.draw(id);
+            this.drawDetails(id);
         });
     }
 

@@ -35,7 +35,7 @@ class App {
                 this.assets_view.draw(id);
             }
         });
-        this.assets_view.init(document.querySelector("#assets_list"), document.querySelector("#asset_view"))
+        this.assets_view.init(document.querySelector("#assets_list"), document.querySelector("#asset_details"))
         this.load();
 
         // switch root page
