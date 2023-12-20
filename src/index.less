@@ -97,7 +97,17 @@ canvas#rootcanvas {
   }
 }
 
-#assets_view, #scene_view, #dev_view {
+#asset_preview_container {
+  &.mode_canvas {
+    img {
+      display: none;
+    }
+  }
+  display: flex;
+  flex-grow: 1;
+}
+
+#assets_view, #dev_view {
   overflow: hidden;
   .view {
     padding: 16px;

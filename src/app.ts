@@ -7,11 +7,15 @@ class App {
     constructor() {
         this.scene = new Scene();
         this.assets = new Assets();
-        this.assets_view = new AssetsView(this.assets);
+        this.assets_view = new AssetsView(this.assets, this.scene);
         this.active = false;
     }
     init() : App {
-        this.scene.init();
+        const canvas = document.querySelector("canvas#rootcanvas");
+        if (!canvas) {
+            throw new Error("can't find canvas to render");
+        }
+        this.scene.init(canvas as HTMLCanvasElement);
         return this;
     }
     dispose() {
@@ -40,7 +44,7 @@ class App {
 
         // switch root page
         if (!this.page(window.location.hash)) {
-            this.page("#scene_view");
+            this.page("#assets_view");
         }
         
         this.scene.run();
@@ -72,6 +76,15 @@ class App {
 
             }
         })
+
+        if (id.includes('scene_view')) {
+            const container = document.querySelector("#scene_view_canvas_container");
+            if(container) {
+                this.scene.reattach(container as HTMLElement);
+            } else {
+                console.warn("Can't reattach scene canvas back to scene_view")
+            }
+        }
 
         return pageFound;
     }

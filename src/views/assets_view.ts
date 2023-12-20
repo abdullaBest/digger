@@ -1,8 +1,10 @@
 import { Assets, listenFormSubmit } from "../assets";
+import Scene from "../scene";
 
 export default class AssetsView {
-    constructor(assets: Assets){
+    constructor(assets: Assets, scene: Scene){
         this.assets = assets;
+        this.scene = scene;
     }
 
     /**
@@ -32,6 +34,7 @@ export default class AssetsView {
         if(!asset) {
             return;
         }
+        console.log("Preview asset:", asset);
         const info = asset.info;
         this.props_container.innerHTML = `
         <form id="asset_props">
@@ -41,8 +44,22 @@ export default class AssetsView {
         <input id="assets_upload_files" type="file" name="file" accept=".${info.extension}">
         <input type="submit" />
         </form>
+        <container id="asset_preview_container">
         <img src='${asset.thumbnail}'></img>
+        </container>
         `
+
+        if (info.extension == "gltf" || info.extension == "glb") {
+            const container = this.props_container.querySelector('#asset_preview_container');
+            if (container) {
+                container.classList.add('mode_canvas');
+                this.scene.reattach(container as HTMLElement);
+                this.scene.viewGLTF(info.url);
+            } else {
+                console.warn("can't draw preview.")
+            }
+        }
+
         listenFormSubmit({
             form: this.props_container.firstElementChild as HTMLFormElement,
             url: `/assets/upload/${id}`,
@@ -78,4 +95,5 @@ export default class AssetsView {
     list_container: HTMLElement;
     props_container: HTMLElement;
     assets: Assets;
+    scene: Scene;
 }

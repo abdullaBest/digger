@@ -4,6 +4,7 @@ import { WebSocketServer } from 'ws';
 import multer from 'multer';
 import Assets from './assets.js';
 import path from 'path';
+import { rejects } from 'assert';
 
 const port = 3000
 const path_uploads = "uploads/";
@@ -92,27 +93,77 @@ app.get('/assets/get/:id', async (req, res) => {
   res.json(info);
 })
 
+app.get('/assets/load', async (req, res, next) => {
+  let asset = null;
+
+  // find asset matching query
+  for(const k in assets.data) {
+    const _asset = assets.data[k];
+    let match = false;
+    for (const q in req.query) {
+      if (_asset[q] && _asset[q] == req.query[q]) {
+        match = true;
+      } else {
+        match = false;
+        break;
+      }
+    }
+
+    if (match) {
+      asset = _asset;
+      break;
+    }
+  }
+
+  if (!asset) {
+    res.statusCode = 404;
+    res.send("No asset matching query found.");
+    return;
+  }
+  let filename = asset.filename;
+
+  sendFile(filename, asset.type, res).catch((err)=>{
+    if (err.status !== 404) return next(err); // non-404 error
+    // file for download not found
+    res.statusCode = 404;
+    res.send("No file matching query found.");
+  })
+})
+
 app.get('/assets/load/:id/:revision', async (req, res, next) => {
   const id = req.params.id;
   const revision = req.params.revision || -1;
   const asset = assets.data[id]
 
-  const filename = asset.revisions[revision] || asset.revisions[assets.data.revision];
+  const filename = asset.revisions[revision] || asset.revisions[asset.revision];
 
-  const options = {
-    root: assets.directory,
-    headers: {
-      'Content-Type': asset.type
-    }
-  }
-  res.sendFile(filename, options, function (err) {
-    if (!err) return; // file sent
+  sendFile(filename, asset.type, res).catch((err)=>{
     if (err.status !== 404) return next(err); // non-404 error
-    // file for download not found
-    res.statusCode = 404;
-    res.send(`File ${id}  rev ${revision} not found`);
-  });
+      // file for download not found
+      res.statusCode = 404;
+      res.send(`File ${id}  rev ${revision} not found`);
+  })
 })
+
+function sendFile(filename, type,  res) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      root: assets.directory,
+      headers: {
+        'Content-Type': type
+      }
+    }
+    res.sendFile(filename, options, function (err) {
+      if (!err) {
+        // file sent
+        resolve();
+      } else {
+        reject(err);
+      }
+    });
+  })
+ 
+}
 
 // -- dump
 
