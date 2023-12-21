@@ -12,9 +12,9 @@ body
 	#rootlayout
 		#header
 			o digger toolbox █
-			a.btn(href="#scene_view") scene
-			a.btn(href="#assets_view") assets
-			a.btn(href="#dev_view") dev
+			a(href="#scene_view") scene
+			a(href="#assets_view") assets
+			a(href="#dev_view") dev
 		page#scene_view
 			.sidebar_l
 				ul
@@ -24,14 +24,34 @@ body
 				o scene viewer
 				o v0
 		page#assets_view
-			.sidebar_l#asset_details
-			.view
+			page.sidebar_l#asset_details
+			page.sidebar_l#asset_create
+				splitter upload files
 				form#assets_upload
 					input#assets_upload_files(type="file" name="files" multiple)
-					input(type="submit")
-				hr
+					input(type="submit" value="Upload")
+				splitter create kit
+			.view
 				tilegrid#assets_list
 					entry(id="dev")
+				splitter &
+				a.btn(href="#asset_create") Create new
+			.footer
+				o assets viewer
+				o v1
+		page#dev_view
+			.sidebar_l
+			.view
+				splitter запросы
+				ul
+					li GET /, /editor - alias для папки сборки ./dist
+					li POST /assets/upload - загрузка новых файлов. Возвращает массив новых id
+					li POST /assets/upload/:id - обновление параметров уже существующих файлов
+					li GET /assets/list - массив id всех загруженных файлов
+					li GET /assets/get/:id - объект информации о ассете
+					li GET /assets/load/:id/:revision - отправляет файл по id ассета. revision - номер ревизии. revision ставить last для загрузки последней версии
+					li GET /assets/load?name=something - ищет в ассетах тот что соответствует всем параметрам в query. Временное решение
+				splitter заметки
 				ul Поддерживает работу с:
 					li изображения разных видов
 					li glb, gltf. для gltf необходимо загружать .bin и текстуру 
@@ -45,21 +65,6 @@ body
 					li отображаем список загруженных ассетов (вероятно всех, с фильтрами)
 					li сцены тоже должны показываться где-то в этом списке (?)
 					li нужно иметь возможность (возможности, блин. Чо тут хотел дописать хз)
-			.footer
-				o assets viewer
-				o v1
-		page#dev_view
-			.sidebar_l
-			.view
-				h3 запросы:
-				ul
-					li /, /editor - alias для папки сборки ./dist
-					li /assets/upload - загрузка новых файлов. Возвращает массив новых id
-					li /assets/upload/:id - обновление параметров уже существующих файлов
-					li /assets/list - массив id всех загруженных файлов
-					li /assets/get/:id - объект информации о ассете
-					li /assets/load/:id/:revision - отправляет файл по id ассета. revision - номер ревизии. revision ставить last для загрузки последней версии
-					li /assets/load?name=something - ищет в ассетах тот что соответствует всем параметрам в query. Временное решение
 			.footer
 				o dev section
 	

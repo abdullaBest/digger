@@ -42,7 +42,7 @@ export default class AssetsView {
         <label>Name <input value="${info.name}" type="text" name="name" required/></label>
         <label>Extension <input value="${info.extension}" type="text" name="extension" required disabled/></label>
         <input id="assets_upload_files" type="file" name="file" accept=".${info.extension}">
-        <input type="submit" />
+        <input type="submit" value="Update"/>
         </form>
         <container id="asset_preview_container">
         <img src='${asset.thumbnail}'></img>
@@ -78,9 +78,10 @@ export default class AssetsView {
             return;
         }
 
-        const el = (this.list_container.querySelector('#' + id) || document.createElement('entry')) as HTMLElement;
+        const el = (this.list_container.querySelector('#' + id) || document.createElement('a')) as HTMLElement;
         el.id = asset.info.id;
         el.dataset["name"] = asset.info.name; 
+        el.href = "#asset_details"
         this.list_container.appendChild(el);
     }
 

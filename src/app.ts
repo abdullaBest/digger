@@ -43,9 +43,8 @@ class App {
         this.load();
 
         // switch root page
-        if (!this.page(window.location.hash)) {
-            this.page("#assets_view");
-        }
+        window.location.hash = "#assets_view"
+        this.page("#assets_view");
         
         this.scene.run();
         this.active = true;
@@ -61,22 +60,30 @@ class App {
 
     /**
      * tynroar todo: move into page control logic
+     * Using this function as global page switcher for all layouts
+     * To avoid listening callbacks on all bottons
      * 
      * @param id id of page to switch to
      */
-    page(id: String) : boolean {
-        let pageFound = false;
-        const pages = document.body.querySelectorAll("#rootlayout page");
+    page(id: string) {
+        // find requested element
+        const el = document.querySelector(id);
+        if(!el) { throw new Error("page: no such element " + id); }
+        if (!el.parentElement) { throw new Error(`page: element #${id} has no parent`); }
+
+        const pages = document.querySelectorAll(`#${el.parentElement.id} > page`);
+        console.log(pages)
         pages.forEach((v) => {
             if (id.includes(v.id)) {
                 v.classList.remove('hidden');
-                pageFound = true;
             } else {
                 v.classList.add('hidden');
-
             }
         })
 
+        // -- postpage operations. temporal
+
+        // swaps canvas back to scene view if it was removed
         if (id.includes('scene_view')) {
             const container = document.querySelector("#scene_view_canvas_container");
             if(container) {
@@ -85,8 +92,6 @@ class App {
                 console.warn("Can't reattach scene canvas back to scene_view")
             }
         }
-
-        return pageFound;
     }
 
     private active: Boolean;

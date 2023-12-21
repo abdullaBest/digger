@@ -50,7 +50,6 @@ class Scene {
         this.scene = scene;
         this.camera = camera;
 
-        this.viewGLTF('/assets/load/a0_feb7598e4ae706a33a614f43330b9e7d/0');
         this.updateSize();
         
         return this;

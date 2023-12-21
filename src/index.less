@@ -1,3 +1,5 @@
+// - layout
+
 html,
 body {
   width: 100%;
@@ -12,7 +14,7 @@ canvas#rootcanvas {
 }
 
 #rootlayout {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
 
   #header {
     border-bottom: 1px solid #000;
@@ -35,7 +37,7 @@ canvas#rootcanvas {
   height: 100vh;
 
   .hidden {
-    display: none;
+    display: none !important;
   }
 
   #header, .footer {
@@ -45,7 +47,7 @@ canvas#rootcanvas {
     gap: 2px;
   }
 
-  page {
+  #scene_view, #assets_view, #dev_view {
     flex-grow: 1;
     display: grid;
     grid-template-columns: 20vw auto auto 10vw;
@@ -69,42 +71,48 @@ canvas#rootcanvas {
 
 }
 
-#asset_details {
-  display: flex;
-  flex-direction: column;
-
-  img {
-    margin: auto;
-    width: 70%;
-    height: auto;
-  }
-}
-#asset_props {
+page#assets_view page.sidebar_l {
   display: flex;
   flex-direction: column;
   padding: 8px;
-  gap: 2px;
-
-  & > * {
-  }
-
-  label {
-    display: flex;
-    justify-content: space-between;
-    input {
-      width: 60%;
-    }
-  }
 }
 
-#asset_preview_container {
-  &.mode_canvas {
-    img {
-      display: none;
+#asset_details, #asset_create {
+  // asset properties form
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      input {
+        width: 60%;
+      }
+    }
+
+    [type=submit] {
+      margin-top: 8px;
     }
   }
-  display: flex;
-  flex-grow: 1;
+
+  // asset image container
+  container#asset_preview_container {
+    img {
+      margin: auto;
+      width: 70%;
+      height: auto;
+    }
+
+    &.mode_canvas {
+      img {
+        display: none;
+      }
+    }
+    display: flex;
+    flex-grow: 1;
+  }
 }
 
 #assets_view, #dev_view {
@@ -119,16 +127,13 @@ canvas#rootcanvas {
 
 #assets_view tilegrid {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 8px;
 
-  entry {
+  a {
     user-select: none;
-    cursor: pointer;
-    padding: 4px;
-    height: 32px;
-    box-shadow: 0px -4px 0px inset #0005;
-    border: 1px solid black;
+    height: 80px;
+    width: 256px;
 
     display: flex;
     flex-direction: column;
@@ -140,6 +145,56 @@ canvas#rootcanvas {
     }
     &[data-name]::before {
       content: attr(data-name);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
+  }
+}
+
+// - styling
+
+:root {
+  --color-a: white;
+  --color-b: black;
+  --color-c: #aaa;
+}
+
+btn, .btn {
+  cursor: pointer;
+  padding: 4px;
+  box-shadow: 0px -2px 0px inset #0005;
+  border: 1px solid var(--color-c);
+  text-decoration: none;
+  color: var(--color-b);
+  background-color: var(--color-a);
+  border-radius: 4px;
+}
+
+splitter {
+  margin: 2px;
+  display: flex;
+  gap: 8px;
+  color: var(--color-c);
+  &::before, &::after {
+    background-color: var(--color-c);
+    content: '';
+    flex-grow: 1;
+    height: 2px;
+    border-radius: 2px;
+    margin: auto;
+  }
+}
+
+#assets_view tilegrid a {
+  &:extend(btn);
+}
+
+input {
+  &[type=file] {
+    //..
+  }
+  &[type=submit] {
+    &:extend(btn);
   }
 }
