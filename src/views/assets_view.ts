@@ -49,15 +49,18 @@ export default class AssetsView {
         </container>
         `
 
-        if (info.extension == "gltf" || info.extension == "glb") {
-            const container = this.props_container.querySelector('#asset_preview_container');
-            if (container) {
+        const container = this.props_container.querySelector('#asset_preview_container');
+        if (container) {
+            if (info.extension == "gltf" || info.extension == "glb") {
                 container.classList.add('mode_canvas');
                 this.scene.reattach(container as HTMLElement);
                 this.scene.viewGLTF(info.url);
-            } else {
-                console.warn("can't draw preview.")
+            } 
+            if (info.extension == "scene") {
+                console.log(asset);
             }
+        }else {
+            console.warn("can't draw preview: #asset_preview_container not found");
         }
 
         listenFormSubmit({
@@ -78,7 +81,7 @@ export default class AssetsView {
             return;
         }
 
-        const el = (this.list_container.querySelector('#' + id) || document.createElement('a')) as HTMLElement;
+        const el = (this.list_container.querySelector('#' + id) || document.createElement('a')) as HTMLLinkElement;
         el.id = asset.info.id;
         el.dataset["name"] = asset.info.name; 
         el.href = "#asset_details"

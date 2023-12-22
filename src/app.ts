@@ -2,6 +2,7 @@ import Scene from "./scene";
 import Assets from "./assets";
 import AssetsView from "./views/assets_view";
 import { listenFormSubmit } from "./assets";
+import { response } from "express";
 
 class App {
     constructor() {
@@ -23,22 +24,6 @@ class App {
         this.stop();
     }
     run() {
-        // tynroar todo: unlisten
-        addEventListener("hashchange", (event) => {
-            this.page(window.location.hash);
-        });
-        listenFormSubmit({
-            form: document.querySelector("#assets_upload"), 
-            url: "/assets/upload", 
-            files: ["files"]
-        }, async (s, res) => {
-            const ids = await res.json();
-            for(const i in ids) {
-                const id = ids[i];
-                await this.assets.loadAsset(id);
-                this.assets_view.draw(id);
-            }
-        });
         this.assets_view.init(document.querySelector("#assets_list"), document.querySelector("#asset_details"))
         this.load();
 
@@ -46,8 +31,53 @@ class App {
         window.location.hash = "#assets_view"
         this.page("#assets_view");
         
+        this.listenersRun();
+
         this.scene.run();
         this.active = true;
+    }
+
+    // tmp
+    private listenersRun() {
+        // tynroar todo: unlisten
+        addEventListener("hashchange", (event) => {
+            this.page(window.location.hash);
+        });
+
+        const res_update_callback = async (success: boolean, res:Response) => {
+            const ids = await res.json();
+            for(const i in ids) {
+                const id = ids[i];
+                await this.assets.loadAsset(id);
+                this.assets_view.draw(id);
+            }
+        }
+
+        listenFormSubmit({
+            form: document.querySelector("#assets_upload"), 
+            url: "/assets/upload", 
+            files: ["files"]
+        }, res_update_callback);
+
+        const createbtn = document.querySelector("#crate_scene_btn");
+        if (createbtn) {
+            createbtn.addEventListener("click", async (ev) => {
+                const formData = new FormData();
+                const file = new File(["{type:'scene'}"], "newscene.scene", {
+                    type: "application/json",
+                });
+                  
+                formData.append("files", file);
+                const res = await fetch("/assets/upload", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {}
+                })
+                res_update_callback(res.ok, res);
+            })
+        } else {
+            console.error("#crate_scene_btn btn wasn't found");
+        }
     }
     async load() {
         await this.assets.load();
@@ -72,7 +102,6 @@ class App {
         if (!el.parentElement) { throw new Error(`page: element #${id} has no parent`); }
 
         const pages = document.querySelectorAll(`#${el.parentElement.id} > page`);
-        console.log(pages)
         pages.forEach((v) => {
             if (id.includes(v.id)) {
                 v.classList.remove('hidden');
