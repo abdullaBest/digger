@@ -32,7 +32,7 @@ const server = app.listen(port, async() => {
 })
 
 // files upload
-app.post("/assets/upload/:id", upload.single("file"), updateFiles);
+app.post("/assets/upload/:id", upload.single("files"), updateFiles);
 app.post("/assets/upload", upload.array("files"), uploadFiles);
 
 function updateFiles(req, res) {

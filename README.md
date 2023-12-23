@@ -5,4 +5,4 @@ $ npm i
 $ npm start
 ```
 
-![d231220](docs/sceen-d231220.png)
+![d231220](docs/sceen-d231223.png)

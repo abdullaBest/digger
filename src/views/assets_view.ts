@@ -41,7 +41,7 @@ export default class AssetsView {
 
         <label>Name <input value="${info.name}" type="text" name="name" required/></label>
         <label>Extension <input value="${info.extension}" type="text" name="extension" required disabled/></label>
-        <input id="assets_upload_files" type="file" name="file" accept=".${info.extension}">
+        <input id="assets_upload_files" type="file" name="files" accept=".${info.extension}">
         <input type="submit" value="Update"/>
         </form>
         <container id="asset_preview_container">
@@ -67,7 +67,7 @@ export default class AssetsView {
             form: this.props_container.firstElementChild as HTMLFormElement,
             url: `/assets/upload/${id}`,
             fields: ["name", "extension"],
-            files: ["file"]
+            files: ["files"]
         }, async (s, res) => {
             await this.assets.loadAsset(id);
             this.draw(id);
@@ -75,25 +75,47 @@ export default class AssetsView {
         });
     }
 
-    draw(id: string) {
-        const asset = this.assets.list[id];
+    static draw(assets: Assets, id: string, container: HTMLElement, filter: any = {}, link: string = "#asset_details") {
+        const asset = assets.get(id, filter);
         if (!asset) {
             return;
         }
 
-        const el = (this.list_container.querySelector('#' + id) || document.createElement('a')) as HTMLLinkElement;
+        let filtered = false;
+        for(const k in filter) {
+            if (k in asset.info && asset.info[k] != filter[k]) {
+                filtered = true;
+                break;
+            }
+        }
+        if (filtered) {
+            return;
+        }
+
+        const el = (container.querySelector('#' + id) || document.createElement('a')) as HTMLLinkElement;
         el.id = asset.info.id;
         el.dataset["name"] = asset.info.name; 
-        el.href = "#asset_details"
-        this.list_container.appendChild(el);
+        if(link) {
+            el.href = link;
+        }
+        container.appendChild(el);
     }
 
-    propagate() {
-        this.list_container.innerHTML = "";
+    draw(id: string, container: HTMLElement = this.list_container, filter: any = {}, link: string = "#asset_details") {
+        AssetsView.draw(this.assets, id, container, filter, link);
+    }
 
-        for(const k in this.assets.list) {
-            this.draw(k);
+    static propagate(assets: Assets, container: HTMLElement, filter: any = {}, link: string = "#asset_details") {
+        container.innerHTML = "";
+
+        const _assets = assets.find(filter);
+        for(const k in _assets) {
+            AssetsView.draw(assets, k, container, filter, link);
         }
+    }
+
+    propagate(container: HTMLElement = this.list_container, filter: any = {}, link: string = "#asset_details") {
+        AssetsView.propagate(this.assets, container, filter, link);
     }
 
     list_container: HTMLElement;

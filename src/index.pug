@@ -1,7 +1,7 @@
 doctype html
 html(lang="en")
 	head
-	title Digger █▮ v231220
+	title Digger █▮ v231223
 	meta(name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0")
 	meta(charset="utf-8")
 	
@@ -9,6 +9,9 @@ html(lang="en")
 	script(type="module", src="./index.ts" async defer)
 
 body
+	#popup.hidden
+		header#popup_header xxx
+		container#popup_content
 	#rootlayout
 		#header
 			o digger toolbox █
@@ -16,13 +19,21 @@ body
 			a(href="#assets_view") assets
 			a(href="#dev_view") dev
 		page#scene_view
-			.sidebar_l
-				ul
-					li Тут пока ничего интересного. 
+			page.sidebar_l#scene_edit_sidebar
+				splitter scene
+				page#scene_edit_list
+				page#scene_edit_details.hidden
+					a.btn#back_to_scene_list_btn(href="#scene_edit_list") back to scene list
+					splitter palette
+					container#scene_tools_palette
+						btn#add_scene_model_btn add model
+						btn#add_scene_something_btn add something
+					splitter elements
+					container#scene_edit_elements
 			#scene_view_canvas_container.view: canvas#rootcanvas
 			.footer
 				o scene viewer
-				o v0
+				o v1
 		page#assets_view
 			page.sidebar_l#asset_details
 			page.sidebar_l#asset_create
@@ -31,7 +42,8 @@ body
 					input#assets_upload_files(type="file" name="files" multiple)
 					input(type="submit" value="Upload")
 				splitter create kit
-				a.btn#crate_scene_btn Create scene
+				a.btn#create_model_btn Create model
+				a.btn#create_scene_btn Create scene
 			.view
 				tilegrid#assets_list
 					entry(id="dev")

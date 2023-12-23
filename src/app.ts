@@ -1,14 +1,23 @@
-import Scene from "./scene";
+import SceneRender from "./scene";
 import Assets from "./assets";
+import SceneEdit from "./scene_edit";
+import SceneEditView from "./views/scene_edit_view";
 import AssetsView from "./views/assets_view";
-import { listenFormSubmit } from "./assets";
-import { response } from "express";
+import { listenFormSubmit, sendFiles } from "./assets";
+import { listenClick, popup } from "./document";
 
 class App {
     constructor() {
-        this.scene = new Scene();
+
         this.assets = new Assets();
         this.assets_view = new AssetsView(this.assets, this.scene);
+
+
+        this.scene_edit = new SceneEdit(this.assets);
+        this.scene = new SceneRender(this.scene_edit);
+        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene);
+
+
         this.active = false;
     }
     init() : App {
@@ -25,11 +34,12 @@ class App {
     }
     run() {
         this.assets_view.init(document.querySelector("#assets_list"), document.querySelector("#asset_details"))
+        this.scene_edit_view.init(document.querySelector("#scene_edit_list"), document.querySelector("#scene_edit_elements"))
         this.load();
 
         // switch root page
-        window.location.hash = "#assets_view"
-        this.page("#assets_view");
+        window.location.hash = "#scene_view"
+        this.page("#scene_view");
         
         this.listenersRun();
 
@@ -50,6 +60,7 @@ class App {
                 const id = ids[i];
                 await this.assets.loadAsset(id);
                 this.assets_view.draw(id);
+                this.assets_view.draw(id, this.scene_edit_view.list_container, {extension: 'scene'}, "#scene_edit_details");
             }
         }
 
@@ -59,29 +70,35 @@ class App {
             files: ["files"]
         }, res_update_callback);
 
-        const createbtn = document.querySelector("#crate_scene_btn");
-        if (createbtn) {
-            createbtn.addEventListener("click", async (ev) => {
-                const formData = new FormData();
-                const file = new File(["{type:'scene'}"], "newscene.scene", {
-                    type: "application/json",
-                });
-                  
-                formData.append("files", file);
-                const res = await fetch("/assets/upload", {
-                    method: 'POST',
-                    body: formData,
-                    headers: {}
-                })
-                res_update_callback(res.ok, res);
-            })
-        } else {
-            console.error("#crate_scene_btn btn wasn't found");
-        }
+        listenClick("#create_scene_btn", (ev) => {
+            const file = new File([`{"guids": 0}`], "newscene.scene", {
+                type: "application/json",
+            });
+            sendFiles("/assets/upload", [file], res_update_callback);
+        });
+        listenClick("#create_model_btn", async (ev) => {
+            const popupel = document.querySelector("container#popup_content") as HTMLElement;
+            if (!popupel) {
+                throw new Error("can't draw popup");
+            }
+            AssetsView.propagate(this.scene_edit.assets, popupel, {extension: 'gltf'}, '');
+            const modelid = await popup("select model");
+            const modelname = this.assets.get(modelid)?.info.name ?? "newmodel";
+            AssetsView.propagate(this.scene_edit.assets, popupel, {extension: 'bin'}, '');
+            const modelbin = await popup("select texture");
+            AssetsView.propagate(this.scene_edit.assets, popupel, {extension: 'png'}, '');
+            const modeltexture = await popup("select texture");
+            const model = {gltf: modelid, bin: modelbin, texture: modeltexture};
+            const file = new File([JSON.stringify(model)], modelname + ".model", {
+                type: "application/json",
+            });
+            sendFiles("/assets/upload", [file], res_update_callback);
+        });
     }
     async load() {
         await this.assets.load();
         this.assets_view.propagate();
+        this.assets_view.propagate(this.scene_edit_view.list_container, {extension: 'scene'}, "#scene_edit_details");
     }
     stop() {
         this.scene.stop();
@@ -124,7 +141,9 @@ class App {
     }
 
     private active: Boolean;
-    private scene: Scene;
+    private scene: SceneRender;
+    private scene_edit: SceneEdit;
+    private scene_edit_view: SceneEditView;
     private assets: Assets;
     private assets_view: AssetsView;
 }

@@ -30,15 +30,37 @@ canvas#rootcanvas {
   }
 }
 
+.hidden {
+  display: none !important;
+}
+
+.fade {
+  opacity: 0.5;
+}
+
+#popup {
+  background-color: #aaa;
+  position: absolute;
+  margin: auto;
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  overflow: auto;
+  max-height: 50vh;
+  padding: 8px 20px;
+  border: 2px solid;
+
+  container#popup_content {
+  }
+  
+}
+
 #rootlayout { 
   display: flex;
   flex-direction: column;
   width: 100vw;
   height: 100vh;
-
-  .hidden {
-    display: none !important;
-  }
 
   #header, .footer {
     height: 2em;
@@ -71,10 +93,22 @@ canvas#rootcanvas {
 
 }
 
-page#assets_view page.sidebar_l {
+page#assets_view, page#scene_view {
+  page.sidebar_l {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    gap: 2px;
+  }
+}
+
+container#scene_tools_palette {
+  background-color: #0003;
+  padding: 16px 8px;
+  border-radius: 8px;
   display: flex;
-  flex-direction: column;
-  padding: 8px;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 #asset_details, #asset_create {
@@ -115,26 +149,35 @@ page#assets_view page.sidebar_l {
   }
 }
 
-#assets_view, #dev_view {
+#scene_edit_sidebar {
+
+}
+
+
+#scene_view, #assets_view, #dev_view {
   overflow: hidden;
-  .view {
-    padding: 16px;
-  }
-  .view, .sidebar_l {
+  .sidebar_l {
     overflow: auto;
   }
 }
 
-#assets_view tilegrid {
+#assets_view, #dev_view {
+  .view {
+    padding: 16px;
+    overflow: auto;
+  }
+}
+
+#scene_edit_list, #scene_edit_details, #scene_edit_elements, container#popup_content {
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
   gap: 8px;
+} 
 
-  a {
+#assets_view tilegrid, #scene_edit_list, #scene_edit_elements, container#popup_content {
+  a, entry {
     user-select: none;
-    height: 80px;
-    width: 256px;
-
     display: flex;
     flex-direction: column;
 
@@ -149,6 +192,25 @@ page#assets_view page.sidebar_l {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+  }
+}
+
+#scene_edit_elements entry {
+  &.collapse {
+    & > * {
+      display: none !important;
+    }
+  }
+}
+
+#assets_view tilegrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  a {
+    height: 80px;
+    width: 256px;
   }
 }
 
@@ -186,7 +248,7 @@ splitter {
   }
 }
 
-#assets_view tilegrid a {
+#assets_view tilegrid a, #scene_edit_list a, #scene_edit_elements entry, container#popup_content a {
   &:extend(btn);
 }
 

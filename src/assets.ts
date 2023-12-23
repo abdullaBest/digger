@@ -54,7 +54,6 @@ function listenFormSubmit(
         }
         }
         
-        
         const res = await fetch(url, {
             method: 'POST',
             body: formData,
@@ -64,6 +63,18 @@ function listenFormSubmit(
     }
 }
 
+async function sendFiles(url, files: Array<File>, callback: (success: boolean, response: Response) => void) {
+    const formData = new FormData();
+    for(const i in files) {
+        formData.append("files", files[i]);
+    }
+    const res = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {}
+    })
+    callback(res.ok, res);
+}
 
 enum AssetStatus {
     UNKNOWN = 0,
@@ -110,11 +121,42 @@ class Asset {
 class Assets {
     list: { [id: string] : Asset; };
 
-    get(id: string) : Asset {
-        const a = this.list[id] ?? null;
+    get(id: string, filter: any = {}) : Asset | null {
+        const asset = this.list[id] ?? null;
 
-        return a;
+        if (!asset) {
+            return asset;
+        }
+
+        let filtered = false;
+        for(const k in filter) {
+            if (k in asset.info && asset.info[k] != filter[k]) {
+                filtered = true;
+                break;
+            }
+        }
+        if (filtered) {
+            return null;
+        }
+
+        return asset;
     }
+
+    find(filter: any) : { [id: string] : Asset; } {
+        const assets = {};
+        for(const id in this.list) {
+            const asset = this.get(id, filter);
+            if (asset) {
+                assets[id] = asset;
+            }
+        }
+
+        return assets;
+    }
+
+    /**
+     * Loads asset metadata. To get asset data itself use asset.info.url
+     */
     async loadAsset(id) {
         const path = "/assets/get/" + id;
         const res = await fetch(path);
@@ -123,7 +165,7 @@ class Assets {
             throw new Error(`asset ${id} loading error`);
         }
         const data = await res.json();
-        const myContentType = res.headers.get("Content-Type");
+        //const myContentType = res.headers.get("Content-Type");
         const asset = new Asset({
             url: data.url,
             name: data.name,
@@ -149,4 +191,4 @@ class Assets {
 }
 
 export default Assets;
-export { Assets, Asset, listenFormSubmit }
+export { Assets, Asset, listenFormSubmit, sendFiles }
