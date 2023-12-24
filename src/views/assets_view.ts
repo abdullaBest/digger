@@ -106,6 +106,8 @@ export default class AssetsView {
 		}
 		this.props_container.innerHTML = sprintf(template, info.name, info.extension, info.extension);
 
+        this.props_container.querySelector("label#assets_upload_files_label")?.classList[info.type.includes("json") ? "add" : "remove"]('hidden');
+
         // draw previews
         if (info.extension == "gltf" || info.extension == "glb") {
 			const container = switchPage("#canvas_asset_preview");
@@ -117,13 +119,29 @@ export default class AssetsView {
 			img.src = asset.thumbnail;
 		} 
         
+        let json_data_changed = false;
+        let asset_json = null;
+        const makeJSONFile = () => {
+            if (!json_data_changed) {
+                return null;
+            }
+
+            const file = new File([JSON.stringify(asset_json)], `v${info.revision}_${info.name}`, {
+                type: "application/json",
+            });
+
+            return file;
+        }
         // draw settings fiels
         if (info.extension == "model") {
 			const modeldata = await (await fetch(info.url)).json();
+            asset_json = modeldata;
 			const container = switchPage("#details_model_edit");
             container.innerHTML = "";
             const makePropEditField = (name, extension = name) => {
-                new AssetPropertyEdit().init(modeldata, name).drawSelectOption(async () => {
+                new AssetPropertyEdit().init(modeldata, name, () => {
+                    json_data_changed = true;
+                }).drawSelectOption(async () => {
                     const popupel = querySelector("container#popup_content");
                     AssetsView.propagate(this.assets, popupel, {extension: extension}, '');
                     const newid = await popup("select " + extension);
@@ -136,11 +154,13 @@ export default class AssetsView {
         }
 
         listenFormSubmit({
-            form: this.props_container.firstElementChild as HTMLFormElement,
+            form: querySelector("form#asset_props", this.props_container) as HTMLFormElement,
             url: `/assets/upload/${id}`,
             fields: ["name", "extension"],
-            files: ["files"]
+            files: ["files"],
+            custom: {"files": makeJSONFile}
         }, async (s, res) => {
+            // should get rid of this loadAsset after each update
             await this.assets.loadAsset(id);
             this.draw(id);
             this.drawDetails(id);

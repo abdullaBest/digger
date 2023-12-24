@@ -5,16 +5,24 @@
  * @param opts.url url path to post
  * @param opts.fields input names
  * @param opts.files file input names
+ * @param opts.custom custom content generators
  * @param callback callback of form response
  */
 function listenFormSubmit(
-    opts: { form: HTMLFormElement | null, url: string, fields?: Array<string> | null, files?: Array<string> | null },
+    opts: { 
+        form: HTMLFormElement | null, 
+        url: string, 
+        fields?: Array<string> | null, 
+        files?: Array<string> | null, 
+        custom?: { [id: string] : () => any }
+    },
     callback: (success: boolean, response: Response) => void
     ) {
     const form = opts.form;
     const url = opts.url;
     const fields = opts.fields;
     const files = opts.files;
+    const custom = opts.custom;
 
     if (!form) {
         throw new Error("form is null");
@@ -46,12 +54,19 @@ function listenFormSubmit(
             }
             let len = f?.files?.length ?? 0;
             for (let i =0; i < len; i++) {
-            let file = f?.files ? f?.files[i] : null;
-            if(file) {
-                console.log(file);
-                formData.append(k, file);
+                let file = f?.files ? f?.files[i] : null;
+                if(file) {
+                    console.log(file);
+                    formData.append(k, file);
+                }
             }
         }
+
+        for(const k in custom) {
+            const data = custom[k]();
+            if (data) {
+                formData.append(k, data);
+            }
         }
         
         const res = await fetch(url, {
@@ -89,6 +104,7 @@ interface AssetInfo {
     id: string;
     type: string;
     extension: string;
+    revision: number;
 }
 
 class Asset {
@@ -171,7 +187,8 @@ class Assets {
             name: data.name,
             id: data.id,
             type: data.type,
-            extension: data.extension
+            extension: data.extension,
+            revision: data.revision
         });
         this.list[id] = asset;
     }

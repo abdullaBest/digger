@@ -73,8 +73,8 @@ export function switchPage(id: string) : HTMLElement {
 	return el;
 }
 
-export function querySelector(query: string) : HTMLElement {
-    const element = document.querySelector(query) as HTMLElement;
+export function querySelector(query: string, root: HTMLElement = document.body) : HTMLElement {
+    const element = root.querySelector(query) as HTMLElement;
     if (!element) { throw new Error("can't find element matching query " + query); }
     return element;
 }
