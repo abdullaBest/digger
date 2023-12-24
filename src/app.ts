@@ -85,7 +85,7 @@ class App {
             const modelid = await popup("select model");
             const modelname = this.assets.get(modelid)?.info.name ?? "newmodel";
             AssetsView.propagate(this.scene_edit.assets, popupel, {extension: 'bin'}, '');
-            const modelbin = await popup("select texture");
+            const modelbin = await popup("select bin");
             AssetsView.propagate(this.scene_edit.assets, popupel, {extension: 'png'}, '');
             const modeltexture = await popup("select texture");
             const model = {gltf: modelid, bin: modelbin, texture: modeltexture};

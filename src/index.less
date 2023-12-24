@@ -39,21 +39,34 @@ canvas#rootcanvas {
 }
 
 #popup {
-  background-color: #aaa;
+  background-color: white;
   position: absolute;
   margin: auto;
   transform: translate(-50%, -50%);
   top: 50%;
   left: 50%;
   z-index: 1;
-  overflow: auto;
-  max-height: 50vh;
-  padding: 8px 20px;
-  border: 2px solid;
+  border: 2px solid #aaa;
 
-  container#popup_content {
+  container#popup_content_wrapper {
+    overflow: auto;
+    padding: 8px 20px;
+  	max-height: 50vh;
+		display: block;
   }
+
+	#popup_header {
+		text-align: center;
+  	font-size: 1.2em;
+	}
   
+  btn#popup_close {
+		transform: translate(-50%, -50%);
+  	position: absolute;
+	  &::before {
+		  content: "❌";
+	  }
+  }
 }
 
 #rootlayout { 
@@ -168,7 +181,7 @@ container#scene_tools_palette {
   }
 }
 
-#scene_edit_list, #scene_edit_details, #scene_edit_elements, container#popup_content {
+#scene_edit_list, #scene_edit_details, #scene_edit_elements {
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
