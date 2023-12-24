@@ -82,4 +82,23 @@ body
 					li нужно иметь возможность (возможности, блин. Чо тут хотел дописать хз)
 			.footer
 				o dev section
-	
+	db#templates
+		template#asset_details_template
+			splitter asset details
+			form#asset_props
+				label name
+					input(value="%s", type="text" name="name", required)
+				label extension
+					input(value="%s", type="text", name="extension" required disabled)
+				label reupload 
+					input#assets_upload_files(type="file" name="files" accept=".%s")
+				input(type="submit" value="update")
+			splitter asset content
+			container#asset_details_properties_edit
+				page#details_empty_edit
+				page#details_model_edit
+			btn#save_asset_details_btn save
+			container#asset_preview_container
+				page#img_asset_preview
+					img#asset_preview_img
+				page#canvas_asset_preview

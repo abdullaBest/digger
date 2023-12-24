@@ -4,18 +4,16 @@ import SceneEdit from "./scene_edit";
 import SceneEditView from "./views/scene_edit_view";
 import AssetsView from "./views/assets_view";
 import { listenFormSubmit, sendFiles } from "./assets";
-import { listenClick, popup } from "./document";
+import { listenClick, popup, switchPage } from "./document";
 
 class App {
     constructor() {
 
         this.assets = new Assets();
-        this.assets_view = new AssetsView(this.assets, this.scene);
-
-
         this.scene_edit = new SceneEdit(this.assets);
         this.scene = new SceneRender(this.scene_edit);
         this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene);
+        this.assets_view = new AssetsView(this.assets, this.scene);
 
 
         this.active = false;
@@ -113,20 +111,7 @@ class App {
      * @param id id of page to switch to
      */
     page(id: string) {
-        // find requested element
-        const el = document.querySelector(id);
-        if(!el) { throw new Error("page: no such element " + id); }
-        if (!el.parentElement) { throw new Error(`page: element #${id} has no parent`); }
-
-        const pages = document.querySelectorAll(`#${el.parentElement.id} > page`);
-        pages.forEach((v) => {
-            if (id.includes(v.id)) {
-                v.classList.remove('hidden');
-            } else {
-                v.classList.add('hidden');
-            }
-        })
-
+		switchPage(id);
         // -- postpage operations. temporal
 
         // swaps canvas back to scene view if it was removed

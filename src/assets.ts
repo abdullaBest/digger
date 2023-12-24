@@ -102,7 +102,7 @@ class Asset {
         this._thumbnail = null;
     }
 
-    get thumbnail() : String {
+    get thumbnail() : string {
         if (this._thumbnail) {
             return this._thumbnail;
         }

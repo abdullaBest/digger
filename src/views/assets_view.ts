@@ -1,10 +1,72 @@
 import { Assets, listenFormSubmit } from "../assets";
-import Scene from "../scene";
+import SceneRender from "../scene";
+import { sprintf } from "../lib/sprintf.js";
+import { switchPage, querySelector, popup } from "../document";
+
+/**
+ * v1: draws property edit with select option
+ */
+class AssetPropertyEdit {
+    /**
+     * @param object object to chenge property in
+     * @param key key in object to access
+     * @returns this
+     */
+    init(object: any, key: string, callback?: (value: string) => void) : AssetPropertyEdit {
+        this.object = object;
+        this.key = key;
+        this.callback = callback ?? null;
+        
+        return this;
+    }
+
+    drawSelectOption(onclick: () => Promise<string>, parent?: HTMLElement) : HTMLElement {
+        this.element = this.element ?? document.createElement("entry");
+        this.element.innerHTML = `<label>${this.key}:(${this.object[this.key]})<btn>set</btn></label>`
+        this.element.querySelector("btn")?.addEventListener('click', async () => {
+            const newval = await onclick();
+            this.object[this.key] = newval;
+            this.drawSelectOption(onclick, parent);
+            if (this.callback) {
+                this.callback(newval);
+            }
+        });
+
+        if (!this.element.parentElement) {
+            parent?.appendChild(this.element);
+        }
+
+        return this.element;
+    }
+
+    drawTextEditOption(parent?: HTMLElement) : HTMLElement {
+        this.element = this.element ?? document.createElement("entry");
+        this.element.innerHTML = `<label>${this.key}<input value="${this.object[this.key]}", type="text" name="name"></input></label>`
+        this.element.querySelector("input")?.addEventListener('change', async (ev) => {
+            const newval = (ev.target as HTMLInputElement)?.value;
+            this.object[this.key] = newval;
+            if (this.callback) {
+                this.callback(newval);
+            }
+        });
+
+        if (!this.element.parentElement) {
+            parent?.appendChild(this.element);
+        }
+
+        return this.element;
+    }
+
+    object: any;
+    key: string;
+    element: HTMLElement | null;
+    callback: ((value: string) => void) | null;
+}
 
 export default class AssetsView {
-    constructor(assets: Assets, scene: Scene){
+    constructor(assets: Assets, scene: SceneRender){
         this.assets = assets;
-        this.scene = scene;
+        this.scene_render = scene;
     }
 
     /**
@@ -29,38 +91,48 @@ export default class AssetsView {
         return this;
     }
 
-    private drawDetails(id: string) {
+    private async drawDetails(id: string) {
         const asset = this.assets.get(id);
         if(!asset) {
             return;
         }
         console.log("Preview asset:", asset);
         const info = asset.info;
-        this.props_container.innerHTML = `
-        <form id="asset_props">
 
-        <label>Name <input value="${info.name}" type="text" name="name" required/></label>
-        <label>Extension <input value="${info.extension}" type="text" name="extension" required disabled/></label>
-        <input id="assets_upload_files" type="file" name="files" accept=".${info.extension}">
-        <input type="submit" value="Update"/>
-        </form>
-        <container id="asset_preview_container">
-        <img src='${asset.thumbnail}'></img>
-        </container>
-        `
 
-        const container = this.props_container.querySelector('#asset_preview_container');
-        if (container) {
-            if (info.extension == "gltf" || info.extension == "glb") {
-                container.classList.add('mode_canvas');
-                this.scene.reattach(container as HTMLElement);
-                this.scene.viewGLTF(info.url);
-            } 
-            if (info.extension == "scene") {
-                console.log(asset);
-            }
-        }else {
-            console.warn("can't draw preview: #asset_preview_container not found");
+		const template = document.querySelector("template#asset_details_template")?.innerHTML;
+		if(!template) {
+			throw new Error("Couldn't find template#asset_details_template");
+		}
+		this.props_container.innerHTML = sprintf(template, info.name, info.extension, info.extension);
+
+        // draw previews
+        if (info.extension == "gltf" || info.extension == "glb") {
+			const container = switchPage("#canvas_asset_preview");
+            this.scene_render.reattach(container as HTMLElement);
+            this.scene_render.viewGLTF(info.url);
+        } else if (info.type.includes("image")) {
+			const container = switchPage("#img_asset_preview");
+			const img = container.querySelector("img");
+			img.src = asset.thumbnail;
+		} 
+        
+        // draw settings fiels
+        if (info.extension == "model") {
+			const modeldata = await (await fetch(info.url)).json();
+			const container = switchPage("#details_model_edit");
+            container.innerHTML = "";
+            const makePropEditField = (name, extension = name) => {
+                new AssetPropertyEdit().init(modeldata, name).drawSelectOption(async () => {
+                    const popupel = querySelector("container#popup_content");
+                    AssetsView.propagate(this.assets, popupel, {extension: extension}, '');
+                    const newid = await popup("select " + extension);
+                    return newid;
+                }, container);
+            };
+            makePropEditField("gltf");
+            makePropEditField("bin");
+            makePropEditField("texture", "png");
         }
 
         listenFormSubmit({
@@ -121,5 +193,5 @@ export default class AssetsView {
     list_container: HTMLElement;
     props_container: HTMLElement;
     assets: Assets;
-    scene: Scene;
+    scene_render: SceneRender;
 }
