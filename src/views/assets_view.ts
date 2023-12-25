@@ -2,6 +2,7 @@ import { Assets, listenFormSubmit } from "../assets";
 import SceneRender from "../scene";
 import { sprintf } from "../lib/sprintf.js";
 import { switchPage, querySelector, popupListSelect } from "../document";
+import SceneEdit from "../scene_edit";
 
 /**
  * v1: draws property edit with select option
@@ -108,12 +109,24 @@ export default class AssetsView {
         this.props_container.querySelector("label#assets_upload_files_label")?.classList[info.extension.includes("model") ? "add" : "remove"]('hidden');
 
         // draw previews
-        if (info.extension == "gltf" || info.extension == "glb" || info.extension == 'model') {
+        if (info.extension == "gltf" || info.extension == "glb" || info.extension == 'model' || info.extension == "scene") {
 			const container = switchPage("#canvas_asset_preview");
             this.scene_render.reattach(container as HTMLElement);
+            this.scene_render.clearModels();
             if (info.extension == 'model') {
                 this.scene_render.viewModel(id);
-            } else {
+            } else if (info.extension == 'scene') {
+                await this.scene_render.scene_edit.load(id);
+                for(const _id in this.scene_render.scene_edit.elements) {
+                    const element = this.scene_render.scene_edit.elements[_id];
+        
+                    const model = element.model;
+                    if(model) {
+                        this.scene_render.addModel(model, _id);
+                    }
+                }
+            } 
+            else {
                 this.scene_render.viewGLTF(info.url);
             }
         } else if (info.type.includes("image")) {

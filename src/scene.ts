@@ -110,11 +110,11 @@ class SceneRender {
         const loader = new GLTFLoader(loading_manager);
         loading_manager.setURLModifier((path: string, s: any, r: any) => {
             if (path.includes(".bin")) {
-                console.warn(`SceneRender::addModel: model ${gltfurl} has internal '.bin' dependency. Please reimport`)
+                console.warn(`SceneRender::addModel: model ${asset_id} has internal '.bin' dependency. Please reimport`)
                 const name = path.split('/').pop();
                 return `/assets/load?name=${name}`;
             } else if (path.includes(".png")) {
-                console.warn(`SceneRender::addModel: model ${gltfurl} has internal '.png' dependency. Please reimport`)
+                console.warn(`SceneRender::addModel: model ${asset_id} has internal '.png' dependency. Please reimport`)
                 return textureurl;
             }
 
@@ -327,8 +327,8 @@ class SceneRender {
     private mousepos: THREE.Vector2;
     private raycaster: THREE.Raycaster;
 
-    private assets: Assets;
-    private scene_edit: SceneEdit;
+    assets: Assets;
+    scene_edit: SceneEdit;
     private active: Boolean;
     private cache: SceneCache;
 }
