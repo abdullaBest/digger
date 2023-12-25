@@ -85,7 +85,7 @@ class App {
             const modelid = await popupListSelect("select model", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: 'gltf'}, ''));
             const modelname = this.assets.get(modelid)?.info.name ?? "newmodel";
             const modeltexture = await popupListSelect("select texture", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: 'png'}, ''));
-            const model = { gltf: modelid, material: "standart", texture: modeltexture };
+            const model = { gltf: modelid, material: "standart", texture: modeltexture, pos_x: 0, pos_y: 0, pos_z: 0 };
             const file = new File([JSON.stringify(model)], modelname.split('.').shift() + ".model", {
                 type: "application/json",
             });

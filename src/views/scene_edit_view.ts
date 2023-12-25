@@ -43,9 +43,9 @@ export default class SceneEditView {
             AssetsView.propagate(this.scene_edit.assets, popupel, {extension: 'model'}, '');
             const modelid = await popupListSelect("select model");
             const modelasset = this.scene_edit.assets.get(modelid);
-            const el = this.scene_edit.addElement({model: modelid, name: modelasset?.info.name});
+            const el = await this.scene_edit.addElement({model: modelid, name: modelasset?.info.name});
             this.draw(el.id);
-            this.scene_render.addModel(modelid, el.id);
+            this.scene_render.addModel(el.id, el.components.model.properties);
         })
         listenClick("#back_to_scene_list_btn",  async (ev) => {
             this.scene_edit.save();
@@ -61,7 +61,7 @@ export default class SceneEditView {
         el.id = element.id;
         el.dataset["name"] = element.name;
         el.classList.add("collapse");
-        
+        //AssetsView.drawModelPropertyFields(el, this.scene_edit.assets, )
         container.appendChild(el);
     }
 
@@ -76,9 +76,9 @@ export default class SceneEditView {
             const element = this.scene_edit.elements[id];
             this.draw(id);
 
-            const model = element.model;
+            const model = element.components.model;
             if(model) {
-                this.scene_render.addModel(model, id);
+                this.scene_render.addModel(id, model.properties);
             }
         }
     }

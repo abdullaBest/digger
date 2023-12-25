@@ -2,7 +2,7 @@ import * as THREE from './lib/three.module.js';
 import { GLTFLoader } from './lib/GLTFLoader.js';
 import { OrbitControls } from './lib/OrbitControls.js'
 import { Assets } from './assets'
-import SceneEdit from "./scene_edit";
+import { SceneEdit, SceneElement } from "./scene_edit";
 import { TransformControls } from './lib/TransformControls.js';
 
 class SceneCache {
@@ -60,10 +60,11 @@ class SceneRender {
             const object = e.target.object;
             const id = object.name;
             const el = this.scene_edit.elements && this.scene_edit.elements[id];
-            if (el) {
-                el.position.x = object.position.x;
-                el.position.y = object.position.y;
-                el.position.z = object.position.z;
+            if (el && el.components.model) {
+                
+                el.components.model.properties.pos_x = object.position.x;
+                el.components.model.properties.pos_y = object.position.y;
+                el.components.model.properties.pos_z = object.position.z;
             }
         });
         this.transform_controls.addEventListener( 'mouseDown', ( event ) => {
@@ -91,18 +92,15 @@ class SceneRender {
      * "model" works only with "imported" gltf's wich does not have any internal links
      * @param id model asset id
      */
-    async addModel(asset_id: string, elemet_id?: string) {
-        const modelurl = this.assets.get(asset_id).info.url;
-        const modeldata = await (await fetch(modelurl)).json();
-
-        const gltfurl = this.assets.get(modeldata.gltf).info.url
-        const textureurl = this.assets.get(modeldata.texture).info.url
+    async addModel(id: string, model: any) {
+        const gltfurl = this.assets.get(model.gltf).info.url
+        const textureurl = this.assets.get(model.texture).info.url
 
         if (!gltfurl || !textureurl) {
             throw new Error(
                 `Load model errors: wrong ids 
-                gltf = [${modeldata.gltf}:${gltfurl}], 
-                texture = [${modeldata.texture}:${textureurl}]`
+                gltf = [${model.gltf}:${gltfurl}], 
+                texture = [${model.texture}:${textureurl}]`
                 )
         }
 
@@ -110,31 +108,29 @@ class SceneRender {
         const loader = new GLTFLoader(loading_manager);
         loading_manager.setURLModifier((path: string, s: any, r: any) => {
             if (path.includes(".bin")) {
-                console.warn(`SceneRender::addModel: model ${asset_id} has internal '.bin' dependency. Please reimport`)
+                console.warn(`SceneRender::addModel: model ${model.gltf} has internal '.bin' dependency. Please reimport`)
                 const name = path.split('/').pop();
                 return `/assets/load?name=${name}`;
             } else if (path.includes(".png")) {
-                console.warn(`SceneRender::addModel: model ${asset_id} has internal '.png' dependency. Please reimport`)
+                console.warn(`SceneRender::addModel: model ${model.gltf} has internal '.png' dependency. Please reimport`)
                 return textureurl;
+            } else if (path.includes(gltfurl)) {
+                return gltfurl;
             }
 
-            return gltfurl;
+            return path;
         })
 
 
         loader.load( gltfurl,  ( gltf ) => {
-            if (elemet_id && this.scene_edit.elements) {
-                const model_element = this.scene_edit.elements[elemet_id];
-                gltf.scene.position.x = model_element.position.x;
-                gltf.scene.position.y = model_element.position.y;
-                gltf.scene.position.z = model_element.position.z;
-            }
-            const id = elemet_id ?? asset_id;
+            gltf.scene.position.x = model.pos_x;
+            gltf.scene.position.y = model.pos_y;
+            gltf.scene.position.z = model.pos_z;
             gltf.scene.name = id;
             this.cache.models[id] = gltf.scene;
             this.scene.add( gltf.scene );
 
-            const material = this.getMaterial(modeldata.material, textureurl);
+            const material = this.getMaterial(model.material, textureurl);
             gltf.scene.traverse((o) => {
                 if (o.isMesh) o.material = material;
             });
@@ -156,9 +152,9 @@ class SceneRender {
         }
         this.cache.models = {};
     }
-    viewModel(asset_id: string) {
+    viewModel(id: string, model: any) {
         this.clearModels();
-        this.addModel(asset_id);
+        this.addModel(id, model);
     }
 
     /**

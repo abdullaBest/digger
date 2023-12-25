@@ -114,15 +114,15 @@ export default class AssetsView {
             this.scene_render.reattach(container as HTMLElement);
             this.scene_render.clearModels();
             if (info.extension == 'model') {
-                this.scene_render.viewModel(id);
+                const model = await (await fetch(this.assets.get(id).info.url)).json();
+                this.scene_render.viewModel(id, model);
             } else if (info.extension == 'scene') {
                 await this.scene_render.scene_edit.load(id);
                 for(const _id in this.scene_render.scene_edit.elements) {
                     const element = this.scene_render.scene_edit.elements[_id];
         
-                    const model = element.model;
-                    if(model) {
-                        this.scene_render.addModel(model, _id);
+                    if(element.components.model) {
+                        this.scene_render.addModel(_id, element.components.model.properties);
                     }
                 }
             } 
@@ -150,29 +150,11 @@ export default class AssetsView {
         }
         // draw settings fiels
         if (info.extension == "model") {
-			const modeldata = await (await fetch(info.url)).json();
-            asset_json = modeldata;
-			const container = switchPage("#details_model_edit");
+            asset_json = await (await fetch(info.url)).json();
+            const container = switchPage("#details_model_edit");
             container.innerHTML = "";
 
-            const makePropSelectField = (name, extension = name) => {
-                new AssetPropertyEdit().init(modeldata, name, () => {
-                    json_data_changed = true;
-                }).drawSelectOption(async () => {
-                    const popupel = querySelector("container#popup_content");
-                    AssetsView.propagate(this.assets, popupel, {extension: extension}, '');
-                    const newid = await popupListSelect("select " + extension);
-                    return newid;
-                }, container);
-            };
-            const makePropEditField = (name) => {
-                new AssetPropertyEdit().init(modeldata, name, () => {
-                    json_data_changed = true;
-                }).drawTextEditOption(container);
-            }
-            makePropSelectField("gltf");
-            makePropEditField("material")
-            makePropSelectField("texture", "png");
+            this._drawModelPropertyFields(container, asset_json, () =>  { json_data_changed = true });
         }
 
         listenFormSubmit({
@@ -187,6 +169,28 @@ export default class AssetsView {
             this.draw(id);
             this.drawDetails(id);
         });
+    }
+
+    static drawModelPropertyFields(container: HTMLElement, assets: Assets, modeldata: any, onchange: () => void) {
+        const makePropSelectField = (name, extension = name) => {
+            new AssetPropertyEdit().init(modeldata, name, onchange).drawSelectOption(async () => {
+                const popupel = querySelector("container#popup_content");
+                AssetsView.propagate(assets, popupel, {extension: extension}, '');
+                const newid = await popupListSelect("select " + extension);
+                return newid;
+            }, container);
+        };
+        const makePropEditField = (name) => {
+            new AssetPropertyEdit().init(modeldata, name, onchange).drawTextEditOption(container);
+        }
+        makePropSelectField("gltf");
+        makePropEditField("material")
+        makePropSelectField("texture", "png");
+    }
+
+    _drawModelPropertyFields(container: HTMLElement, modeldata: any, onchange: () => void) {
+        AssetsView.drawModelPropertyFields(container, this.assets, modeldata, onchange);
+       
     }
 
     static draw(assets: Assets, id: string, container: HTMLElement, filter: any = {}, link: string = "#asset_details") {

@@ -12,8 +12,8 @@ function blobToBase64(blob : Blob) : Promise<string | ArrayBuffer | null> {
 };
 
 export async function importGltfSequence() {
-    let gltfContent: any = null;
-    let gltfFile: any = null;
+    let gltfContents: Array<any> = [];
+    let gltfFiles: Array<File> = [];
     try {
         // a. show file select popup.
         const input = document.createElement("input");
@@ -34,45 +34,48 @@ export async function importGltfSequence() {
             }
             filesMap[file.name] = file;
             if(file.name.match(/\.(gltf)$/)) {
-                gltfFile = file;
-                gltfContent = JSON.parse(await file.text());
+                gltfFiles.push(file);
+                gltfContents.push(JSON.parse(await file.text()))
             }
         }
 
         // b.1 cycle back to (a.)
-        if (!gltfContent) {
+        if (!gltfContents.length) {
             throw new Error("no gltf provided");
         }
         
         // c.1 replace buffer
-        for (const i in gltfContent.buffers) {
-            const b = gltfContent.buffers[i];
-            if (b.uri.includes("data:application/octet-stream")) {
-                continue;
-            }
-            const depname = b.uri.split('/').pop();
-            const dep = filesMap[depname];
-            if (!dep) {
-                throw new Error(`gltf requires "${b.uri}" buffer but no "${depname}" found.`);
+        for(const i in gltfContents) {
+            const gltfContent = gltfContents[i];
+            for (const i in gltfContent.buffers) {
+                const b = gltfContent.buffers[i];
+                if (b.uri.includes("data:application/octet-stream")) {
+                    continue;
+                }
+                const depname = b.uri.split('/').pop();
+                const dep = filesMap[depname];
+                if (!dep) {
+                    throw new Error(`gltf requires "${b.uri}" buffer but no "${depname}" found.`);
+                }
+
+                const newdata = await blobToBase64(dep);
+
+                b.uri = newdata;
+                b.byteLength = dep.size;
             }
 
-            const newdata = await blobToBase64(dep);
-
-            b.uri = newdata;
-            b.byteLength = dep.size;
-        }
-
-        // c.2 replace textures
-        for (const i in gltfContent.images) {
-            const img = gltfContent.images[i];
-            const newtx = await fetch('res/missing-texture.png');
-            if (!newtx.type.includes("image")) {
-                throw new Error("missing missing-texture.. :D");
+            // c.2 replace textures
+            for (const i in gltfContent.images) {
+                const img = gltfContent.images[i];
+                const newtx = await fetch('res/missing-texture.png');
+                if (!newtx.ok) {
+                    throw new Error("missing missing-texture.. :D");
+                }
+                const blob = await newtx.blob()
+                const newdata = await blobToBase64(blob);
+                img.mimeType = newtx.type;
+                img.uri = newdata;
             }
-            const blob = await newtx.blob()
-            const newdata = await blobToBase64(blob);
-            img.mimeType = newtx.type;
-            img.uri = newdata;
         }
 
     } catch(err) {
@@ -84,10 +87,15 @@ export async function importGltfSequence() {
         return await importGltfSequence();
     }
 
-    console.log(gltfContent);
-    const file = new File([JSON.stringify(gltfContent)], gltfFile.name, {
-        type: "application/json",
-    });
+    const files: Array<File> = [];
+    for(const i in gltfContents) {
+        const gltfContent = gltfContents[i];
+        const gltfFile = gltfFiles[i];
+        const file = new File([JSON.stringify(gltfContent)], gltfFile.name, {
+            type: "application/json",
+        });
+        files.push(file);
+    }
 
-    return await sendFiles("/assets/upload", [file]);
+    return await sendFiles("/assets/upload", files);
 }

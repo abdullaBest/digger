@@ -1,17 +1,56 @@
 import { Assets, Asset, sendFiles } from "./assets";
 
+/**
+ * Used to override default asset properties with custom data
+ */
+class OverridedAssetLink {
+    id: string;
+    properties: any;
+    constructor(id?, properties = {}) {
+        this.id = id;
+        this.properties = properties;
+    }
+
+    init(opts: {id: string, properties: any}) : OverridedAssetLink {
+        this.id = opts.id;
+        this.properties = Object.assign(this.properties, opts.properties);
+
+        return this;
+    }
+
+    async load(url: string) {
+        const data = await (await fetch(url)).json();
+        Object.setPrototypeOf(this.properties, data);
+    }
+
+    store() {
+        return {
+            id: this.id,
+            properties: this.properties
+        }
+    }
+}
+
 class SceneElement {
     parent: string | null;
     id: string;
     name: string;
     position: { x:number, y: number, z: number };
-    model: string | null;
+    components: { [id: string] : OverridedAssetLink }
 
     constructor(id: string = '', name: string = 'newelement') {
         this.name = name;
         this.id = id;
         this.parent = null;
         this.position = {x: 0, y: 0, z: 0};
+        this.components = {};
+    }
+
+    async load(assets: Assets) {
+        for(const k in this.components) {
+            const component = this.components[k]
+            await component.load(assets.get(component.id).info.url);
+        }
     }
 
     /**
@@ -22,11 +61,10 @@ class SceneElement {
         this.parent = json.parent;
         this.id = json.id;
         this.name = json.name;
-        if (json.position) {
-            Object.assign(this.position, json.position);
-        }
-        if (json.model) {
-            this.model = json.model;
+
+        for(const k in json.components) {
+            const component = json.components[k];
+            this.components[k] = new OverridedAssetLink().init(component);
         }
 
         return this;
@@ -35,22 +73,21 @@ class SceneElement {
      * Stores class properties into object
      * @param json object to store data in to
      */
-    store(json: any): object {
+    store(json: any): any {
         json.parent = this.parent;
         json.id = this.id;
         json.name = this.name;
-        if (this.position) {
-             json.position = Object.assign(json.position ?? {}, this.position);
+        json.components = {};
+       
+        for(const k in this.components) {
+            json.components[k] = this.components[k].store();
         }
-        if (this.model) {
-            json.model = this.model;
-       }
 
         return json;
     }
 }
 
-export default class SceneEdit {
+class SceneEdit {
     constructor(asset: Assets) {
         this.assets = asset;
         this.asset = null;
@@ -80,6 +117,7 @@ export default class SceneEdit {
         for(const i in elements) {
             const el = elements[i];
             const element = new SceneElement().init(el)
+            await element.load(this.assets);
             this.elements[el.id] = element;
         }
     }
@@ -99,14 +137,15 @@ export default class SceneEdit {
         });
     }
 
-    addElement(opts: {model?: string, name?: string} = {}) : SceneElement {
+    async addElement(opts: {model?: string, name?: string} = {}) : Promise<SceneElement> {
         const el = new SceneElement('e' + this.guids++);
         if(opts.model) {
-            el.model = opts.model;
+            el.components.model = new OverridedAssetLink(opts.model);
         }
         if(opts.name) {
             el.name = opts.name;
         }
+        await el.load(this.assets);
         this.elements[el.id] = el;
         return el;
     }
@@ -117,3 +156,6 @@ export default class SceneEdit {
     elements: { [id: string] : SceneElement; };
     guids: number;
 }
+
+export default SceneEdit;
+export { SceneEdit, SceneElement };
