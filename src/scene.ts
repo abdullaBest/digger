@@ -30,7 +30,7 @@ class SceneRender {
     }
     init(canvas: HTMLCanvasElement) : SceneRender {
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+        const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
         const renderer = new THREE.WebGLRenderer({ canvas , alpha: true });
         this.refSizeEl = canvas.parentElement;
         this.canvas = canvas;
@@ -74,7 +74,19 @@ class SceneRender {
             this.controls.enabled = true;
         } );
         scene.add(this.transform_controls);
-        canvas.addEventListener('mousedown', this.onMouseClick.bind(this));
+
+        let localMouse = {x: 0, y: 0}
+        canvas.addEventListener('mousedown', (ev: MouseEvent) => {
+            localMouse.x = ev.clientX;
+            localMouse.y = ev.clientY;
+        });
+        canvas.addEventListener('mouseup', (ev: MouseEvent) => {
+            const deltax = Math.abs(ev.clientX - localMouse.x);
+            const deltay = Math.abs(ev.clientY - localMouse.y);
+            if (deltax + deltay < 10) {
+                this.onMouseClick(ev);
+            }
+        });
         
         (camera as any).position.z = 2;
 
