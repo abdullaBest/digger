@@ -23,7 +23,8 @@ class AssetPropertyEdit {
 
     drawSelectOption(onclick: () => Promise<string>, parent?: HTMLElement) : HTMLElement {
         this.element = this.element ?? document.createElement("entry");
-        this.element.innerHTML = `<label>${this.key}:(${this.object[this.key]})<btn>set</btn></label>`
+        const value = this.object[this.key];
+        this.element.innerHTML = `<label title="${value}">${this.key}:(...)<btn>set</btn></label>`
         this.element.querySelector("btn")?.addEventListener('click', async () => {
             const newval = await onclick();
             this.object[this.key] = newval;
@@ -171,7 +172,7 @@ export default class AssetsView {
         });
     }
 
-    static drawModelPropertyFields(container: HTMLElement, assets: Assets, modeldata: any, onchange: () => void) {
+    static drawModelPropertyFields(container: HTMLElement, assets: Assets, modeldata: any, onchange?: () => void) {
         const makePropSelectField = (name, extension = name) => {
             new AssetPropertyEdit().init(modeldata, name, onchange).drawSelectOption(async () => {
                 const popupel = querySelector("container#popup_content");

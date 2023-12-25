@@ -138,7 +138,7 @@ container#scene_tools_palette {
   gap: 4px;
 }
 
-#asset_details, #asset_create, #asset_details_model_template {
+#asset_details, #asset_create, #asset_details_model_template, #scene_edit_elements {
   // asset properties form
   form {
     display: flex;
@@ -151,6 +151,7 @@ container#scene_tools_palette {
   }
 
   label {
+      align-items: center;
       display: flex;
       justify-content: space-between;
       input {
@@ -280,7 +281,7 @@ splitter {
   }
 }
 
-#assets_view tilegrid a, #scene_edit_list a, #scene_edit_elements entry, container#popup_content a {
+#assets_view tilegrid a, #scene_edit_list a, #scene_edit_elements > entry, container#popup_content a {
   &:extend(.btn-style);
 }
 

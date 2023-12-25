@@ -142,6 +142,14 @@ class SceneRender {
         
         } );
     }
+    removeModel(id: string) {
+        this.transform_controls.detach();
+        if (!this.cache.models[id]) {
+            throw new Error("SceneRender::removeModel: can't remove model " + id);
+        }
+        this.scene.remove(this.cache.models[id]);
+        delete this.cache.models[id];
+    }
     clearModels() {
         this.transform_controls.detach();
         for(const k in this.cache.models) {
