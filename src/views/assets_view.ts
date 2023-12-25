@@ -1,7 +1,7 @@
 import { Assets, listenFormSubmit } from "../assets";
 import SceneRender from "../scene";
 import { sprintf } from "../lib/sprintf.js";
-import { switchPage, querySelector, popup } from "../document";
+import { switchPage, querySelector, popupListSelect } from "../document";
 
 /**
  * v1: draws property edit with select option
@@ -99,23 +99,26 @@ export default class AssetsView {
         console.log("Preview asset:", asset);
         const info = asset.info;
 
-
 		const template = document.querySelector("template#asset_details_template")?.innerHTML;
 		if(!template) {
 			throw new Error("Couldn't find template#asset_details_template");
 		}
 		this.props_container.innerHTML = sprintf(template, info.name, info.extension, info.extension);
 
-        this.props_container.querySelector("label#assets_upload_files_label")?.classList[info.type.includes("json") ? "add" : "remove"]('hidden');
+        this.props_container.querySelector("label#assets_upload_files_label")?.classList[info.extension.includes("model") ? "add" : "remove"]('hidden');
 
         // draw previews
-        if (info.extension == "gltf" || info.extension == "glb") {
+        if (info.extension == "gltf" || info.extension == "glb" || info.extension == 'model') {
 			const container = switchPage("#canvas_asset_preview");
             this.scene_render.reattach(container as HTMLElement);
-            this.scene_render.viewGLTF(info.url);
+            if (info.extension == 'model') {
+                this.scene_render.viewModel(id);
+            } else {
+                this.scene_render.viewGLTF(info.url);
+            }
         } else if (info.type.includes("image")) {
 			const container = switchPage("#img_asset_preview");
-			const img = container.querySelector("img");
+			const img = querySelector("img") as HTMLImageElement;
 			img.src = asset.thumbnail;
 		} 
         
@@ -138,19 +141,25 @@ export default class AssetsView {
             asset_json = modeldata;
 			const container = switchPage("#details_model_edit");
             container.innerHTML = "";
-            const makePropEditField = (name, extension = name) => {
+
+            const makePropSelectField = (name, extension = name) => {
                 new AssetPropertyEdit().init(modeldata, name, () => {
                     json_data_changed = true;
                 }).drawSelectOption(async () => {
                     const popupel = querySelector("container#popup_content");
                     AssetsView.propagate(this.assets, popupel, {extension: extension}, '');
-                    const newid = await popup("select " + extension);
+                    const newid = await popupListSelect("select " + extension);
                     return newid;
                 }, container);
             };
-            makePropEditField("gltf");
-            makePropEditField("bin");
-            makePropEditField("texture", "png");
+            const makePropEditField = (name) => {
+                new AssetPropertyEdit().init(modeldata, name, () => {
+                    json_data_changed = true;
+                }).drawTextEditOption(container);
+            }
+            makePropSelectField("gltf");
+            makePropEditField("material")
+            makePropSelectField("texture", "png");
         }
 
         listenFormSubmit({
@@ -168,7 +177,7 @@ export default class AssetsView {
     }
 
     static draw(assets: Assets, id: string, container: HTMLElement, filter: any = {}, link: string = "#asset_details") {
-        const asset = assets.get(id, filter);
+        const asset = assets.get(id);
         if (!asset) {
             return;
         }

@@ -40,6 +40,7 @@ db {
 
 .fade {
   opacity: 0.5;
+  filter: blur(1px);
 }
 
 #popup {
@@ -50,18 +51,27 @@ db {
   top: 50%;
   left: 50%;
   z-index: 1;
-  border: 2px solid #aaa;
+  border: 2px solid #aaa5;
+  border-radius: 4px;
 
   container#popup_content_wrapper {
     overflow: auto;
     padding: 8px 20px;
   	max-height: 50vh;
+    min-width: 16vw;
 		display: block;
+  }
+
+  container#popup_content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
 	#popup_header {
 		text-align: center;
   	font-size: 1.2em;
+    padding: 8px 16px 2px 16px;
 	}
   
   btn#popup_close {

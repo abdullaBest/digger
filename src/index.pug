@@ -39,13 +39,14 @@ body
 		page#assets_view
 			page.sidebar_l#asset_details
 			page.sidebar_l#asset_create
-				splitter upload files
+				splitter create
+				a.btn#upload_gltf_btn Import gltf
+				a.btn#create_model_btn Create model
+				a.btn#create_scene_btn Create scene
+				splitter or upload any files
 				form#assets_upload
 					input#assets_upload_files(type="file" name="files" multiple)
 					input(type="submit" value="Upload")
-				splitter create kit
-				a.btn#create_model_btn Create model
-				a.btn#create_scene_btn Create scene
 			.view
 				tilegrid#assets_list
 					entry(id="dev")
@@ -92,10 +93,12 @@ body
 					input(value="%s", type="text", name="extension" required disabled)
 				label#assets_upload_files_label reupload 
 					input#assets_upload_files(type="file" name="files" accept=".%s")
+				splitter asset edit
 				container#asset_details_properties_edit
 					page#details_empty_edit
 					page#details_model_edit
 				input(type="submit" value="save")
+			splitter asset preview
 			container#asset_preview_container
 				page#img_asset_preview
 					img#asset_preview_img

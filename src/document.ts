@@ -2,16 +2,23 @@
  * Page helpers functions
  */
 
+
+export function querySelector(query: string, root: HTMLElement = document.body) : HTMLElement {
+    const element = root.querySelector(query) as HTMLElement;
+    if (!element) { throw new Error("can't find element matching query " + query); }
+    return element;
+}
+
 /**
  * 
  * @param message 
  */
-export function popup(message) : Promise<string> {
+export function popupListSelect(message, propagete?: (el: HTMLElement) => void) : Promise<string> {
     const header = document.getElementById("popup_header");
     const rootlayout = document.getElementById("rootlayout");
     const _popup = document.getElementById("popup");
     const _popup_close = document.getElementById("popup_close");
-    const content = document.getElementById("popup_content");
+    const content = querySelector("#popup_content");
 
     rootlayout?.classList.add('fade');
     _popup?.classList.remove('hidden');
@@ -19,36 +26,82 @@ export function popup(message) : Promise<string> {
         header.innerHTML = message;
     }
 
+    if (propagete) {
+        content.innerHTML = "";
+        propagete(content);
+    }
+
     return new Promise((resolve, reject) => {
-				const delisten = () => {
-        	content?.removeEventListener('click', callback);
-        	_popup_close?.removeEventListener('click', close);
-          rootlayout?.classList.remove('fade');
-          _popup?.classList.add('hidden');
-				}
+        const delisten = () => {
+            content?.removeEventListener('click', callback);
+            _popup_close?.removeEventListener('click', close);
+            rootlayout?.classList.remove('fade');
+            _popup?.classList.add('hidden');
+        }
         const callback = async (ev) => {
             const el = (ev.target as HTMLElement);
             if(el.parentElement == content && el.id) {
-								delisten();
+                delisten();
                 resolve(el.id);
             }
         }
-				const close = () => {
-					delisten();
-					reject('cancel');
-				}
+        const close = () => {
+            delisten();
+            reject('cancel');
+        }
         content?.addEventListener('click', callback);
         _popup_close?.addEventListener('click', close);
     })
 }
 
-export function listenClick(selector: string, callback: (event: Event) => any) {
-    const btn = document.querySelector(selector);
-    if (!btn) {
-        throw new Error("listenClick error: can't find element " + selector);
+/**
+ * 
+ * @param message 
+ */
+export function popupConfirm(message, propagete?: (el: HTMLElement) => void) : Promise<number> {
+    const header = document.getElementById("popup_header");
+    const rootlayout = document.getElementById("rootlayout");
+    const _popup = document.getElementById("popup");
+    const _popup_close = document.getElementById("popup_close");
+    const content = querySelector("#popup_content");
+
+    rootlayout?.classList.add('fade');
+    _popup?.classList.remove('hidden');
+    if(header) {
+        header.innerHTML = message;
     }
 
-    btn.addEventListener('click', callback);
+    content.innerHTML = "";
+    if (propagete) {
+        propagete(content);
+    }
+
+    const btn = document.createElement("btn");
+    btn.innerHTML = "confirm";
+    content.appendChild(btn);
+
+    return new Promise((resolve, reject) => {
+        const delisten = () => {
+            content?.removeEventListener('click', callback);
+            _popup_close?.removeEventListener('click', close);
+            rootlayout?.classList.remove('fade');
+            _popup?.classList.add('hidden');
+        }
+        const callback = async (ev) => {
+            delisten();
+            resolve(1);
+        }
+        const close = () => {
+            delisten();
+            reject('cancel');
+        }
+        btn?.addEventListener('click', callback);
+        _popup_close?.addEventListener('click', close);
+    })
+}
+
+export function listenClick(selector: string, callback: (event: Event) => any) {
+    querySelector(selector).addEventListener('click', callback);
 }
 
 /**
@@ -71,10 +124,4 @@ export function switchPage(id: string) : HTMLElement {
     })
 
 	return el;
-}
-
-export function querySelector(query: string, root: HTMLElement = document.body) : HTMLElement {
-    const element = root.querySelector(query) as HTMLElement;
-    if (!element) { throw new Error("can't find element matching query " + query); }
-    return element;
 }

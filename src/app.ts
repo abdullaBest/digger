@@ -4,7 +4,8 @@ import SceneEdit from "./scene_edit";
 import SceneEditView from "./views/scene_edit_view";
 import AssetsView from "./views/assets_view";
 import { listenFormSubmit, sendFiles } from "./assets";
-import { listenClick, popup, switchPage } from "./document";
+import { listenClick, popupListSelect, switchPage, querySelector, popupConfirm } from "./document";
+import { importGltfSequence } from "./importer";
 
 class App {
     constructor() {
@@ -68,6 +69,12 @@ class App {
             files: ["files"]
         }, res_update_callback);
 
+        listenClick("#upload_gltf_btn", async () =>  {
+            const res = await importGltfSequence();
+            res_update_callback(res.ok, res);
+        });
+
+
         listenClick("#create_scene_btn", (ev) => {
             const file = new File([`{"guids": 0}`], "newscene.scene", {
                 type: "application/json",
@@ -75,19 +82,11 @@ class App {
             sendFiles("/assets/upload", [file], res_update_callback);
         });
         listenClick("#create_model_btn", async (ev) => {
-            const popupel = document.querySelector("container#popup_content") as HTMLElement;
-            if (!popupel) {
-                throw new Error("can't draw popup");
-            }
-            AssetsView.propagate(this.scene_edit.assets, popupel, {extension: 'gltf'}, '');
-            const modelid = await popup("select model");
+            const modelid = await popupListSelect("select model", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: 'gltf'}, ''));
             const modelname = this.assets.get(modelid)?.info.name ?? "newmodel";
-            AssetsView.propagate(this.scene_edit.assets, popupel, {extension: 'bin'}, '');
-            const modelbin = await popup("select bin");
-            AssetsView.propagate(this.scene_edit.assets, popupel, {extension: 'png'}, '');
-            const modeltexture = await popup("select texture");
-            const model = {gltf: modelid, bin: modelbin, texture: modeltexture};
-            const file = new File([JSON.stringify(model)], modelname + ".model", {
+            const modeltexture = await popupListSelect("select texture", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: 'png'}, ''));
+            const model = { gltf: modelid, material: "standart", texture: modeltexture };
+            const file = new File([JSON.stringify(model)], modelname.split('.').shift() + ".model", {
                 type: "application/json",
             });
             sendFiles("/assets/upload", [file], res_update_callback);

@@ -56,7 +56,6 @@ function listenFormSubmit(
             for (let i =0; i < len; i++) {
                 let file = f?.files ? f?.files[i] : null;
                 if(file) {
-                    console.log(file);
                     formData.append(k, file);
                 }
             }
@@ -78,7 +77,7 @@ function listenFormSubmit(
     }
 }
 
-async function sendFiles(url, files: Array<File>, callback: (success: boolean, response: Response) => void) {
+async function sendFiles(url, files: Array<File>, callback?: (success: boolean, response: Response) => void) : Promise<Response> {
     const formData = new FormData();
     for(const i in files) {
         formData.append("files", files[i]);
@@ -88,7 +87,11 @@ async function sendFiles(url, files: Array<File>, callback: (success: boolean, r
         body: formData,
         headers: {}
     })
-    callback(res.ok, res);
+    if(callback) {
+        callback(res.ok, res);
+    }
+
+    return res;
 }
 
 enum AssetStatus {
@@ -110,7 +113,7 @@ interface AssetInfo {
 class Asset {
     status: AssetStatus;
     info: AssetInfo;
-    private _thumbnail: String | null;
+    private _thumbnail: string | null;
 
     constructor(options: AssetInfo) {
         this.status = AssetStatus.UNKNOWN;
@@ -137,23 +140,10 @@ class Asset {
 class Assets {
     list: { [id: string] : Asset; };
 
-    get(id: string, filter: any = {}) : Asset | null {
+    get(id: string) : Asset {
         const asset = this.list[id] ?? null;
 
-        if (!asset) {
-            return asset;
-        }
-
-        let filtered = false;
-        for(const k in filter) {
-            if (k in asset.info && asset.info[k] != filter[k]) {
-                filtered = true;
-                break;
-            }
-        }
-        if (filtered) {
-            return null;
-        }
+        if (!asset) { throw new Error("Assets: can't find asset " + id) }
 
         return asset;
     }
@@ -161,10 +151,17 @@ class Assets {
     find(filter: any) : { [id: string] : Asset; } {
         const assets = {};
         for(const id in this.list) {
-            const asset = this.get(id, filter);
-            if (asset) {
-                assets[id] = asset;
+            const asset = this.get(id);
+
+            let filtered = false;
+            for(const k in filter) {
+                if (k in asset.info && asset.info[k] != filter[k]) {
+                    filtered = true;
+                    break;
+                }
             }
+    
+            if (!filtered) { assets[id] = asset }
         }
 
         return assets;

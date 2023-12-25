@@ -25,7 +25,6 @@ class SceneElement {
         if (json.position) {
             Object.assign(this.position, json.position);
         }
-        console.log(json.position, this.position);
         if (json.model) {
             this.model = json.model;
         }
@@ -43,7 +42,6 @@ class SceneElement {
         if (this.position) {
              json.position = Object.assign(json.position ?? {}, this.position);
         }
-        console.log(json.position, this.position);
         if (this.model) {
             json.model = this.model;
        }

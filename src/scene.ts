@@ -9,10 +9,14 @@ class SceneCache {
     constructor() {
         this.vec2_0 = new THREE.Vector2();
         this.gltfs = [];
+        this.models = {};
+        this.materials = {};
     }
+    
     vec2_0: THREE.Vector2;
     gltfs: Array<any>;
     models: { [id: string] : any; };
+    materials: { [id: string] : THREE.Material; };
 }
 
 class SceneRender {
@@ -55,7 +59,7 @@ class SceneRender {
         this.transform_controls.addEventListener( 'objectChange', (e) => {
             const object = e.target.object;
             const id = object.name;
-            const el = this.scene_edit.elements[id];
+            const el = this.scene_edit.elements && this.scene_edit.elements[id];
             if (el) {
                 el.position.x = object.position.x;
                 el.position.y = object.position.y;
@@ -69,7 +73,7 @@ class SceneRender {
             this.controls.enabled = true;
         } );
         scene.add(this.transform_controls);
-        canvas.addEventListener('click', this.onMouseClick.bind(this));
+        canvas.addEventListener('mousedown', this.onMouseClick.bind(this));
         
         (camera as any).position.z = 2;
 
@@ -82,39 +86,35 @@ class SceneRender {
         
         return this;
     }
-    async addModel(id: string) {
-        const model_element = this.scene_edit.elements[id];
-        const model_asset_id = model_element.model;
-        if (!model_asset_id) {
-            throw new Error(`Can't add model ${id}. Element has no model data`);
-        }
-        const modelurl = this.assets.get(model_asset_id)?.info.url;
-        if (!modelurl) {
-            throw new Error(`Can't find model ${model_asset_id} for element ${id}`);
-        }
+
+    /**
+     * "model" works only with "imported" gltf's wich does not have any internal links
+     * @param id model asset id
+     */
+    async addModel(asset_id: string, elemet_id?: string) {
+        const modelurl = this.assets.get(asset_id).info.url;
         const modeldata = await (await fetch(modelurl)).json();
 
-        const gltfurl = this.assets.get(modeldata.gltf)?.info.url
-        const binurl = this.assets.get(modeldata.bin)?.info.url
-        const textureurl = this.assets.get(modeldata.texture)?.info.url
+        const gltfurl = this.assets.get(modeldata.gltf).info.url
+        const textureurl = this.assets.get(modeldata.texture).info.url
 
-        if (!gltfurl || !binurl || !textureurl) {
+        if (!gltfurl || !textureurl) {
             throw new Error(
                 `Load model errors: wrong ids 
                 gltf = [${modeldata.gltf}:${gltfurl}], 
-                bin = [${modeldata.bin}:${binurl}], 
                 texture = [${modeldata.texture}:${textureurl}]`
                 )
         }
 
-        console.log(gltfurl, binurl, textureurl);
-
         const loading_manager = new THREE.LoadingManager();
         const loader = new GLTFLoader(loading_manager);
-        loading_manager.setURLModifier((path: string) => {
+        loading_manager.setURLModifier((path: string, s: any, r: any) => {
             if (path.includes(".bin")) {
-                return binurl;
+                console.warn(`SceneRender::addModel: model ${gltfurl} has internal '.bin' dependency. Please reimport`)
+                const name = path.split('/').pop();
+                return `/assets/load?name=${name}`;
             } else if (path.includes(".png")) {
+                console.warn(`SceneRender::addModel: model ${gltfurl} has internal '.png' dependency. Please reimport`)
                 return textureurl;
             }
 
@@ -123,12 +123,22 @@ class SceneRender {
 
 
         loader.load( gltfurl,  ( gltf ) => {
+            if (elemet_id && this.scene_edit.elements) {
+                const model_element = this.scene_edit.elements[elemet_id];
+                gltf.scene.position.x = model_element.position.x;
+                gltf.scene.position.y = model_element.position.y;
+                gltf.scene.position.z = model_element.position.z;
+            }
+            const id = elemet_id ?? asset_id;
             gltf.scene.name = id;
-            gltf.scene.position.x = model_element.position.x;
-            gltf.scene.position.y = model_element.position.y;
-            gltf.scene.position.z = model_element.position.z;
-            this.scene.add( gltf.scene );
             this.cache.models[id] = gltf.scene;
+            this.scene.add( gltf.scene );
+
+            const material = this.getMaterial(modeldata.material, textureurl);
+            gltf.scene.traverse((o) => {
+                if (o.isMesh) o.material = material;
+            });
+
             console.log(dumpObject(gltf.scene).join('\n'));
         }, undefined,  ( error ) => {
         
@@ -141,21 +151,38 @@ class SceneRender {
         for(const k in this.cache.models) {
             this.scene.remove(this.cache.models[k])
         }
-        this.cache.models = {};
-    }
-    viewGLTF(url: string) {
         while(this.cache.gltfs.length) {
             this.scene.remove(this.cache.gltfs.pop());
         }
+        this.cache.models = {};
+    }
+    viewModel(asset_id: string) {
+        this.clearModels();
+        this.addModel(asset_id);
+    }
+
+    /**
+     * Basic way to display model.
+     * Resolves internal urls by asset name.
+     * @param url gltf file url
+     */
+    viewGLTF(url: string) {
+        this.clearModels();
 
         const loading_manager = new THREE.LoadingManager();
         const loader = new GLTFLoader(loading_manager);
         loading_manager.setURLModifier((path: string) => {
-            // 1. Loads model itself. Leave it as it
+            // 0. blobbed data. Leave as it is
+            if (path.includes('data:application/octet-stream') || path.includes('data:image')) {
+                return path;
+            }
+            // 1. Loads model itself. Same
             if (path.includes(url)) {
                 return path;
             }
+
             // 2. Loads model dependencies. Replace it with custom path
+            // Works with model names so this could produce errors
             const name = path.split('/').pop();
             return `/assets/load?name=${name}`;
         })
@@ -170,6 +197,40 @@ class SceneRender {
         
         } );
     }
+
+    /**
+     * Creates new material or finds it in cache
+     * @param name material name
+     * @param texture_url path to lexture
+     */
+    getMaterial(name: string, texture_url: string) : THREE.Material {
+        const materialTypes = { standart: THREE.MeshStandardMaterial, toon: THREE.MeshToonMaterial }
+
+        if(!name || !materialTypes[name]) {
+            console.warn(`SceneRender::getMaterial meterial preset has no type ${name}. Using 'standart'`);
+            name = "standart";
+        }
+        
+        const id = `${name}_${texture_url}`;
+        if (this.cache.materials[id]) {
+            return this.cache.materials[id];
+        }
+
+        const texture = new THREE.TextureLoader().load( texture_url );
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.flipY = false;
+
+        const materialOptions = { 
+            standart:  { roughness: 0.7 },
+            toon: {}
+        }
+        const options = Object.assign({color: 0xffffff, name: id, map: texture }, materialOptions[name]);
+        const material = new materialTypes[name](options);
+        this.cache.materials[id] = material;
+
+        return material;
+    }
+
     dispose() {
         this.stop();
     }
@@ -226,12 +287,10 @@ class SceneRender {
 
     onMouseClick( event ) {
         event.preventDefault();
-        console.log(event);
         this.mousepos.x = ( event.layerX / event.target.offsetWidth ) * 2 - 1;
         this.mousepos.y = - ( event.layerY / event.target.offsetHeight ) * 2 + 1;
         this.raycaster.setFromCamera( this.mousepos, this.camera );
         const intersects = this.raycaster.intersectObjects( this.scene.children, true );
-        console.log("raycasting")
 
         let model: THREE.Object3D | null = null;
         for(const i in intersects) {
@@ -250,7 +309,7 @@ class SceneRender {
         }
 
         if ( model ) {
-            console.log("transform attaced to " + model.name)
+            console.log("transform attached to " + model.name)
             this.transform_controls.attach(model);
         }
 

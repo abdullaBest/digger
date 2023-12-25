@@ -1,4 +1,4 @@
-import { popup, listenClick } from "../document";
+import { popupListSelect, listenClick } from "../document";
 import SceneEdit from "../scene_edit";
 import AssetsView from "./assets_view";
 import SceneRender from "../scene";
@@ -41,11 +41,11 @@ export default class SceneEditView {
                 throw new Error("can't draw popup");
             }
             AssetsView.propagate(this.scene_edit.assets, popupel, {extension: 'model'}, '');
-            const modelid = await popup("select model");
+            const modelid = await popupListSelect("select model");
             const modelasset = this.scene_edit.assets.get(modelid);
             const el = this.scene_edit.addElement({model: modelid, name: modelasset?.info.name});
             this.draw(el.id);
-            this.scene_render.addModel(el.id);
+            this.scene_render.addModel(modelid, el.id);
         })
         listenClick("#back_to_scene_list_btn",  async (ev) => {
             this.scene_edit.save();
@@ -78,7 +78,7 @@ export default class SceneEditView {
 
             const model = element.model;
             if(model) {
-                this.scene_render.addModel(id);
+                this.scene_render.addModel(model, id);
             }
         }
     }
