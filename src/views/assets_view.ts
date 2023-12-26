@@ -13,7 +13,7 @@ class AssetPropertyEdit {
      * @param key key in object to access
      * @returns this
      */
-    init(object: any, key: string, callback?: (value: string) => void) : AssetPropertyEdit {
+    init(object: any, key: string, callback?: (value: string | boolean | number) => void) : AssetPropertyEdit {
         this.object = object;
         this.key = key;
         this.callback = callback ?? null;
@@ -59,10 +59,28 @@ class AssetPropertyEdit {
         return this.element;
     }
 
+    drawCkeckboxOption(parent?: HTMLElement) : HTMLElement {
+        this.element = this.element ?? document.createElement("entry");
+        this.element.innerHTML = `<label>${this.key}<input ${this.object[this.key] ? "checked" : ""} type="checkbox" name="name"></input></label>`
+        this.element.querySelector("input")?.addEventListener('change', async (ev) => {
+            const newval = (ev.target as HTMLInputElement)?.checked;
+            this.object[this.key] = newval;
+            if (this.callback) {
+                this.callback(newval);
+            }
+        });
+
+        if (!this.element.parentElement) {
+            parent?.appendChild(this.element);
+        }
+
+        return this.element;
+    }
+
     object: any;
     key: string;
     element: HTMLElement | null;
-    callback: ((value: string) => void) | null;
+    callback: ((value: string | boolean | number) => void) | null;
 }
 
 export default class AssetsView {
@@ -142,7 +160,6 @@ export default class AssetsView {
             if (!json_data_changed) {
                 return null;
             }
-
             const file = new File([JSON.stringify(asset_json)], `v${info.revision}_${info.name}`, {
                 type: "application/json",
             });
@@ -154,7 +171,7 @@ export default class AssetsView {
             asset_json = await (await fetch(info.url)).json();
             const container = switchPage("#details_model_edit");
             container.innerHTML = "";
-
+            console.log(asset_json);
             this._drawModelPropertyFields(container, asset_json, () =>  { json_data_changed = true });
         }
 
@@ -184,9 +201,14 @@ export default class AssetsView {
         const makePropEditField = (name) => {
             new AssetPropertyEdit().init(modeldata, name, onchange).drawTextEditOption(container);
         }
+        const makeCkeckboxField = (name) => {
+            new AssetPropertyEdit().init(modeldata, name, onchange).drawCkeckboxOption(container);
+        }
+        // tynroar torefactor 231226: make unified flow for model and other types
         makePropSelectField("gltf");
         makePropEditField("material")
         makePropSelectField("texture", "png");
+        makeCkeckboxField("collider");
     }
 
     _drawModelPropertyFields(container: HTMLElement, modeldata: any, onchange: () => void) {

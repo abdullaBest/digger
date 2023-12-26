@@ -114,20 +114,20 @@ export default class SceneMath {
      * @param origin plane origin
      * @param normal plane normal
      */
-    intersectAABBPlane(mesh: THREE.Mesh, origin: THREE.Vector3, normal: THREE.Vector3) : { length: number, intersections: Array<THREE.Vector3>, vertices: Array<THREE.Vector3> } {
+    intersectAABBPlane(geometry: THREE.BufferGeometry, transform_node: THREE.Object3D, origin: THREE.Vector3, normal: THREE.Vector3) : { length: number, intersections: Array<THREE.Vector3>, vertices: Array<THREE.Vector3> } {
          // geometry transformed bound box
-        mesh.geometry.computeBoundingBox();
-        mesh.updateMatrixWorld();
-        const box = new THREE.Box3().copy( mesh.geometry.boundingBox );
+        geometry.computeBoundingBox();
+        transform_node.updateMatrixWorld();
+        const box = new THREE.Box3().copy( geometry.boundingBox );
         const vertices = this.cache.vertices;
-        vertices[0].set(box.min.x, box.min.y, box.min.z).applyMatrix4(mesh.matrixWorld);
-        vertices[1].set(box.max.x, box.min.y, box.min.z).applyMatrix4(mesh.matrixWorld);
-        vertices[2].set(box.min.x, box.max.y, box.min.z).applyMatrix4(mesh.matrixWorld);
-        vertices[3].set(box.min.x, box.min.y, box.max.z).applyMatrix4(mesh.matrixWorld);
-        vertices[4].set(box.min.x, box.max.y, box.max.z).applyMatrix4(mesh.matrixWorld);
-        vertices[5].set(box.max.x, box.max.y, box.min.z).applyMatrix4(mesh.matrixWorld);
-        vertices[6].set(box.max.x, box.min.y, box.max.z).applyMatrix4(mesh.matrixWorld);
-        vertices[7].set(box.max.x, box.max.y, box.max.z).applyMatrix4(mesh.matrixWorld);
+        vertices[0].set(box.min.x, box.min.y, box.min.z).applyMatrix4(transform_node.matrixWorld);
+        vertices[1].set(box.max.x, box.min.y, box.min.z).applyMatrix4(transform_node.matrixWorld);
+        vertices[2].set(box.min.x, box.max.y, box.min.z).applyMatrix4(transform_node.matrixWorld);
+        vertices[3].set(box.min.x, box.min.y, box.max.z).applyMatrix4(transform_node.matrixWorld);
+        vertices[4].set(box.min.x, box.max.y, box.max.z).applyMatrix4(transform_node.matrixWorld);
+        vertices[5].set(box.max.x, box.max.y, box.min.z).applyMatrix4(transform_node.matrixWorld);
+        vertices[6].set(box.max.x, box.min.y, box.max.z).applyMatrix4(transform_node.matrixWorld);
+        vertices[7].set(box.max.x, box.max.y, box.max.z).applyMatrix4(transform_node.matrixWorld);
  
         // calculate plane intersections
         let intersections = this.cache.points;
@@ -145,8 +145,11 @@ export default class SceneMath {
         return { length, intersections, vertices }
     }
 
-    intersectAABBPlaneTo2dAabb(mesh: THREE.Mesh, origin: THREE.Vector3, normal: THREE.Vector3) : THREE.Box2 {
-        const {length, vertices, intersections} = this.intersectAABBPlane(mesh, origin, normal);
+    intersectAABBPlaneTo2dAabb(geometry: THREE.BufferGeometry, transform_node: THREE.Object3D, origin: THREE.Vector3, normal: THREE.Vector3) : THREE.Box2 | null{
+        const {length, vertices, intersections} = this.intersectAABBPlane(geometry, transform_node, origin, normal);
+        if (!length) {
+            return null;
+        }
         const points_2d = this.posOnPlaneArray(intersections, origin, normal);
         const box = this.pointsToAabb2d(points_2d, length);
 
@@ -185,7 +188,6 @@ export default class SceneMath {
         const u = this.cache.vec3_4;
     
         const dot = normal.dot(axis);
-        console.log(dot)
         if (dot === 0 || Math.abs(dot) === 1) {
             v.set(0, 1, 0);
             u.set(1, 0, 0);

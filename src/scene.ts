@@ -5,6 +5,7 @@ import { Assets } from './assets'
 import { SceneEdit, SceneElement } from "./scene_edit";
 import { TransformControls } from './lib/TransformControls.js';
 import SceneMath from './scene_math.js';
+import Colliders from './colliders.js';
 
 class SceneCache {
     constructor() {
@@ -12,13 +13,18 @@ class SceneCache {
         this.gltfs = [];
         this.models = {};
         this.materials = {};
+        this.debug_colliders = {};
     }
     
     
     vec2_0: THREE.Vector2;
+
+    // used for raw gltfs
     gltfs: Array<any>;
+    // used for model scene element gltfs
     models: { [id: string] : any; };
     materials: { [id: string] : THREE.Material; };
+    debug_colliders: { [id: string] : THREE.Mesh; };
 }
 
 class SceneRender {
@@ -30,6 +36,8 @@ class SceneRender {
         this.mousepos = new THREE.Vector2();
         this.raycaster = new THREE.Raycaster();
         this.scene_math = new SceneMath();
+        this.colliders = new Colliders();
+        this._drawDebug2dAabb = true;
     }
     init(canvas: HTMLCanvasElement) : SceneRender {
         const scene = new THREE.Scene();
@@ -64,10 +72,18 @@ class SceneRender {
             const id = object.name;
             const el = this.scene_edit.elements && this.scene_edit.elements[id];
             if (el && el.components.model) {
-                
                 el.components.model.properties.pos_x = object.position.x;
                 el.components.model.properties.pos_y = object.position.y;
                 el.components.model.properties.pos_z = object.position.z;
+
+                if (this._drawDebug2dAabb) {
+                    object.traverse((o) => {
+                        if (!o.isMesh) {
+                            return;
+                        }
+                        this.drawObjectAabbDebug(id, o, object);
+                    });
+                }
             }
         });
         this.transform_controls.addEventListener( 'mouseDown', ( event ) => {
@@ -99,7 +115,16 @@ class SceneRender {
         this.camera = camera;
 
         this.updateSize();
-        this.test();
+        //this.test();
+
+        if(this._drawDebug2dAabb) {
+            const geometry = new THREE.PlaneGeometry( 10, 10 );
+            const material = new THREE.MeshStandardMaterial( { color: 0xaaaa00, transparent: true, opacity: 0.1 } );
+            const plane = new THREE.Mesh( geometry, material as any );
+            this.scene.add( plane );
+            plane.position.copy(this.colliders.origin);
+            plane.lookAt(this.colliders.origin.x + this.colliders.normal.x, this.colliders.origin.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
+        }
         
         return this;
     }
@@ -148,8 +173,19 @@ class SceneRender {
 
             const material = this.getMaterial(model.material, textureurl);
             gltf.scene.traverse((o) => {
-                if (o.isMesh) o.material = material;
+                if (!o.isMesh) {
+                    return;
+                }
+
+                o.material = material;
+                
+                // tmp. only gonna work for scenes with one mesh
+                if (this._drawDebug2dAabb) {
+                    this.drawObjectAabbDebug(id, o, gltf.scene);
+                }
             });
+
+           
 
             console.log(dumpObject(gltf.scene).join('\n'));
         }, undefined,  ( error ) => {
@@ -158,6 +194,35 @@ class SceneRender {
         
         } );
     }
+
+    drawObjectAabbDebug(id: string, mesh: THREE.Mesh, transform_node: THREE.Object3D) {
+        const box = this.scene_math.intersectAABBPlaneTo2dAabb(mesh.geometry, transform_node, this.colliders.origin, this.colliders.normal);
+        if (!box) {
+            if(this.cache.debug_colliders[id]) {
+                this.scene.remove(this.cache.debug_colliders[id]);
+                delete this.cache.debug_colliders[id];
+            }
+            return;
+        }
+        const collider = this.colliders.add(id, box);
+
+        
+
+        let plane = this.cache.debug_colliders[id];
+        if (!plane) {
+            const geometry = new THREE.PlaneGeometry( collider.width, collider.height );
+            // tynroar tmp todo: move material into cache
+            const material = new THREE.MeshStandardMaterial( { color: 0x00ffff, wireframe: true } );
+            plane = new THREE.Mesh( geometry, material as any );
+            this.scene.add( plane );
+        }
+        plane.position.copy(new THREE.Vector3(collider.pos.x, collider.pos.y, 0));
+        //plane.position.add(this.cache.models[id].position);
+        //plane.position.z = this.colliders.origin.z;
+        plane.lookAt(plane.position.x + this.colliders.normal.x, plane.position.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
+        this.cache.debug_colliders[id] = plane;
+    }
+
     removeModel(id: string) {
         this.transform_controls.detach();
         if (!this.cache.models[id]) {
@@ -165,11 +230,16 @@ class SceneRender {
         }
         this.scene.remove(this.cache.models[id]);
         delete this.cache.models[id];
+        if(this.cache.debug_colliders[id]) {
+            this.scene.remove(this.cache.debug_colliders[id]);
+            delete this.cache.debug_colliders[id];
+        }
+        this.colliders.remove(id);
     }
     clearModels() {
         this.transform_controls.detach();
         for(const k in this.cache.models) {
-            this.scene.remove(this.cache.models[k])
+            this.removeModel(k)
         }
         while(this.cache.gltfs.length) {
             this.scene.remove(this.cache.gltfs.pop());
@@ -351,7 +421,7 @@ class SceneRender {
         }
 
         // test geometry
-        const borigin = new THREE.Vector3(0, 0, 0);
+        const borigin = new THREE.Vector3(1, 0, 0);
         const bnormal = new THREE.Vector3(1, 0.4, 1).normalize();
         const geometry = new THREE.BoxGeometry( 1, 1, 1 );
         const material = new THREE.MeshBasicMaterial( { color: 0xaaaaaa } );
@@ -360,7 +430,7 @@ class SceneRender {
         mesh.position.copy(borigin);
         mesh.lookAt(borigin.x + bnormal.x, borigin.y + bnormal.y, borigin.z + bnormal.z);
 
-       const {length, vertices, intersections} = this.scene_math.intersectAABBPlane(mesh, porigin, pnormal);
+       const {length, vertices, intersections} = this.scene_math.intersectAABBPlane(mesh.geometry, mesh, porigin, pnormal);
 
         // debug draw
         for(let i in vertices) {
@@ -385,7 +455,7 @@ class SceneRender {
             const plane = new THREE.Mesh( geometry, material as any );
             this.scene.add( plane );
             plane.position.copy(new THREE.Vector3((box.max.x + box.min.x) / 2, (box.max.y + box.min.y) / 2, 0));
-            plane.lookAt(porigin.x + pnormal.x, porigin.y + pnormal.y, porigin.z + pnormal.z);
+            plane.lookAt(plane.position.x + pnormal.x, plane.position.y + pnormal.y, plane.position.z + pnormal.z);
         }
 
         //const bbox = new THREE.Box3().setFromObject(box)
@@ -444,6 +514,10 @@ class SceneRender {
     scene_edit: SceneEdit;
     private active: Boolean;
     private cache: SceneCache;
+
+    private colliders: Colliders;
+
+    _drawDebug2dAabb: boolean;
 }
 
 function dumpObject(obj, lines: Array<string> = [], isLast = true, prefix = '') {

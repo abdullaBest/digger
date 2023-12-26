@@ -62,7 +62,6 @@ export default class SceneEditView {
         el.dataset["name"] = element.name;
         el.classList.add("collapse");
         if(element.components.model) {
-            console.log(element.components.model);
             AssetsView.drawModelPropertyFields(el, this.scene_edit.assets, element.components.model.properties, () => {
                 this.scene_render.removeModel(id);
                 this.scene_render.addModel(id, element.components.model.properties);

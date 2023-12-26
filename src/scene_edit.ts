@@ -35,14 +35,12 @@ class SceneElement {
     parent: string | null;
     id: string;
     name: string;
-    position: { x:number, y: number, z: number };
     components: { [id: string] : OverridedAssetLink }
 
     constructor(id: string = '', name: string = 'newelement') {
         this.name = name;
         this.id = id;
         this.parent = null;
-        this.position = {x: 0, y: 0, z: 0};
         this.components = {};
     }
 
