@@ -4,6 +4,7 @@ import { OrbitControls } from './lib/OrbitControls.js'
 import { Assets } from './assets'
 import { SceneEdit, SceneElement } from "./scene_edit";
 import { TransformControls } from './lib/TransformControls.js';
+import SceneMath from './scene_math.js';
 
 class SceneCache {
     constructor() {
@@ -12,6 +13,7 @@ class SceneCache {
         this.models = {};
         this.materials = {};
     }
+    
     
     vec2_0: THREE.Vector2;
     gltfs: Array<any>;
@@ -27,6 +29,7 @@ class SceneRender {
         this.cache = new SceneCache();
         this.mousepos = new THREE.Vector2();
         this.raycaster = new THREE.Raycaster();
+        this.scene_math = new SceneMath();
     }
     init(canvas: HTMLCanvasElement) : SceneRender {
         const scene = new THREE.Scene();
@@ -96,6 +99,7 @@ class SceneRender {
         this.camera = camera;
 
         this.updateSize();
+        this.test();
         
         return this;
     }
@@ -331,6 +335,98 @@ class SceneRender {
 
     }
 
+    test() {
+        const porigin = new THREE.Vector3(0, 0, 0);
+        const pnormal = new THREE.Vector3(0, 0, 1).normalize();
+		//const onplane = this.intersectLinePlane(line, origin, normal);
+
+        // test plane
+        {
+            const geometry = new THREE.PlaneGeometry( 10, 10 );
+            const material = new THREE.MeshStandardMaterial( { color: 0xff0000, transparent: true, opacity: 0.2 } );
+            const plane = new THREE.Mesh( geometry, material as any );
+            this.scene.add( plane );
+            plane.position.copy(porigin);
+            plane.lookAt(porigin.x + pnormal.x, porigin.y + pnormal.y, porigin.z + pnormal.z);
+        }
+
+        // test geometry
+        const borigin = new THREE.Vector3(0, 0, 0);
+        const bnormal = new THREE.Vector3(1, 0.4, 1).normalize();
+        const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        const material = new THREE.MeshBasicMaterial( { color: 0xaaaaaa } );
+        const mesh = new THREE.Mesh( geometry, material );
+        this.scene.add( mesh );
+        mesh.position.copy(borigin);
+        mesh.lookAt(borigin.x + bnormal.x, borigin.y + bnormal.y, borigin.z + bnormal.z);
+
+       const {length, vertices, intersections} = this.scene_math.intersectAABBPlane(mesh, porigin, pnormal);
+
+        // debug draw
+        for(let i in vertices) {
+            this.testSphereAdd(vertices[i], 0.02, 0xeeeeee);
+        }
+        /*
+        for(let i = 0; i < length; i++) {
+            this.testSphereAdd(intersections[i], 0.07, 0xffff00);
+        }*/
+        const points_2d = this.scene_math.posOnPlaneArray(intersections, porigin, pnormal);
+        for(let i = 0; i < length; i++) {
+            this.testSphereAdd(new THREE.Vector3(points_2d[i].x, points_2d[i].y, 0), 0.03, 0xffff00);
+        }
+
+        // final test goal
+        const box = this.scene_math.pointsToAabb2d(points_2d, length);
+
+        // aabb plane
+        {
+            const geometry = new THREE.PlaneGeometry( box.max.x - box.min.x, box.max.y - box.min.y );
+            const material = new THREE.MeshStandardMaterial( { color: 0x00ffff, wireframe: true } );
+            const plane = new THREE.Mesh( geometry, material as any );
+            this.scene.add( plane );
+            plane.position.copy(new THREE.Vector3((box.max.x + box.min.x) / 2, (box.max.y + box.min.y) / 2, 0));
+            plane.lookAt(porigin.x + pnormal.x, porigin.y + pnormal.y, porigin.z + pnormal.z);
+        }
+
+        //const bbox = new THREE.Box3().setFromObject(box)
+        //box.geometry.computeBoundingBox();
+
+    }
+
+    /**
+     * Testin line-plane intersections
+     */
+    test1() {
+        const pointa = new THREE.Vector3(0, 0, 0);
+        const pointb = new THREE.Vector3(0, 3, 3);
+        const line = new THREE.Line3(pointa, pointb);
+        const origin = new THREE.Vector3(0, 0, 0);
+        const normal = new THREE.Vector3(0, 0, 1).normalize();
+		const onplane = this.scene_math.intersectLinePlane(line, origin, normal);
+
+        this.testSphereAdd(pointa, 0.1, 0xffff00);
+        this.testSphereAdd(pointb, 0.1, 0xffff00);
+        if(onplane) {
+            this.testSphereAdd(onplane, 0.2, 0xff0000);
+        }
+
+        const geometry = new THREE.PlaneGeometry( 10, 10 );
+        const material = new THREE.MeshBasicMaterial( { color: 0xaaaaaa } );
+        const plane = new THREE.Mesh( geometry, material );
+        this.scene.add( plane );
+        plane.position.copy(origin);
+        plane.lookAt(origin.x + normal.x, origin.y + normal.y, origin.z + normal.z);
+    }
+
+    testSphereAdd(pos: THREE.Vector3, size: number = 0.1, color: number = 0xffffff) {
+        const geometry = new THREE.SphereGeometry(size);
+        const material = new THREE.MeshBasicMaterial( { color } );
+        const sphere = new THREE.Mesh( geometry, material );
+        sphere.position.copy(pos);
+        this.scene.add( sphere );
+        return sphere
+    }
+
     private canvas: HTMLCanvasElement;
     private refSizeEl: HTMLElement | null | undefined;
 
@@ -343,6 +439,7 @@ class SceneRender {
     private mousepos: THREE.Vector2;
     private raycaster: THREE.Raycaster;
 
+    private scene_math: SceneMath;
     assets: Assets;
     scene_edit: SceneEdit;
     private active: Boolean;
