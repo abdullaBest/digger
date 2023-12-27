@@ -104,15 +104,13 @@ class SceneCollisions {
         for(const k in this.colliders) {
             const collider = this.colliders[k];
             let broadphasebox = this.calcBodyBroadphase(body); 	
-            if (true || this.testCollisionAabb(broadphasebox, collider)) 	
-            { 
-                const collision = this.sweptAABB(body, collider, this.cache.cr_0);
-                if (collision.time < 1) {
-                    const c = this.cache.contacts[collisions++];
-                    c.time = collision.time;
-                    c.normal_x = collision.normal_x;
-                    c.normal_y = collision.normal_y;
-                }
+            //if (this.testCollisionAabb(broadphasebox, collider)) {
+            const collision = this.sweptAABB(body, collider, this.cache.cr_0);
+            if (collision.time < 1) {
+                const c = this.cache.contacts[collisions++];
+                c.time = collision.time;
+                c.normal_x = collision.normal_x;
+                c.normal_y = collision.normal_y;
             }
         }
 
@@ -131,11 +129,11 @@ class SceneCollisions {
         }
         if (collision_time_y < 1e-4) {
             body.velocity_y = 0;
-        }
+        } 
         if (collision_time_x || collision_time_y < 1)
         { 
             // ...
-        } 
+        }
     }
 
     testCollisionAabb(a: BoxCollider, b: BoxCollider) {
@@ -160,89 +158,32 @@ class SceneCollisions {
     }
 
     sweptAABB(a: DynamicBody, b: BoxCollider, ret: CollisionResult = ({} as any)): CollisionResult {
-
-
         const distDirX = Math.sign( b.pos_x - a.collider.pos_x );
         const distDirY = Math.sign( b.pos_y - a.collider.pos_y );
         const deltaDistX = Math.abs(a.collider.pos_x - b.pos_x) - a.collider.width / 2 - b.width / 2; 
         const deltaDistY = Math.abs(a.collider.pos_y - b.pos_y) - a.collider.height / 2 - b.height / 2;
-        
-        if (
-            deltaDistX - Math.abs(a.velocity_x) > 0 || deltaDistY - Math.abs(a.velocity_y) > 0
-            //|| (a.velocity_y && distDirY != Math.sign(a.velocity_y))
-            ) {
-            ret.normal_x = 0;
-            ret.normal_y = 0;
-            ret.time = 1;
-            return ret;
-        }
-
-        /*
-        // inverts time if boxes inside each other
-        const timeX = a.velocity_x ? Math.abs(deltaDistX) / Math.abs(a.velocity_x) : 1;
-        const timeY = a.velocity_y ? Math.abs(deltaDistY) / Math.abs(a.velocity_y) : 1;
-
-        ret.normal_x = timeX < 1 ? distDirX : 0;
-        ret.normal_y = timeY < 1 ? distDirY : 0;
-        ret.time = Math.min(timeX, timeY);
-
-        return ret;
-        */
-
-        let xInvEntry = 0 , yInvEntry = 0; 
-        let xInvExit = 0, yInvExit = 0;
-
-        // find the distance between the objects on the near and far sides for both x and y 
-        const ax = b._left - a.collider._right;
-        const bx = b._right - a.collider._left;
-        const is_x_neg = a.velocity_x < 0;
-        xInvEntry = is_x_neg ? bx : ax;
-        xInvExit = is_x_neg ? ax : bx;
-        
-        const ay = b._bottom - a.collider._top;
-        const by = b._top - a.collider._bottom;
-        const is_y_neg = a.velocity_y < 0;
-        yInvEntry = is_y_neg ? by : ay;
-        yInvExit = is_y_neg ? ay : by;
-
-        let xEntry = -Infinity, yEntry = -Infinity; 
-        let xExit = Infinity, yExit = Infinity; 
-
-        if (a.velocity_x != 0.0) 
-        { 
-            xEntry = xInvEntry / a.velocity_x; 
-            xExit = xInvExit / a.velocity_x; 
-        } 
-
-        if (a.velocity_y != 0.0) 
-        { 
-            yEntry = yInvEntry / a.velocity_y; 
-            yExit = yInvExit / a.velocity_y; 
-        }
-
-        let entryTime = Math.max(xEntry, yEntry); 
-        let exitTime = Math.min(xExit, yExit);
-
-        const overlapping = (xEntry < -1e-4 && yEntry < -1e-4);
-        if (
-            entryTime > exitTime || overlapping || xEntry > 1.0 || yEntry > 1.0
-        )
-        { 
-            ret.normal_x = 0;
-            ret.normal_y = 0;
-            ret.time = 1;
-            return ret;
-        }
+        const approaching_x = a.velocity_x && Math.sign(a.velocity_x) == distDirX;
+        const approaching_y = a.velocity_y && Math.sign(a.velocity_y) == distDirY;
 
         ret.normal_x = 0;
         ret.normal_y = 0;
-        ret.time = entryTime;
+        ret.time = 1;
 
-        if (xEntry > yEntry) {
-            ret.normal_x = xInvEntry < 0 ? 1 : -1;
-        } else { 
-            ret.normal_y = yInvEntry < 0 ? 1 : -1;
-        } 
+        // means that it's should be check
+        const shiftedDistX = deltaDistX - Math.abs(a.velocity_x);
+        const shiftedDistY = deltaDistY - Math.abs(a.velocity_y);
+        if (shiftedDistX > 0 || shiftedDistY > 0) {
+            return ret;
+        }
+        if (shiftedDistX < shiftedDistY) {
+            // Y collisions
+            ret.time = approaching_y && a.velocity_y ? deltaDistY / Math.abs(a.velocity_y) : 1;
+            ret.normal_y = ret.time < 1 ? distDirY : 0;
+        } else {
+            // X collisions
+            ret.time = approaching_x && a.velocity_x ? deltaDistX / Math.abs(a.velocity_x) : 1;
+            ret.normal_x = ret.time < 1 ? distDirX : 0;
+        }
 
         return ret;
     }

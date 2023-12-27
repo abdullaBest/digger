@@ -9,6 +9,10 @@ export default class Character {
         return this;
     }
 
+    step(dt: number) {
+
+    }
+
     action(tag: string) {
         switch(tag) {
             case "jump":

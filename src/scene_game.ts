@@ -38,7 +38,8 @@ export default class SceneGame {
         if (!this.active) {
             return;
         }
-        this.colliders.step(1);
+        this.player_character.step();
+        this.colliders.step();
     }
     
     _keydown(event: KeyboardEvent) {
@@ -49,6 +50,8 @@ export default class SceneGame {
             this.player_character.action("move_left");
         } else if (key === 'KeyD') {
             this.player_character.action("move_right");
+        } else if (key === 'KeyS') {
+            this.colliders.step(1);
         }
     }
     _keyup(event: KeyboardEvent) {
