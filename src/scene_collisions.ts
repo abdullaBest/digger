@@ -28,20 +28,16 @@ interface CollisionResult {
     normal_x: number;
     normal_y: number;
     time: number;
-    time_x: number;
-    time_y: number;
 }
 
 class CollidersCache {
     bc_0: BoxCollider;
     cr_0: CollisionResult;
-    cr_1: CollisionResult;
-    cr_2: CollisionResult;
+    contacts: Array<CollisionResult>;
     constructor() {
         this.bc_0 = SceneCollisions.makeBoxCollider();
-        this.cr_0 = { normal_x: 0, normal_y: 0, time: 0, time_x: 0, time_y: 0 };
-        this.cr_1 = { normal_x: 0, normal_y: 0, time: 0, time_x: 0, time_y: 0};
-        this.cr_2 = { normal_x: 0, normal_y: 0, time: 0, time_x: 0, time_y: 0 };
+        this.cr_0 = { normal_x: 0, normal_y: 0, time: 0 };
+        this.contacts = Array.apply(null,{length: 8}).map(function() { return { normal_x: 0, normal_y: 0, time: 0 } });
     }
 }
 
@@ -103,35 +99,40 @@ class SceneCollisions {
     stepBody(body: DynamicBody, dt: number) {
         body.velocity_y += this.gravity.y;
 
-        const closest_collision = this.cache.cr_1;
-        closest_collision.time = 1;
-        closest_collision.normal_x = 0;
-        closest_collision.normal_y = 0;
+        let collisions = 0;
 
         for(const k in this.colliders) {
             const collider = this.colliders[k];
             let broadphasebox = this.calcBodyBroadphase(body); 	
-            if (false || this.testCollisionAabb(broadphasebox, collider)) 	
+            if (true || this.testCollisionAabb(broadphasebox, collider)) 	
             { 
                 const collision = this.sweptAABB(body, collider, this.cache.cr_0);
-                if(collision.time < closest_collision.time) {
-                    closest_collision.time = collision.time;
-                    closest_collision.normal_x = collision.normal_x;
-                    closest_collision.normal_y = collision.normal_y;
+                if (collision.time < 1) {
+                    const c = this.cache.contacts[collisions++];
+                    c.time = collision.time;
+                    c.normal_x = collision.normal_x;
+                    c.normal_y = collision.normal_y;
                 }
             }
         }
 
-        let collision_time_x = closest_collision.normal_x ? closest_collision.time : 1;
-        let collision_time_y = closest_collision.normal_y ? closest_collision.time : 1;
+        let collision_time_x = 1;
+        let collision_time_y = 1;
+        for (let i = 0; i < collisions; i++) {
+            const c = this.cache.contacts[i];
+            collision_time_x = c.normal_x ? Math.min(collision_time_x, c.time) : collision_time_x;
+            collision_time_y = c.normal_y ? Math.min(collision_time_y, c.time) : collision_time_y;
+        }
         let newx = body.collider.pos_x + body.velocity_x * collision_time_x;
         let newy = body.collider.pos_y + body.velocity_y * collision_time_y;
         SceneCollisions.setColliderPos(body.collider, newx, newy);
-        if (closest_collision.time < 1e-4) {
-            body.velocity_x = body.velocity_x * (1- closest_collision.normal_x);
-            body.velocity_y = body.velocity_y * (1- closest_collision.normal_y);
+        if (collision_time_x < 1e-4) {
+            body.velocity_x = 0;
         }
-        if (closest_collision.time < 1)
+        if (collision_time_y < 1e-4) {
+            body.velocity_y = 0;
+        }
+        if (collision_time_x || collision_time_y < 1)
         { 
             // ...
         } 
@@ -159,8 +160,37 @@ class SceneCollisions {
     }
 
     sweptAABB(a: DynamicBody, b: BoxCollider, ret: CollisionResult = ({} as any)): CollisionResult {
+
+
+        const distDirX = Math.sign( b.pos_x - a.collider.pos_x );
+        const distDirY = Math.sign( b.pos_y - a.collider.pos_y );
+        const deltaDistX = Math.abs(a.collider.pos_x - b.pos_x) - a.collider.width / 2 - b.width / 2; 
+        const deltaDistY = Math.abs(a.collider.pos_y - b.pos_y) - a.collider.height / 2 - b.height / 2;
+        
+        if (
+            deltaDistX - Math.abs(a.velocity_x) > 0 || deltaDistY - Math.abs(a.velocity_y) > 0
+            //|| (a.velocity_y && distDirY != Math.sign(a.velocity_y))
+            ) {
+            ret.normal_x = 0;
+            ret.normal_y = 0;
+            ret.time = 1;
+            return ret;
+        }
+
+        /*
+        // inverts time if boxes inside each other
+        const timeX = a.velocity_x ? Math.abs(deltaDistX) / Math.abs(a.velocity_x) : 1;
+        const timeY = a.velocity_y ? Math.abs(deltaDistY) / Math.abs(a.velocity_y) : 1;
+
+        ret.normal_x = timeX < 1 ? distDirX : 0;
+        ret.normal_y = timeY < 1 ? distDirY : 0;
+        ret.time = Math.min(timeX, timeY);
+
+        return ret;
+        */
+
         let xInvEntry = 0 , yInvEntry = 0; 
-        let xInvExit = 0, yInvExit = 0; 
+        let xInvExit = 0, yInvExit = 0;
 
         // find the distance between the objects on the near and far sides for both x and y 
         const ax = b._left - a.collider._right;
@@ -190,14 +220,13 @@ class SceneCollisions {
             yExit = yInvExit / a.velocity_y; 
         }
 
-        if (yInvEntry > 1) yInvEntry = -Infinity;
-        if (xInvEntry > 1) xInvEntry = -Infinity;
-
         let entryTime = Math.max(xEntry, yEntry); 
         let exitTime = Math.min(xExit, yExit);
 
         const overlapping = (xEntry < -1e-4 && yEntry < -1e-4);
-        if (entryTime > exitTime || overlapping || xEntry > 1.0 || yEntry > 1.0) 
+        if (
+            entryTime > exitTime || overlapping || xEntry > 1.0 || yEntry > 1.0
+        )
         { 
             ret.normal_x = 0;
             ret.normal_y = 0;
@@ -208,8 +237,6 @@ class SceneCollisions {
         ret.normal_x = 0;
         ret.normal_y = 0;
         ret.time = entryTime;
-        ret.time_x = xEntry;
-        ret.time_y = yEntry;
 
         if (xEntry > yEntry) {
             ret.normal_x = xInvEntry < 0 ? 1 : -1;

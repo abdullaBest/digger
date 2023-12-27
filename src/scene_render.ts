@@ -127,6 +127,12 @@ class SceneRender {
         }
 
        
+        let groundbox = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(0, -1), new THREE.Vector2(1, 1));
+        const groundbody = this.colliders.addBoxCollider("ground", groundbox);
+        this.drawColliderDebug("ground", groundbody);
+        let groundbox1 = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(-1.5, 0.5), new THREE.Vector2(1, 1));
+        const groundbody1 = this.colliders.addBoxCollider("ground1", groundbox1);
+        this.drawColliderDebug("ground1", groundbody1);
         
         return this;
     }
