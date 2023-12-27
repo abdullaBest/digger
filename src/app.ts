@@ -1,4 +1,4 @@
-import SceneRender from "./scene";
+import SceneRender from "./scene_render";
 import Assets from "./assets";
 import SceneEdit from "./scene_edit";
 import SceneEditView from "./views/scene_edit_view";
@@ -6,16 +6,16 @@ import AssetsView from "./views/assets_view";
 import { listenFormSubmit, sendFiles } from "./assets";
 import { listenClick, popupListSelect, switchPage, querySelector, popupConfirm } from "./document";
 import { importGltfSequence } from "./importer";
+import SceneGame from "./scene_game";
 
 class App {
     constructor() {
-
         this.assets = new Assets();
         this.scene_edit = new SceneEdit(this.assets);
-        this.scene = new SceneRender(this.scene_edit);
-        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene);
-        this.assets_view = new AssetsView(this.assets, this.scene);
-
+        this.scene_game = new SceneGame();
+        this.scene_render = new SceneRender(this.scene_edit, this.scene_game.colliders);
+        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render);
+        this.assets_view = new AssetsView(this.assets, this.scene_render);
 
         this.active = false;
     }
@@ -24,11 +24,11 @@ class App {
         if (!canvas) {
             throw new Error("can't find canvas to render");
         }
-        this.scene.init(canvas as HTMLCanvasElement);
+        this.scene_render.init(canvas as HTMLCanvasElement);
         return this;
     }
     dispose() {
-        this.scene.dispose();
+        this.scene_render.dispose();
         this.stop();
     }
     run() {
@@ -42,8 +42,20 @@ class App {
         
         this.listenersRun();
 
-        this.scene.run();
+        this.scene_render.run();
         this.active = true;
+        this.loop();
+    }
+
+    private loop() {
+        if (!this.active) {
+            return;
+        }
+
+        this.scene_game.step(1);
+        this.scene_render.step();
+
+        requestAnimationFrame( this.loop.bind(this) );
     }
 
     // tmp
@@ -51,6 +63,15 @@ class App {
         // tynroar todo: unlisten
         addEventListener("hashchange", (event) => {
             this.page(window.location.hash);
+        }); 
+
+        querySelector("#scene_edit_tools").addEventListener("click", (ev: MouseEvent) => {
+            const id = (ev.target as HTMLElement)?.id;
+            switch (id) {
+                case "play_scene_btn":
+                    this.scene_game.run();
+                    break;
+            }
         });
 
         const res_update_callback = async (success: boolean, res:Response) => {
@@ -100,7 +121,7 @@ class App {
         this.assets_view.propagate(this.scene_edit_view.list_container, {extension: 'scene'}, "#scene_edit_details");
     }
     stop() {
-        this.scene.stop();
+        this.scene_render.stop();
         this.active = false;
     }
 
@@ -115,23 +136,24 @@ class App {
 		switchPage(id);
         // -- postpage operations. temporal
 
-        // swaps canvas back to scene view if it was removed
+        // swaps canvas back to scene_render view if it was removed
         if (id.includes('scene_view')) {
             const container = document.querySelector("#scene_view_canvas_container");
             if(container) {
-                this.scene.reattach(container as HTMLElement);
+                this.scene_render.reattach(container as HTMLElement);
             } else {
-                console.warn("Can't reattach scene canvas back to scene_view")
+                console.warn("Can't reattach scene_render canvas back to scene_view")
             }
         }
     }
 
     private active: Boolean;
-    private scene: SceneRender;
+    private scene_render: SceneRender;
     private scene_edit: SceneEdit;
     private scene_edit_view: SceneEditView;
     private assets: Assets;
     private assets_view: AssetsView;
+    private scene_game: SceneGame;
 }
 
 export default App;

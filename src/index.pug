@@ -32,7 +32,10 @@ body
 						btn#add_scene_something_btn add something
 					splitter elements
 					container#scene_edit_elements
-			#scene_view_canvas_container.view: canvas#rootcanvas
+			#scene_view_canvas_container.view
+				container#scene_edit_tools
+					btn#play_scene_btn play
+				canvas#rootcanvas
 			.footer
 				o scene viewer
 				o v3

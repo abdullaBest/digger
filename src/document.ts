@@ -9,6 +9,17 @@ export function querySelector(query: string, root: HTMLElement = document.body) 
     return element;
 }
 
+export interface EventListenerDetails {
+    callback: EventListenerOrEventListenerObject;
+    name: string;
+    node: HTMLElement;
+} 
+
+export function addEventListener(opts: EventListenerDetails) : EventListenerDetails {
+    opts.node.addEventListener(opts.name, opts.callback);
+    return opts;
+}
+
 /**
  * 
  * @param message 

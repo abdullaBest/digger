@@ -1,11 +1,11 @@
 import * as THREE from './lib/three.module.js';
 import { GLTFLoader } from './lib/GLTFLoader.js';
 import { OrbitControls } from './lib/OrbitControls.js'
-import { Assets } from './assets'
-import { SceneEdit, SceneElement } from "./scene_edit";
+import { Assets } from './assets.js'
+import { SceneEdit, SceneElement } from "./scene_edit.js";
 import { TransformControls } from './lib/TransformControls.js';
 import SceneMath from './scene_math.js';
-import Colliders from './colliders.js';
+import { SceneCollisions, BoxCollider } from './scene_collisions.js';
 
 class SceneCache {
     constructor() {
@@ -28,7 +28,7 @@ class SceneCache {
 }
 
 class SceneRender {
-    constructor(scene_edit: SceneEdit) {
+    constructor(scene_edit: SceneEdit, colliders: SceneCollisions) {
         this.scene_edit = scene_edit;
         this.assets = this.scene_edit.assets;
         this.active = false;
@@ -36,7 +36,7 @@ class SceneRender {
         this.mousepos = new THREE.Vector2();
         this.raycaster = new THREE.Raycaster();
         this.scene_math = new SceneMath();
-        this.colliders = new Colliders();
+        this.colliders = colliders;
         this._drawDebug2dAabb = true;
     }
     init(canvas: HTMLCanvasElement) : SceneRender {
@@ -122,9 +122,11 @@ class SceneRender {
             const material = new THREE.MeshStandardMaterial( { color: 0xaaaa00, transparent: true, opacity: 0.1 } );
             const plane = new THREE.Mesh( geometry, material as any );
             this.scene.add( plane );
-            plane.position.copy(this.colliders.origin);
+            this.setPos(plane, this.colliders.origin)
             plane.lookAt(this.colliders.origin.x + this.colliders.normal.x, this.colliders.origin.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
         }
+
+       
         
         return this;
     }
@@ -201,13 +203,15 @@ class SceneRender {
             if(this.cache.debug_colliders[id]) {
                 this.scene.remove(this.cache.debug_colliders[id]);
                 delete this.cache.debug_colliders[id];
+                this.colliders.removeCollider(id);
             }
             return;
         }
-        const collider = this.colliders.add(id, box);
+        const collider = this.colliders.addBoxCollider(id, box);
+        this.drawColliderDebug(id, collider);
+    }
 
-        
-
+    drawColliderDebug(id: string, collider: BoxCollider) {
         let plane = this.cache.debug_colliders[id];
         if (!plane) {
             const geometry = new THREE.PlaneGeometry( collider.width, collider.height );
@@ -216,10 +220,11 @@ class SceneRender {
             plane = new THREE.Mesh( geometry, material as any );
             this.scene.add( plane );
         }
-        plane.position.copy(new THREE.Vector3(collider.pos.x, collider.pos.y, 0));
+        this.setPos(plane, new THREE.Vector3(collider.pos_x, collider.pos_y, this.colliders.origin.z))
         //plane.position.add(this.cache.models[id].position);
         //plane.position.z = this.colliders.origin.z;
-        plane.lookAt(plane.position.x + this.colliders.normal.x, plane.position.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
+        const planepos = (plane as any).position;
+        plane.lookAt(planepos.x + this.colliders.normal.x, planepos.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
         this.cache.debug_colliders[id] = plane;
     }
 
@@ -326,12 +331,11 @@ class SceneRender {
     }
     run() {
         this.active = true;
-        this.loop();
     }
     stop() {
         this.active = false;
     }
-    private loop() {
+    step() {
         if (!this.active) {
             return;
         }
@@ -340,10 +344,12 @@ class SceneRender {
 
         this.cube.rotateX(0.01);
         this.cube.rotateY(0.01);
+        for(const k in this.colliders.bodies) {
+            const body = this.colliders.bodies[k];
+            this.drawColliderDebug(k, body.collider);
+        }
     
         this.renderer.render( this.scene, this.camera );
-
-        requestAnimationFrame( this.loop.bind(this) );
     }
 
     /**
@@ -405,6 +411,41 @@ class SceneRender {
 
     }
 
+    /**
+     * Avoiding typescript errors
+     * @param o 
+     * @param pos 
+     */
+    setPos(o: THREE.Object3D, pos: THREE.Vector3) {
+        if((o as any).position) {
+            (o as any).position.copy(pos);
+        }
+    }
+
+    private canvas: HTMLCanvasElement;
+    private refSizeEl: HTMLElement | null | undefined;
+
+    private cube: THREE.Mesh;
+    private renderer: THREE.WebGLRenderer;
+    private scene: THREE.Scene;
+    private camera: THREE.PerspectiveCamera;
+    private controls: OrbitControls;
+    private transform_controls: TransformControls;
+    private mousepos: THREE.Vector2;
+    private raycaster: THREE.Raycaster;
+
+    private scene_math: SceneMath;
+    assets: Assets;
+    scene_edit: SceneEdit;
+    private active: Boolean;
+    private cache: SceneCache;
+
+    colliders: SceneCollisions;
+
+    _drawDebug2dAabb: boolean;
+
+    // --- tests
+
     test() {
         const porigin = new THREE.Vector3(0, 0, 0);
         const pnormal = new THREE.Vector3(0, 0, 1).normalize();
@@ -416,7 +457,7 @@ class SceneRender {
             const material = new THREE.MeshStandardMaterial( { color: 0xff0000, transparent: true, opacity: 0.2 } );
             const plane = new THREE.Mesh( geometry, material as any );
             this.scene.add( plane );
-            plane.position.copy(porigin);
+            this.setPos(plane, porigin);
             plane.lookAt(porigin.x + pnormal.x, porigin.y + pnormal.y, porigin.z + pnormal.z);
         }
 
@@ -427,7 +468,7 @@ class SceneRender {
         const material = new THREE.MeshBasicMaterial( { color: 0xaaaaaa } );
         const mesh = new THREE.Mesh( geometry, material );
         this.scene.add( mesh );
-        mesh.position.copy(borigin);
+        this.setPos(mesh, borigin);
         mesh.lookAt(borigin.x + bnormal.x, borigin.y + bnormal.y, borigin.z + bnormal.z);
 
        const {length, vertices, intersections} = this.scene_math.intersectAABBPlane(mesh.geometry, mesh, porigin, pnormal);
@@ -454,8 +495,9 @@ class SceneRender {
             const material = new THREE.MeshStandardMaterial( { color: 0x00ffff, wireframe: true } );
             const plane = new THREE.Mesh( geometry, material as any );
             this.scene.add( plane );
-            plane.position.copy(new THREE.Vector3((box.max.x + box.min.x) / 2, (box.max.y + box.min.y) / 2, 0));
-            plane.lookAt(plane.position.x + pnormal.x, plane.position.y + pnormal.y, plane.position.z + pnormal.z);
+            this.setPos(plane, new THREE.Vector3((box.max.x + box.min.x) / 2, (box.max.y + box.min.y) / 2, 0));
+            const planepos = (plane as any).position;
+            plane.lookAt(planepos.x + pnormal.x, planepos.y + pnormal.y, planepos.z + pnormal.z);
         }
 
         //const bbox = new THREE.Box3().setFromObject(box)
@@ -484,7 +526,7 @@ class SceneRender {
         const material = new THREE.MeshBasicMaterial( { color: 0xaaaaaa } );
         const plane = new THREE.Mesh( geometry, material );
         this.scene.add( plane );
-        plane.position.copy(origin);
+        this.setPos(plane, origin);
         plane.lookAt(origin.x + normal.x, origin.y + normal.y, origin.z + normal.z);
     }
 
@@ -492,32 +534,11 @@ class SceneRender {
         const geometry = new THREE.SphereGeometry(size);
         const material = new THREE.MeshBasicMaterial( { color } );
         const sphere = new THREE.Mesh( geometry, material );
-        sphere.position.copy(pos);
+        this.setPos(sphere, pos);
         this.scene.add( sphere );
         return sphere
     }
 
-    private canvas: HTMLCanvasElement;
-    private refSizeEl: HTMLElement | null | undefined;
-
-    private cube: THREE.Mesh;
-    private renderer: THREE.WebGLRenderer;
-    private scene: THREE.Scene;
-    private camera: THREE.PerspectiveCamera;
-    private controls: OrbitControls;
-    private transform_controls: TransformControls;
-    private mousepos: THREE.Vector2;
-    private raycaster: THREE.Raycaster;
-
-    private scene_math: SceneMath;
-    assets: Assets;
-    scene_edit: SceneEdit;
-    private active: Boolean;
-    private cache: SceneCache;
-
-    private colliders: Colliders;
-
-    _drawDebug2dAabb: boolean;
 }
 
 function dumpObject(obj, lines: Array<string> = [], isLast = true, prefix = '') {

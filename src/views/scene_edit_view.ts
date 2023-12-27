@@ -1,7 +1,7 @@
 import { popupListSelect, listenClick } from "../document";
 import SceneEdit from "../scene_edit";
 import AssetsView from "./assets_view";
-import SceneRender from "../scene";
+import SceneRender from "../scene_render";
 
 export default class SceneEditView {
     list_container: HTMLElement;
