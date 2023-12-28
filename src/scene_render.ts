@@ -10,6 +10,7 @@ import { SceneCollisions, BoxCollider } from './scene_collisions.js';
 class SceneCache {
     constructor() {
         this.vec2_0 = new THREE.Vector2();
+        this.vec3_0 = new THREE.Vector3();
         this.gltfs = {};
         this.models = {};
         this.materials = {};
@@ -18,6 +19,7 @@ class SceneCache {
     }
     
     vec2_0: THREE.Vector2;
+    vec3_0: THREE.Vector3;
 
     // used for gltfs
     gltfs: { [id: string] : any; };
@@ -187,7 +189,7 @@ class SceneRender {
 
         loader.load( gltfurl,  ( gltf ) => {
             gltf.scene.name = id;
-            this.cache.gltfs[id] = gltf.scene;
+            this.cache.gltfs[id] = gltf;
             this.cache.models[id] = model;
             this.scene.add( gltf.scene );
 
@@ -259,7 +261,7 @@ class SceneRender {
             delete this.cache.debug_colliders[id];
         }
         if(this.cache.gltfs[id]) {
-            this.scene.remove(this.cache.gltfs[id]);
+            this.scene.remove(this.cache.gltfs[id].scene);
             delete this.cache.gltfs[id];
         }
         delete this.cache.models[id];
@@ -273,7 +275,7 @@ class SceneRender {
 
         // remove gltfs that wasn't included into models list
         for(const k in this.cache.gltfs) {
-            this.scene.remove(this.cache.gltfs[k]);
+            this.scene.remove(this.cache.gltfs[k].scene);
             delete this.cache.gltfs[k];
         }
         this.cache.models = {};
@@ -284,41 +286,48 @@ class SceneRender {
         this.addModel(id, model);
     }
 
+    addGLTF(url: string, name?: string) : Promise<THREE.Object3D> {
+        return new Promise((resolve, reject) => {
+            const loading_manager = new THREE.LoadingManager();
+            const loader = new GLTFLoader(loading_manager);
+            loading_manager.setURLModifier((path: string) => {
+                // 0. blobbed data. Leave as it is
+                if (path.includes('data:application/octet-stream') || path.includes('data:image')) {
+                    return path;
+                }
+                // 1. Loads model itself. Same
+                if (path.includes(url)) {
+                    return path;
+                }
+
+                // 2. Loads model dependencies. Replace it with custom path
+                // Works with model names so this could produce errors
+                const name = path.split('/').pop();
+                return `/assets/load?name=${name}`;
+            })
+
+            loader.load( url,  ( gltf ) => {
+                this.scene.add( gltf.scene );
+                let id = name ??  "g_" + this.cache.guids++
+                gltf.scene.name = id;
+                this.cache.gltfs[id] = gltf;
+                console.log(dumpObject(gltf.scene).join('\n'));
+                resolve(gltf);
+            }, undefined,  ( error ) => {
+                console.error( error );
+                reject(error);
+            } );
+        })
+    }
+
     /**
      * Basic way to display model.
      * Resolves internal urls by asset name.
      * @param url gltf file url
      */
-    viewGLTF(url: string) {
+    async viewGLTF(url: string) : Promise<THREE.Object3D> {
         this.clearModels();
-
-        const loading_manager = new THREE.LoadingManager();
-        const loader = new GLTFLoader(loading_manager);
-        loading_manager.setURLModifier((path: string) => {
-            // 0. blobbed data. Leave as it is
-            if (path.includes('data:application/octet-stream') || path.includes('data:image')) {
-                return path;
-            }
-            // 1. Loads model itself. Same
-            if (path.includes(url)) {
-                return path;
-            }
-
-            // 2. Loads model dependencies. Replace it with custom path
-            // Works with model names so this could produce errors
-            const name = path.split('/').pop();
-            return `/assets/load?name=${name}`;
-        })
-
-        loader.load( url,  ( gltf ) => {
-            this.scene.add( gltf.scene );
-            this.cache.gltfs["g_" + this.cache.guids++] = gltf.scene;
-            console.log(dumpObject(gltf.scene).join('\n'));
-        }, undefined,  ( error ) => {
-        
-            console.error( error );
-        
-        } );
+        return await this.addGLTF(url);
     }
 
     /**
@@ -375,6 +384,26 @@ class SceneRender {
         for(const k in this.colliders.bodies) {
             const body = this.colliders.bodies[k];
             this.drawColliderDebug(k, body.collider);
+        }
+
+        if (this.cache.gltfs["player_character"] && this.colliders.bodies["player_character"]) {
+            const gltf = this.cache.gltfs["player_character"];
+            /*
+            let m: THREE.AnimationMixer = gltf.mixer;
+            if (!m) {
+                m = new THREE.AnimationMixer(gltf.scene);
+                gltf.mixer = m;
+                let action = m.clipAction(THREE.AnimationClip.findByName(gltf, "Run"));
+                action.play();
+            }
+            m.update(0.01);
+            */
+            const cha = gltf.scene;
+            const body = this.colliders.bodies["player_character"];
+            const x = body.collider.pos_x;
+            const y = body.collider.pos_y - body.collider.height/2;
+            this.setPos(cha, this.cache.vec3_0.set(x, y, 0))
+            cha.lookAt(this.cache.vec3_0.set(x + body.velocity_x, y, 0))
         }
     
         this.renderer.render( this.scene, this.camera );

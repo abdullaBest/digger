@@ -65,11 +65,13 @@ class App {
             this.page(window.location.hash);
         }); 
 
-        querySelector("#scene_edit_tools").addEventListener("click", (ev: MouseEvent) => {
+        querySelector("#scene_edit_tools").addEventListener("click", async (ev: MouseEvent) => {
             const id = (ev.target as HTMLElement)?.id;
             switch (id) {
                 case "play_scene_btn":
                     this.scene_game.run();
+                    this.scene_render.removeModel("player_character");
+                    const cham = await this.scene_render.addGLTF("res/KayKit_AnimatedCharacter_v1.2.glb", "player_character");
                     break;
             }
         });

@@ -1,7 +1,8 @@
-import Character from "./character";
+import { Character, CharacterActionCode } from "./character";
 import { SceneCollisions, BoxCollider } from './scene_collisions.js';
 import { Box2, Vector2 } from "./lib/three.module";
 import { addEventListener, removeEventListeners, EventListenerDetails } from "./document";
+
 export default class SceneGame {
     constructor() {
         this.colliders = new SceneCollisions();
@@ -15,7 +16,7 @@ export default class SceneGame {
         this.stop();
         this.active = true;
 
-        let playerbox = new Box2().setFromCenterAndSize(new Vector2(0, 1), new Vector2(1, 1));
+        let playerbox = new Box2().setFromCenterAndSize(new Vector2(0, 1), new Vector2(1, 2));
         const body = this.colliders.addBoxBody("player_character", playerbox);
         this.player_character = new Character().init(body);
 
@@ -43,19 +44,21 @@ export default class SceneGame {
     _keydown(event: KeyboardEvent) {
         const key = event.code;
         if (key === 'Space') {
-            this.player_character.action("jump");
+            this.player_character.action("jump", CharacterActionCode.START);
         } else if (key === 'KeyA') {
-            this.player_character.action("move_left");
+            this.player_character.action("move_left", CharacterActionCode.START);
         } else if (key === 'KeyD') {
-            this.player_character.action("move_right");
+            this.player_character.action("move_right", CharacterActionCode.START);
         } else if (key === 'KeyS') {
             this.colliders.step(1);
         }
     }
     _keyup(event: KeyboardEvent) {
         const key = event.code;
-        if (key === "KeyA" || key === "KeyD") {
-            this.player_character.action("move_stop");
+        if (key === 'KeyA') {
+            this.player_character.action("move_left", CharacterActionCode.END);
+        } else if (key === 'KeyD') {
+            this.player_character.action("move_right", CharacterActionCode.END);
         }
     }
 
