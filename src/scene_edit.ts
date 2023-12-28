@@ -120,6 +120,9 @@ class SceneEdit {
         }
     }
     async save() {
+        if (!this.asset) {
+            return;
+        }
         const json: {guids: number, elements: { [id: string] : SceneElement; }} = {guids: 0, elements: {}};
         json.guids = this.guids;
         for(const k in this.elements) {
@@ -129,10 +132,18 @@ class SceneEdit {
         const file = new File([JSON.stringify(json)], "newscene.scene", {
             type: "application/json",
         });
-        const id = this.asset?.info.id;
+        const id = this.asset.info.id;
         sendFiles(`/assets/upload/${id}`, [file], (success, res) => {
             this.assets.loadAsset(id);
         });
+    }
+
+    async close(save: boolean = false) {
+        if (save) {
+            await this.save();
+        }
+        this.elements = {};
+        this.asset = null;
     }
 
     async addElement(opts: {model?: string, name?: string} = {}) : Promise<SceneElement> {

@@ -15,9 +15,24 @@ export interface EventListenerDetails {
     node: HTMLElement;
 } 
 
-export function addEventListener(opts: EventListenerDetails) : EventListenerDetails {
+/**
+ * 
+ * @param opts event listener properties
+ * @param list array list to append properties to
+ * @returns listened event properties
+ */
+export function addEventListener(opts: EventListenerDetails, list?: Array<EventListenerDetails>) : EventListenerDetails {
     opts.node.addEventListener(opts.name, opts.callback);
+    list?.push(opts);
+
     return opts;
+}
+
+export function removeEventListeners(list: Array<EventListenerDetails>) {
+    while(list.length) {
+        const l = this._listeners.pop();
+        l?.node?.removeEventListener(l.name, l.callback);
+    }
 }
 
 /**
@@ -168,8 +183,8 @@ export function popupConfirm(message, propagete?: (el: HTMLElement) => void) : P
     })
 }
 
-export function listenClick(selector: string, callback: (event: Event) => any) {
-    querySelector(selector).addEventListener('click', callback);
+export function listenClick(selector: string, callback: (event: Event) => any, list?: Array<EventListenerDetails>) : EventListenerDetails {
+    return addEventListener({node: querySelector(selector), callback, name: "click"}, list)
 }
 
 /**

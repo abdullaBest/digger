@@ -1,7 +1,7 @@
 import Character from "./character";
 import { SceneCollisions, BoxCollider } from './scene_collisions.js';
 import { Box2, Vector2 } from "./lib/three.module";
-import { addEventListener, EventListenerDetails } from "./document";
+import { addEventListener, removeEventListeners, EventListenerDetails } from "./document";
 export default class SceneGame {
     constructor() {
         this.colliders = new SceneCollisions();
@@ -19,16 +19,14 @@ export default class SceneGame {
         const body = this.colliders.addBoxBody("player_character", playerbox);
         this.player_character = new Character().init(body);
 
-        this._listeners.push(addEventListener({callback: this._keydown.bind(this), name: "keydown", node: document.body}))
-        this._listeners.push(addEventListener({callback: this._keyup.bind(this), name: "keyup", node: document.body}))
+        addEventListener({callback: this._keydown.bind(this), name: "keydown", node: document.body}, this._listeners)
+        addEventListener({callback: this._keyup.bind(this), name: "keyup", node: document.body}, this._listeners)
     }
 
     stop() {
         this.active = false;
-        while(this._listeners.length) {
-            const l = this._listeners.pop();
-            l?.node.removeEventListener(l.name, l.callback);
-        }
+        removeEventListeners(this._listeners);
+        
         if(this.player_character) {
             this.colliders.remove(this.player_character.body.id);
         }

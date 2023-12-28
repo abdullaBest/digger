@@ -112,7 +112,7 @@ class App {
             for (const i in modelid) {
                 const modelname = this.assets.get(modelid[i])?.info.name ?? "newmodel";
                 // tynroar torefactor 231226: make unified flow for model and other types
-                const model = { gltf: modelid[i], material: "standart", texture: modeltexture, pos_x: 0, pos_y: 0, pos_z: 0 };
+                const model = { gltf: modelid[i], material: "standart", texture: modeltexture };
                 const file = new File([JSON.stringify(model)], modelname.split('.').shift() + ".model", {
                     type: "application/json",
                 });

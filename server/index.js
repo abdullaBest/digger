@@ -18,7 +18,13 @@ const storage = multer.diskStorage({
     cb(null, path_uploads)
   },
   filename: function (req, file, cb) {
-    cb(null, assets.genId())
+    const id = req.params.id ?? assets.genId();
+    let revision = 0;
+    if (req.params.id && assets.get(req.params.id)) {
+      const asset = assets.get(req.params.id);
+      revision = asset.revision
+    }
+    cb(null, `${id}-${revision}`);
   }
 })
 

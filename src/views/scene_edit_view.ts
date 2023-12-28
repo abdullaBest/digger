@@ -1,4 +1,4 @@
-import { popupListSelect, listenClick, popupListSelectMultiple } from "../document";
+import { EventListenerDetails, addEventListener, removeEventListeners, listenClick, popupListSelectMultiple } from "../document";
 import SceneEdit from "../scene_edit";
 import { AssetsView, AssetPropertyEdit } from "./assets_view";
 import SceneRender from "../scene_render";
@@ -8,12 +8,19 @@ export default class SceneEditView {
     props_container: HTMLElement;
     scene_edit: SceneEdit;
     scene_render: SceneRender;
+    private _listeners: Array<EventListenerDetails>;
 
     constructor(scene_edit: SceneEdit, scene_render: SceneRender){
         this.scene_edit = scene_edit;
         this.scene_render = scene_render;
     }
 
+    /**
+     * 
+     * @param list_container container lists all scenes from assets
+     * @param props_container container list all scene elements
+     * @returns 
+     */
     init(list_container: HTMLElement | null, props_container: HTMLElement | null) : SceneEditView {
         if(!list_container) throw new Error("SceneEditView init error: argument list_container is null");
         if(!props_container) throw new Error("SceneEditView init error: argument props_container is null");
@@ -21,20 +28,25 @@ export default class SceneEditView {
         this.list_container = list_container;
         this.props_container = props_container;
 
-        this.list_container.addEventListener('click', async (ev) => {
+        // select scene to edit
+        addEventListener({name: "click", callback: async (ev) => {
             const id = (ev.target as HTMLElement).id;
             if(id) {
                 await this.scene_edit.load(id);
                 this.propagate();
             }
-        });
-        this.props_container.addEventListener('click', async (ev) => {
+        }, node: this.list_container}, this._listeners)
+
+        // select scene element to edit
+        addEventListener({name: "click", callback: async (ev) => {
             const id = (ev.target as HTMLElement).id;
             if(this.scene_edit.elements[id]) {
                 (ev.target as HTMLElement).classList.toggle('collapse');
             }
-        });
+        }, node: this.props_container}, this._listeners);
 
+        // adds new movel to scene
+        // todo: mode to scene_edit
         listenClick("#add_scene_model_btn",  async (ev) => {
             const popupel = document.querySelector("container#popup_content") as HTMLElement;
             if (!popupel) {
@@ -49,14 +61,57 @@ export default class SceneEditView {
                 this.draw(el.id);
                 this.scene_render.addModel(el.id, el.components.model.properties);
             }
-        })
-        listenClick("#back_to_scene_list_btn",  async (ev) => {
-            this.scene_edit.save();
-        })
+        }, this._listeners)
+
+        // saves and returs to scene list
+        listenClick("#back_to_scene_list_btn_save",  async (ev) => {
+            this.closeScene(true);
+        }, this._listeners)
+        listenClick("#back_to_scene_list_btn_unsave",  async (ev) => {
+            this.closeScene(false);
+        }, this._listeners)
+
+        // toggles modes of transform helper
+        const tcontrols = this.scene_render.transform_controls
+        listenClick("#controls_mode_transform_translate", () => tcontrols?.setMode( 'translate' ), this._listeners)
+        listenClick("#controls_mode_transform_rotate", () => tcontrols?.setMode( 'rotate' ), this._listeners)
+        listenClick("#controls_mode_transform_toggle_snap", (ev) => { 
+            let tsnap: number | null = 1;
+            let rsnap: number | null = 15 * Math.PI / 180;
+            let ssnap: number | null = 0.25;
+            if (!(ev.target as HTMLElement)?.classList.toggle("highlighted")) {
+                tsnap = rsnap = ssnap = null;
+            }
+            tcontrols.setTranslationSnap( tsnap );
+            tcontrols.setRotationSnap( rsnap );
+            tcontrols.setScaleSnap( ssnap );
+        }, this._listeners )
+        listenClick("#controls_mode_transform_toggle_world", (ev) =>  {
+            const mode_local = (ev.target as HTMLElement)?.classList.toggle("highlighted")
+            const mode_text = mode_local ? 'local'  : 'world'
+            tcontrols.setSpace( mode_text );
+            (ev.target as HTMLElement).innerHTML = "t: " + mode_text;
+        }, this._listeners)
 
         return this;
     }
 
+    dispose() {
+        removeEventListeners(this._listeners);
+    }
+
+    closeScene(save: boolean = false) {
+        this.props_container.innerHTML = '';
+        this.scene_render.clearModels();
+        this.scene_edit.close(save);
+    }
+
+    /**
+     * draws element in html and render
+     * 
+     * @param id element id
+     * @param container html element to put data to
+     */
     draw(id: string, container: HTMLElement = this.props_container) {
         const element = this.scene_edit.elements[id];
 
@@ -79,7 +134,7 @@ export default class SceneEditView {
     }
 
     /**
-     * draw list of all scene elements. SceneEdit has to be loaded
+     * draw list of all scene elements in html and 3d view. SceneEdit has to be loaded
      */
     propagate(container: HTMLElement = this.props_container) {
         container.innerHTML = '';

@@ -25,7 +25,8 @@ body
 				splitter scene
 				page#scene_edit_list
 				page#scene_edit_details.hidden
-					a.btn#back_to_scene_list_btn(href="#scene_edit_list") back to scene list
+					a.btn#back_to_scene_list_btn_save(href="#scene_edit_list") back to list (save)
+					a.btn#back_to_scene_list_btn_unsave(href="#scene_edit_list") back to list (unsaved)
 					splitter palette
 					container#scene_tools_palette
 						btn#add_scene_model_btn add model
@@ -34,7 +35,14 @@ body
 					container#scene_edit_elements
 			#scene_view_canvas_container.view
 				container#scene_edit_tools
-					btn#play_scene_btn play
+					container.frame_background
+						btn#controls_mode_transform_translate translate
+						btn#controls_mode_transform_rotate rotate
+						btn#controls_mode_transform_scale scale
+						btn#controls_mode_transform_toggle_snap snap
+						btn#controls_mode_transform_toggle_world t: global
+					container.frame_background
+						btn#play_scene_btn play
 				canvas#rootcanvas
 			.footer
 				o scene viewer

@@ -28,6 +28,29 @@ class SceneCache {
 }
 
 class SceneRender {
+    
+    private canvas: HTMLCanvasElement;
+    private refSizeEl: HTMLElement | null | undefined;
+
+    private cube: THREE.Mesh;
+    private renderer: THREE.WebGLRenderer;
+    private scene: THREE.Scene;
+    private camera: THREE.PerspectiveCamera;
+    private controls: OrbitControls;
+    transform_controls: TransformControls;
+    private mousepos: THREE.Vector2;
+    private raycaster: THREE.Raycaster;
+
+    private scene_math: SceneMath;
+    assets: Assets;
+    scene_edit: SceneEdit;
+    private active: Boolean;
+    private cache: SceneCache;
+
+    colliders: SceneCollisions;
+
+    _drawDebug2dAabb: boolean;
+
     constructor(scene_edit: SceneEdit, colliders: SceneCollisions) {
         this.scene_edit = scene_edit;
         this.assets = this.scene_edit.assets;
@@ -68,22 +91,18 @@ class SceneRender {
 
         this.transform_controls = new TransformControls( camera, renderer.domElement );
         this.transform_controls.addEventListener( 'objectChange', (e) => {
-            const object = e.target.object;
+            const object = e.target.object as THREE.Object3D;
             const id = object.name;
             const el = this.scene_edit.elements && this.scene_edit.elements[id];
             if (el && el.components.model) {
-                el.components.model.properties.pos_x = object.position.x;
-                el.components.model.properties.pos_y = object.position.y;
-                el.components.model.properties.pos_z = object.position.z;
+                el.components.model.properties.matrix = object.matrixWorld.toArray()
 
-                if (this._drawDebug2dAabb) {
-                    object.traverse((o) => {
-                        if (!o.isMesh) {
-                            return;
-                        }
-                        this.drawObjectAabbDebug(id, o, object);
-                    });
-                }
+                object.traverse((o) => {
+                    if (!o.isMesh) {
+                        return;
+                    }
+                    this.makeObjectAabb2d(id, o, object);
+                });
             }
         });
         this.transform_controls.addEventListener( 'mouseDown', ( event ) => {
@@ -156,13 +175,13 @@ class SceneRender {
 
 
         loader.load( gltfurl,  ( gltf ) => {
-            gltf.scene.position.x = model.pos_x;
-            gltf.scene.position.y = model.pos_y;
-            gltf.scene.position.z = model.pos_z;
             gltf.scene.name = id;
             this.cache.models[id] = gltf.scene;
             this.scene.add( gltf.scene );
 
+            if (model.matrix?.length) {
+                (gltf.scene as THREE.Object3D).applyMatrix4(new THREE.Matrix4().fromArray(model.matrix))
+            }
             const material = this.getMaterial(model.material, textureurl);
             gltf.scene.traverse((o) => {
                 if (!o.isMesh) {
@@ -173,7 +192,7 @@ class SceneRender {
                 
                 // tmp. only gonna work for scenes with one mesh
                 if (this._drawDebug2dAabb && model.collider) {
-                    this.drawObjectAabbDebug(id, o, gltf.scene);
+                    this.makeObjectAabb2d(id, o, gltf.scene);
                 }
             });
 
@@ -187,7 +206,7 @@ class SceneRender {
         } );
     }
 
-    drawObjectAabbDebug(id: string, mesh: THREE.Mesh, transform_node: THREE.Object3D) {
+    makeObjectAabb2d(id: string, mesh: THREE.Mesh, transform_node: THREE.Object3D) {
         const box = this.scene_math.intersectAABBPlaneTo2dAabb(mesh.geometry, transform_node, this.colliders.origin, this.colliders.normal);
         if (!box) {
             if(this.cache.debug_colliders[id]) {
@@ -197,14 +216,17 @@ class SceneRender {
             }
             return;
         }
+        this.colliders.removeCollider(id);
         const collider = this.colliders.addBoxCollider(id, box);
-        this.drawColliderDebug(id, collider);
+        if (this._drawDebug2dAabb) {
+            this.drawColliderDebug(id, collider);
+        }
     }
 
     drawColliderDebug(id: string, collider: BoxCollider) {
         let plane = this.cache.debug_colliders[id];
         if (!plane) {
-            const geometry = new THREE.PlaneGeometry( collider.width, collider.height );
+            const geometry = new THREE.PlaneGeometry( 1, 1 );
             // tynroar tmp todo: move material into cache
             const material = new THREE.MeshStandardMaterial( { color: 0x00ffff, wireframe: true } );
             plane = new THREE.Mesh( geometry, material as any );
@@ -214,6 +236,7 @@ class SceneRender {
         //plane.position.add(this.cache.models[id].position);
         //plane.position.z = this.colliders.origin.z;
         const planepos = (plane as any).position;
+        (plane as any).scale.set(collider.width, collider.height, 1);
         plane.lookAt(planepos.x + this.colliders.normal.x, planepos.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
         this.cache.debug_colliders[id] = plane;
     }
@@ -412,27 +435,6 @@ class SceneRender {
         }
     }
 
-    private canvas: HTMLCanvasElement;
-    private refSizeEl: HTMLElement | null | undefined;
-
-    private cube: THREE.Mesh;
-    private renderer: THREE.WebGLRenderer;
-    private scene: THREE.Scene;
-    private camera: THREE.PerspectiveCamera;
-    private controls: OrbitControls;
-    private transform_controls: TransformControls;
-    private mousepos: THREE.Vector2;
-    private raycaster: THREE.Raycaster;
-
-    private scene_math: SceneMath;
-    assets: Assets;
-    scene_edit: SceneEdit;
-    private active: Boolean;
-    private cache: SceneCache;
-
-    colliders: SceneCollisions;
-
-    _drawDebug2dAabb: boolean;
 
     // --- tests
 
