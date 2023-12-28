@@ -10,21 +10,23 @@ import { SceneCollisions, BoxCollider } from './scene_collisions.js';
 class SceneCache {
     constructor() {
         this.vec2_0 = new THREE.Vector2();
-        this.gltfs = [];
+        this.gltfs = {};
         this.models = {};
         this.materials = {};
         this.debug_colliders = {};
+        this.guids = 0;
     }
-    
     
     vec2_0: THREE.Vector2;
 
-    // used for raw gltfs
-    gltfs: Array<any>;
-    // used for model scene element gltfs
+    // used for gltfs
+    gltfs: { [id: string] : any; };
+    // stores pointers to models data
+    // tynroar note: probably bad and unsafe idea
     models: { [id: string] : any; };
     materials: { [id: string] : THREE.Material; };
     debug_colliders: { [id: string] : THREE.Mesh; };
+    guids: number;
 }
 
 class SceneRender {
@@ -94,14 +96,23 @@ class SceneRender {
             const object = e.target.object as THREE.Object3D;
             const id = object.name;
             const el = this.scene_edit.elements && this.scene_edit.elements[id];
+
+            let mproperties = this.cache.models[id];
+
+            // just in case: if scene elements has required element - use pointer from there
             if (el && el.components.model) {
-                el.components.model.properties.matrix = object.matrixWorld.toArray()
+                mproperties = el.components.model.properties;
+            }
+            if (mproperties) {
+                mproperties.matrix = object.matrixWorld.toArray()
 
                 object.traverse((o) => {
                     if (!o.isMesh) {
                         return;
                     }
-                    this.makeObjectAabb2d(id, o, object);
+                    if(mproperties.collider) {
+                        this.makeObjectAabb2d(id, o, object);
+                    }
                 });
             }
         });
@@ -176,7 +187,8 @@ class SceneRender {
 
         loader.load( gltfurl,  ( gltf ) => {
             gltf.scene.name = id;
-            this.cache.models[id] = gltf.scene;
+            this.cache.gltfs[id] = gltf.scene;
+            this.cache.models[id] = model;
             this.scene.add( gltf.scene );
 
             if (model.matrix?.length) {
@@ -233,8 +245,6 @@ class SceneRender {
             this.scene.add( plane );
         }
         this.setPos(plane, new THREE.Vector3(collider.pos_x, collider.pos_y, this.colliders.origin.z))
-        //plane.position.add(this.cache.models[id].position);
-        //plane.position.z = this.colliders.origin.z;
         const planepos = (plane as any).position;
         (plane as any).scale.set(collider.width, collider.height, 1);
         plane.lookAt(planepos.x + this.colliders.normal.x, planepos.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
@@ -243,15 +253,16 @@ class SceneRender {
 
     removeModel(id: string) {
         this.transform_controls.detach();
-        if (!this.cache.models[id]) {
-            throw new Error("SceneRender::removeModel: can't remove model " + id);
-        }
-        this.scene.remove(this.cache.models[id]);
-        delete this.cache.models[id];
+        
         if(this.cache.debug_colliders[id]) {
             this.scene.remove(this.cache.debug_colliders[id]);
             delete this.cache.debug_colliders[id];
         }
+        if(this.cache.gltfs[id]) {
+            this.scene.remove(this.cache.gltfs[id]);
+            delete this.cache.gltfs[id];
+        }
+        delete this.cache.models[id];
         this.colliders.remove(id);
     }
     clearModels() {
@@ -259,10 +270,14 @@ class SceneRender {
         for(const k in this.cache.models) {
             this.removeModel(k)
         }
-        while(this.cache.gltfs.length) {
-            this.scene.remove(this.cache.gltfs.pop());
+
+        // remove gltfs that wasn't included into models list
+        for(const k in this.cache.gltfs) {
+            this.scene.remove(this.cache.gltfs[k]);
+            delete this.cache.gltfs[k];
         }
         this.cache.models = {};
+        this.cache.gltfs = {};
     }
     viewModel(id: string, model: any) {
         this.clearModels();
@@ -297,7 +312,7 @@ class SceneRender {
 
         loader.load( url,  ( gltf ) => {
             this.scene.add( gltf.scene );
-            this.cache.gltfs.push(gltf.scene);
+            this.cache.gltfs["g_" + this.cache.guids++] = gltf.scene;
             console.log(dumpObject(gltf.scene).join('\n'));
         }, undefined,  ( error ) => {
         

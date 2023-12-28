@@ -1,4 +1,4 @@
-import { EventListenerDetails, addEventListener, removeEventListeners, listenClick, popupListSelectMultiple } from "../document";
+import { listenClickAll, EventListenerDetails, addEventListener, removeEventListeners, listenClick, popupListSelectMultiple } from "../document";
 import SceneEdit from "../scene_edit";
 import { AssetsView, AssetPropertyEdit } from "./assets_view";
 import SceneRender from "../scene_render";
@@ -75,6 +75,7 @@ export default class SceneEditView {
         const tcontrols = this.scene_render.transform_controls
         listenClick("#controls_mode_transform_translate", () => tcontrols?.setMode( 'translate' ), this._listeners)
         listenClick("#controls_mode_transform_rotate", () => tcontrols?.setMode( 'rotate' ), this._listeners)
+        listenClick("#controls_mode_transform_scale", () => tcontrols?.setMode( 'scale' ), this._listeners)
         listenClick("#controls_mode_transform_toggle_snap", (ev) => { 
             let tsnap: number | null = 1;
             let rsnap: number | null = 15 * Math.PI / 180;

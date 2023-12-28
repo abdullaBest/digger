@@ -9,10 +9,6 @@ body {
   margin: 0;
 }
 
-canvas#rootcanvas {
-  position: absolute;
-}
-
 db {
 	display: none;
 }
@@ -120,7 +116,7 @@ db {
 
 }
 
-#scene_edit_tools {
+#scene_edit_tools, .scene_edit_tools{
   position: absolute;
   z-index: 1;
   padding: 4px;
@@ -181,11 +177,13 @@ container#scene_tools_palette {
 
   // asset image container
   container#asset_preview_container {
-	#img_asset_preview, #canvas_asset_preview {
-		width: 100%;
-		height: 100%;
-		display: flex;
-	}
+    #img_asset_preview, #canvas_asset_preview {
+      width: 100%;
+      height: 100%;
+      min-height: 256px;
+      display: flex;
+      position: relative;
+    }
     img {
       margin: auto;
       width: 100%;
@@ -197,10 +195,9 @@ container#scene_tools_palette {
   }
 }
 
-#scene_edit_sidebar {
-
+canvas#rootcanvas {
+  position: relative;
 }
-
 
 #scene_view, #assets_view, #dev_view {
   overflow: hidden;

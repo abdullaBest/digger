@@ -30,7 +30,7 @@ export function addEventListener(opts: EventListenerDetails, list?: Array<EventL
 
 export function removeEventListeners(list: Array<EventListenerDetails>) {
     while(list.length) {
-        const l = this._listeners.pop();
+        const l = list.pop();
         l?.node?.removeEventListener(l.name, l.callback);
     }
 }
@@ -187,6 +187,15 @@ export function listenClick(selector: string, callback: (event: Event) => any, l
     return addEventListener({node: querySelector(selector), callback, name: "click"}, list)
 }
 
+export function listenClickAll(selector: string, callback: (event: Event) => any, list?: Array<EventListenerDetails>) : Array<EventListenerDetails> {
+    const listeners: Array<EventListenerDetails> = [];
+    const elements = document.body.querySelectorAll(selector);
+    elements.forEach((node) => {
+        listeners.push(addEventListener({node: node as HTMLElement, callback, name: "click"}, list))
+    })
+    return listeners;
+}
+
 /**
  * Hides all "page" elements in container except one with passed id
  * @param id id of element to display
@@ -207,4 +216,12 @@ export function switchPage(id: string) : HTMLElement {
     })
 
 	return el;
+}
+
+export function reattach(element: Element, container: Element) {
+    if(element.parentElement == container) {
+        return;
+    }
+    element.parentElement?.removeChild(element);
+    container.appendChild(element);
 }

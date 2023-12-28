@@ -4,7 +4,7 @@ import SceneEdit from "./scene_edit";
 import SceneEditView from "./views/scene_edit_view";
 import AssetsView from "./views/assets_view";
 import { listenFormSubmit, sendFiles } from "./assets";
-import { listenClick, popupListSelect, switchPage, querySelector, popupConfirm, popupListSelectMultiple } from "./document";
+import { reattach, listenClick, popupListSelect, switchPage, querySelector, popupConfirm, popupListSelectMultiple } from "./document";
 import { importGltfSequence } from "./importer";
 import SceneGame from "./scene_game";
 
@@ -32,7 +32,7 @@ class App {
         this.stop();
     }
     run() {
-        this.assets_view.init(document.querySelector("#assets_list"), document.querySelector("#asset_details"))
+        this.assets_view.init(document.querySelector("#assets_list"), document.querySelector("#asset_details_content"))
         this.scene_edit_view.init(document.querySelector("#scene_edit_list"), document.querySelector("#scene_edit_elements"))
         this.load();
 
@@ -143,14 +143,16 @@ class App {
      * @param id id of page to switch to
      */
     page(id: string) {
-		switchPage(id);
+		const page = switchPage(id);
         // -- postpage operations. temporal
 
         // swaps canvas back to scene_render view if it was removed
         if (id.includes('scene_view')) {
             const container = document.querySelector("#scene_view_canvas_container");
             if(container) {
+                reattach(querySelector("#scene_edit_tools"), container);
                 this.scene_render.reattach(container as HTMLElement);
+
             } else {
                 console.warn("Can't reattach scene_render canvas back to scene_view")
             }

@@ -1,7 +1,7 @@
 import { Assets, listenFormSubmit } from "../assets";
 import SceneRender from "../scene_render";
 import { sprintf } from "../lib/sprintf.js";
-import { switchPage, querySelector, popupListSelect } from "../document";
+import { reattach, switchPage, querySelector, popupListSelect } from "../document";
 import SceneEdit from "../scene_edit";
 
 /**
@@ -123,18 +123,18 @@ class AssetsView {
 		if(!template) {
 			throw new Error("Couldn't find template#asset_details_template");
 		}
-		this.props_container.innerHTML = sprintf(template, info.name, info.extension, info.extension);
+        this.props_container.innerHTML = sprintf(template, info.name, info.extension, info.extension);
 
         this.props_container.querySelector("label#assets_upload_files_label")?.classList[info.extension.includes("model") ? "add" : "remove"]('hidden');
 
         // draw previews
         if (info.extension == "gltf" || info.extension == "glb" || info.extension == 'model' || info.extension == "scene") {
 			const container = switchPage("#canvas_asset_preview");
+            reattach(querySelector("#scene_edit_tools"), container);
             this.scene_render.reattach(container as HTMLElement);
             this.scene_render.clearModels();
             if (info.extension == 'model') {
-                const model = await (await fetch(this.assets.get(id).info.url)).json();
-                this.scene_render.viewModel(id, model);
+               // ...
             } else if (info.extension == 'scene') {
                 await this.scene_render.scene_edit.load(id);
                 for(const _id in this.scene_render.scene_edit.elements) {
@@ -166,9 +166,12 @@ class AssetsView {
 
             return file;
         }
+
         // draw settings fiels
         if (info.extension == "model") {
+            //const model = await (await fetch(this.assets.get(id).info.url)).json();
             asset_json = await (await fetch(info.url)).json();
+            this.scene_render.viewModel(id, asset_json);
             const container = switchPage("#details_model_edit");
             container.innerHTML = "";
             console.log(asset_json);

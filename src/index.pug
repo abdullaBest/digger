@@ -49,6 +49,12 @@ body
 				o v3
 		page#assets_view
 			page.sidebar_l#asset_details
+				container#asset_details_content
+				splitter asset preview
+				container#asset_preview_container
+					page#img_asset_preview
+						img#asset_preview_img
+					page#canvas_asset_preview
 			page.sidebar_l#asset_create
 				splitter create
 				a.btn#upload_gltf_btn Import gltf
@@ -108,8 +114,3 @@ body
 					page#details_empty_edit
 					page#details_model_edit
 				input(type="submit" value="save")
-			splitter asset preview
-			container#asset_preview_container
-				page#img_asset_preview
-					img#asset_preview_img
-				page#canvas_asset_preview
