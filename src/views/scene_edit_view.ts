@@ -1,6 +1,6 @@
 import { popupListSelect, listenClick, popupListSelectMultiple } from "../document";
 import SceneEdit from "../scene_edit";
-import AssetsView from "./assets_view";
+import { AssetsView, AssetPropertyEdit } from "./assets_view";
 import SceneRender from "../scene_render";
 
 export default class SceneEditView {
@@ -64,6 +64,11 @@ export default class SceneEditView {
         el.id = element.id;
         el.dataset["name"] = element.name;
         el.classList.add("collapse");
+
+        new AssetPropertyEdit().init(element, "name", () => {
+            el.dataset["name"] = element.name;
+        }).drawTextEditOption(el);
+
         if(element.components.model) {
             AssetsView.drawModelPropertyFields(el, this.scene_edit.assets, element.components.model.properties, () => {
                 this.scene_render.removeModel(id);

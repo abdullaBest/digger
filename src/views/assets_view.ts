@@ -83,7 +83,7 @@ class AssetPropertyEdit {
     callback: ((value: string | boolean | number) => void) | null;
 }
 
-export default class AssetsView {
+class AssetsView {
     constructor(assets: Assets, scene: SceneRender){
         this.assets = assets;
         this.scene_render = scene;
@@ -253,3 +253,6 @@ export default class AssetsView {
     assets: Assets;
     scene_render: SceneRender;
 }
+
+export default AssetsView;
+export { AssetsView, AssetPropertyEdit };
