@@ -81,8 +81,9 @@ class App {
                 await this.assets.loadAsset(id);
                 this.assets_view.draw(id);
 
-                // !!!
-                this.assets_view.draw(id, this.scene_edit_view.list_container, "#scene_edit_details");
+                if (this.assets.filter(id, {extension: "scene"})) {
+                    this.assets_view.draw(id, this.scene_edit_view.list_container, "#scene_edit_details");
+                }
             }
         }
 
@@ -121,9 +122,13 @@ class App {
         });
     }
     async load() {
-        await this.assets.load();
-        this.assets_view.propagate();
-        this.assets_view.propagate(this.scene_edit_view.list_container, {extension: 'scene'}, "#scene_edit_details");
+        await this.assets.load((id)=> {
+            this.assets_view.draw(id);
+
+            if (this.assets.filter(id, {extension: "scene"})) {
+                this.assets_view.draw(id, this.scene_edit_view.list_container, "#scene_edit_details");
+            }
+        });
     }
     stop() {
         this.scene_render.stop();

@@ -155,30 +155,41 @@ class Assets {
     find(filter: {[id: string] : string | RegExp}) : { [id: string] : Asset; } {
         const assets = {};
         for(const id in this.list) {
-            const asset = this.get(id);
-
-            let filtered = false;
-            for(const k in filter) {
-                if(!(k in asset.info)) {
-                    continue;
-                }
-                const regexp_check = typeof(asset.info[k]) == "string" && typeof(filter[k]) == "object";
-                if ((regexp_check && !asset.info[k].match(filter[k])) || (!regexp_check && asset.info[k] != filter[k])) {
-                    filtered = true;
-                    break;
-                }
-            }
-    
-            if (!filtered) { assets[id] = asset }
+            if (this.filter(id, filter)) { assets[id] = this.get(id) }
         }
 
         return assets;
     }
 
     /**
-     * Loads asset metadata. To get asset data itself use asset.info.url
+     * 
+     * @param id asset id
+     * @param filter regexp match or strict string match 
+     * @returns true if asset matches all filters
      */
-    async loadAsset(id) {
+    filter(id: string, filter: {[id: string] : string | RegExp}) : boolean {
+        const asset = this.get(id);
+
+        let filtered = false;
+        for(const k in filter) {
+            if(!(k in asset.info)) {
+                continue;
+            }
+            const regexp_check = typeof(asset.info[k]) == "string" && typeof(filter[k]) == "object";
+            if ((regexp_check && !asset.info[k].match(filter[k])) || (!regexp_check && asset.info[k] != filter[k])) {
+                filtered = true;
+                break;
+            }
+        }
+
+        return !filtered;
+    }
+
+    /**
+     * Loads asset metadata. To get asset data itself use asset.info.url
+     * @param onprogress callbacks on asset loaded
+     */
+    async loadAsset(id: string, onprogress?: (id: string) => void) {
         const path = "/assets/get/" + id;
         const res = await fetch(path);
         if(!res.ok) {
@@ -196,9 +207,16 @@ class Assets {
             revision: data.revision
         });
         this.list[id] = asset;
+        if(onprogress) {
+            onprogress(id);
+        }
     }
 
-    async load() {
+    /**
+     * 
+     * @param onprogress callbacks on asset loaded
+     */
+    async load(onprogress?: (id: string) => void) {
         const res = await fetch("/assets/list");
         if (!res.ok) {
             console.error("Assets loading error", res);
@@ -207,7 +225,7 @@ class Assets {
         this.list = {};
         const data = await res.json();
         for (const i in data) {
-            await this.loadAsset(data[i]);
+            await this.loadAsset(data[i], onprogress);
         }
     }
 }
