@@ -136,7 +136,7 @@ class SceneEdit {
     }
 
     async addElement(opts: {model?: string, name?: string} = {}) : Promise<SceneElement> {
-        const el = new SceneElement('e' + this.guids++);
+        const el = new SceneElement(this.asset?.info.id + '-e' + this.guids++);
         if(opts.model) {
             el.components.model = new OverridedAssetLink(opts.model);
         }
