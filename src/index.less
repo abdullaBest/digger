@@ -265,6 +265,7 @@ container#scene_tools_palette {
   color: var(--color-b);
   background-color: var(--color-a);
   border-radius: 4px;
+
 }
 
 btn, .btn {
@@ -289,6 +290,12 @@ splitter {
 
 #assets_view tilegrid a, #scene_edit_list a, #scene_edit_elements > entry, container#popup_content a {
   &:extend(.btn-style);
+  transition-duration: 0.07s;
+  &.highlighted {
+    border-color: #00998b;
+    box-shadow: inset 0 -1px #309900a8;
+    margin: 0px 4px;
+  }
 }
 
 canvas#rootcanvas {

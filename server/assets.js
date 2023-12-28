@@ -4,6 +4,10 @@ import path from "path";
 
 export default class Assets {
     constructor() {
+        this.content = {
+            data: {},
+            guids: 0
+        }
         this.data = {};
         this.filename = "assets.json"
         this.directory = ""
@@ -13,7 +17,7 @@ export default class Assets {
      */
     async load(path) {
         const filecontent = await fs.readFile(path);
-        this.data = JSON.parse(filecontent);
+        this.content = JSON.parse(filecontent);
     }
 
     /**
@@ -36,7 +40,7 @@ export default class Assets {
      * @param {Number} opts.size data size
      */
     async register({ id, filename, name, type, size, extension }) {
-        this.data[id] = {
+        this.content.data[id] = {
             id,
             filename,
             name,
@@ -50,9 +54,30 @@ export default class Assets {
         await this.save();
     }
 
+    /**
+     * @param {string} id returns asset by id
+     */
+    get(id) {
+        return this.content.data[id] ?? null;
+    }
+
+    /**
+     * @returns {Array<string>} list of all assets ids
+     */
+    keys() {
+        return Object.keys(this.content.data);
+    }
+
+    /**
+     * @returns {string} unique id
+     */
+    genId() {
+        return "a_" + this.content.guids++;
+    }
+
     async save() {
         const filepath = path.join(this.directory, this.filename);
-        await this.write(filepath, this.data);
+        await this.write(filepath, this.content);
     }
 
     /**

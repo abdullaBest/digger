@@ -148,14 +148,22 @@ class Assets {
         return asset;
     }
 
-    find(filter: any) : { [id: string] : Asset; } {
+    /**
+     * @param filter regexp match or strict match 
+     * @returns 
+     */
+    find(filter: {[id: string] : string | RegExp}) : { [id: string] : Asset; } {
         const assets = {};
         for(const id in this.list) {
             const asset = this.get(id);
 
             let filtered = false;
             for(const k in filter) {
-                if (k in asset.info && asset.info[k] != filter[k]) {
+                if(!(k in asset.info)) {
+                    continue;
+                }
+                const regexp_check = typeof(asset.info[k]) == "string" && typeof(filter[k]) == "object";
+                if ((regexp_check && !asset.info[k].match(filter[k])) || (!regexp_check && asset.info[k] != filter[k])) {
                     filtered = true;
                     break;
                 }

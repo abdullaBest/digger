@@ -4,7 +4,7 @@ import SceneEdit from "./scene_edit";
 import SceneEditView from "./views/scene_edit_view";
 import AssetsView from "./views/assets_view";
 import { listenFormSubmit, sendFiles } from "./assets";
-import { listenClick, popupListSelect, switchPage, querySelector, popupConfirm } from "./document";
+import { listenClick, popupListSelect, switchPage, querySelector, popupConfirm, popupListSelectMultiple } from "./document";
 import { importGltfSequence } from "./importer";
 import SceneGame from "./scene_game";
 
@@ -80,7 +80,9 @@ class App {
                 const id = ids[i];
                 await this.assets.loadAsset(id);
                 this.assets_view.draw(id);
-                this.assets_view.draw(id, this.scene_edit_view.list_container, {extension: 'scene'}, "#scene_edit_details");
+
+                // !!!
+                this.assets_view.draw(id, this.scene_edit_view.list_container, "#scene_edit_details");
             }
         }
 
@@ -103,16 +105,19 @@ class App {
             sendFiles("/assets/upload", [file], res_update_callback);
         });
         listenClick("#create_model_btn", async (ev) => {
-            const modelid = await popupListSelect("select model", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: 'gltf'}, ''));
-            const modelname = this.assets.get(modelid)?.info.name ?? "newmodel";
-            const modeltexture = await popupListSelect("select texture", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: 'png'}, ''));
-
-            // tynroar torefactor 231226: make unified flow for model and other types
-            const model = { gltf: modelid, material: "standart", texture: modeltexture, pos_x: 0, pos_y: 0, pos_z: 0 };
-            const file = new File([JSON.stringify(model)], modelname.split('.').shift() + ".model", {
-                type: "application/json",
-            });
-            sendFiles("/assets/upload", [file], res_update_callback);
+            const modelid: Array<string> = await popupListSelectMultiple("select model", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: /gltf/}, ''));
+            const modeltexture = await popupListSelect("select texture", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: /(png|jpg)/}, ''));
+            const files: Array<File> = []
+            for (const i in modelid) {
+                const modelname = this.assets.get(modelid[i])?.info.name ?? "newmodel";
+                // tynroar torefactor 231226: make unified flow for model and other types
+                const model = { gltf: modelid[i], material: "standart", texture: modeltexture, pos_x: 0, pos_y: 0, pos_z: 0 };
+                const file = new File([JSON.stringify(model)], modelname.split('.').shift() + ".model", {
+                    type: "application/json",
+                });
+                files.push(file);
+            }
+            sendFiles("/assets/upload", files, res_update_callback);
         });
     }
     async load() {

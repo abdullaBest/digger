@@ -207,7 +207,7 @@ export default class AssetsView {
         // tynroar torefactor 231226: make unified flow for model and other types
         makePropSelectField("gltf");
         makePropEditField("material")
-        makePropSelectField("texture", "png");
+        makePropSelectField("texture", /png|jpg/);
         makeCkeckboxField("collider");
     }
 
@@ -216,20 +216,9 @@ export default class AssetsView {
        
     }
 
-    static draw(assets: Assets, id: string, container: HTMLElement, filter: any = {}, link: string = "#asset_details") {
+    static draw(assets: Assets, id: string, container: HTMLElement, link: string = "#asset_details") {
         const asset = assets.get(id);
         if (!asset) {
-            return;
-        }
-
-        let filtered = false;
-        for(const k in filter) {
-            if (k in asset.info && asset.info[k] != filter[k]) {
-                filtered = true;
-                break;
-            }
-        }
-        if (filtered) {
             return;
         }
 
@@ -242,8 +231,8 @@ export default class AssetsView {
         container.appendChild(el);
     }
 
-    draw(id: string, container: HTMLElement = this.list_container, filter: any = {}, link: string = "#asset_details") {
-        AssetsView.draw(this.assets, id, container, filter, link);
+    draw(id: string, container: HTMLElement = this.list_container, link: string = "#asset_details") {
+        AssetsView.draw(this.assets, id, container, link);
     }
 
     static propagate(assets: Assets, container: HTMLElement, filter: any = {}, link: string = "#asset_details") {
@@ -251,7 +240,7 @@ export default class AssetsView {
 
         const _assets = assets.find(filter);
         for(const k in _assets) {
-            AssetsView.draw(assets, k, container, filter, link);
+            AssetsView.draw(assets, k, container, link);
         }
     }
 

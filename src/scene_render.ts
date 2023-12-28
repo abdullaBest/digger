@@ -117,29 +117,7 @@ class SceneRender {
         this.updateSize();
         //this.test();
 
-        if(this._drawDebug2dAabb) {
-            const geometry = new THREE.PlaneGeometry( 10, 10 );
-            const material = new THREE.MeshStandardMaterial( { color: 0xaaaa00, transparent: true, opacity: 0.1 } );
-            const plane = new THREE.Mesh( geometry, material as any );
-            this.scene.add( plane );
-            this.setPos(plane, this.colliders.origin)
-            plane.lookAt(this.colliders.origin.x + this.colliders.normal.x, this.colliders.origin.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
-        }
-
-        {
-            let groundbox = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(0, -1), new THREE.Vector2(1, 1));
-            const groundbody = this.colliders.addBoxCollider("ground", groundbox);
-            this.drawColliderDebug("ground", groundbody);
-        }
-        {
-            let groundbox = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(2, -1), new THREE.Vector2(1, 1));
-            const groundbody = this.colliders.addBoxCollider("ground2", groundbox);
-            this.drawColliderDebug("ground2", groundbody);
-        }
-        let groundbox1 = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(-1.5, 0.5), new THREE.Vector2(1, 1));
-        const groundbody1 = this.colliders.addBoxCollider("ground1", groundbox1);
-        this.drawColliderDebug("ground1", groundbody1);
-        
+       
         return this;
     }
 
@@ -194,7 +172,7 @@ class SceneRender {
                 o.material = material;
                 
                 // tmp. only gonna work for scenes with one mesh
-                if (this._drawDebug2dAabb) {
+                if (this._drawDebug2dAabb && model.collider) {
                     this.drawObjectAabbDebug(id, o, gltf.scene);
                 }
             });
@@ -540,6 +518,31 @@ class SceneRender {
         this.scene.add( plane );
         this.setPos(plane, origin);
         plane.lookAt(origin.x + normal.x, origin.y + normal.y, origin.z + normal.z);
+    }
+
+    test2() {
+        if(this._drawDebug2dAabb) {
+            const geometry = new THREE.PlaneGeometry( 10, 10 );
+            const material = new THREE.MeshStandardMaterial( { color: 0xaaaa00, transparent: true, opacity: 0.1 } );
+            const plane = new THREE.Mesh( geometry, material as any );
+            this.scene.add( plane );
+            this.setPos(plane, this.colliders.origin)
+            plane.lookAt(this.colliders.origin.x + this.colliders.normal.x, this.colliders.origin.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
+        }
+
+        {
+            let groundbox = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(0, -1), new THREE.Vector2(1, 1));
+            const groundbody = this.colliders.addBoxCollider("ground", groundbox);
+            this.drawColliderDebug("ground", groundbody);
+        }
+        {
+            let groundbox = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(2, -1), new THREE.Vector2(1, 1));
+            const groundbody = this.colliders.addBoxCollider("ground2", groundbox);
+            this.drawColliderDebug("ground2", groundbody);
+        }
+        let groundbox1 = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(-1.5, 0.5), new THREE.Vector2(1, 1));
+        const groundbody1 = this.colliders.addBoxCollider("ground1", groundbox1);
+        this.drawColliderDebug("ground1", groundbody1);
     }
 
     testSphereAdd(pos: THREE.Vector3, size: number = 0.1, color: number = 0xffffff) {

@@ -3,13 +3,26 @@ import express from 'express';
 import { WebSocketServer } from 'ws';
 import multer from 'multer';
 import Assets from './assets.js';
+import { existsSync, rmSync, mkdirSync } from 'node:fs';
 import path from 'path';
 import { rejects } from 'assert';
 
 const port = 3000
 const path_uploads = "uploads/";
 
-const upload = multer({ dest: path_uploads });
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    if (!existsSync(path_uploads)){
+      mkdirSync(path_uploads, { recursive: true });
+    }
+    cb(null, path_uploads)
+  },
+  filename: function (req, file, cb) {
+    cb(null, assets.genId())
+  }
+})
+
+const upload = multer({ dest: path_uploads, storage: storage });
 const app = express()
 const assets = new Assets();
 
@@ -37,7 +50,7 @@ app.post("/assets/upload", upload.array("files"), uploadFiles);
 
 function updateFiles(req, res) {
   const id = req.params.id;
-  const asset = assets.data[id];
+  const asset = assets.get(id);
   if (!asset) {
     res.statusCode = 500;
     res.send(`Asset ${id} wasn't found. Cant update`);
@@ -64,7 +77,7 @@ function uploadFiles(req, res) {
   const ids = [];
   for(const k in req.files) {
     const f = req.files[k];
-    const id = "a0_" + f.filename;
+    const id = f.filename;
     assets.register({
       id: id, 
       filename: f.filename, 
@@ -80,12 +93,12 @@ function uploadFiles(req, res) {
 
 // files access
 app.get('/assets/list', async (req, res) => {
-  res.json(Object.keys(assets.data));
+  res.json(assets.keys());
 })
 
 app.get('/assets/get/:id', async (req, res) => {
   const id = req.params.id;
-  const asset = assets.data[id];
+  const asset = assets.get(id);
   const revision = asset.revision;
   const info = Object.assign(
     { url: `/assets/load/${id}/${revision}` }, 
@@ -97,8 +110,8 @@ app.get('/assets/load', async (req, res, next) => {
   let asset = null;
 
   // find asset matching query
-  for(const k in assets.data) {
-    const _asset = assets.data[k];
+  for(const k in assets.content.data) {
+    const _asset = assets.content.data[k];
     let match = false;
     for (const q in req.query) {
       if (_asset[q] && _asset[q] == req.query[q]) {
@@ -133,7 +146,7 @@ app.get('/assets/load', async (req, res, next) => {
 app.get('/assets/load/:id/:revision', async (req, res, next) => {
   const id = req.params.id;
   const revision = req.params.revision || -1;
-  const asset = assets.data[id]
+  const asset = assets.get(id);
 
   const filename = asset.revisions[revision] || asset.revisions[asset.revision];
 
