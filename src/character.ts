@@ -16,7 +16,7 @@ class Character {
 
     constructor() {
         this.movement_x = 0;
-        this.moving_speed = 0.1;
+        this.moving_speed = 2;
         this.moving_right = false;
         this.moving_left = false;
     }
@@ -39,7 +39,7 @@ class Character {
     action(tag: string, code: CharacterActionCode = 0) {
         switch(tag) {
             case "jump":
-                this.body.velocity_y = 0.2;
+                this.body.velocity_y = 7;
                 break;
             case "move_left":
                 this.moving_left = code == CharacterActionCode.START;

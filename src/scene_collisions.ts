@@ -27,7 +27,8 @@ interface DynamicBody {
 interface CollisionResult {
     normal_x: number;
     normal_y: number;
-    time: number;
+    time_x: number;
+    time_y: number;
 }
 
 class CollidersCache {
@@ -36,8 +37,8 @@ class CollidersCache {
     contacts: Array<CollisionResult>;
     constructor() {
         this.bc_0 = SceneCollisions.makeBoxCollider();
-        this.cr_0 = { normal_x: 0, normal_y: 0, time: 0 };
-        this.contacts = Array.apply(null,{length: 8}).map(function() { return { normal_x: 0, normal_y: 0, time: 0 } });
+        this.cr_0 = { normal_x: 0, normal_y: 0, time_x: 0, time_y: 0 };
+        this.contacts = Array.apply(null,{length: 8}).map(() => { return Object.assign({}, this.cr_0) });
     }
 }
 
@@ -48,14 +49,21 @@ class SceneCollisions {
     normal: Vector3;
     gravity: Vector2;
     cache: CollidersCache;
+    step_threshold: number;
+    step_elapsed: number;
+    step_number: number;
 
     constructor() {
         this.colliders = {};
         this.bodies = {};
         this.origin = new Vector3();
         this.normal = new Vector3(0, 0, 1);
-        this.gravity = new Vector2(0, -0.01);
+        this.gravity = new Vector2(0, -9.8);
         this.cache = new CollidersCache();
+
+        this.step_threshold = 100;
+        this.step_elapsed = 0;
+        this.step_number = 0;
     }
 
     addBoxCollider(id: string, box: Box2) : BoxCollider {
@@ -91,13 +99,21 @@ class SceneCollisions {
     }
 
     step(dt: number) {
-        for(const k in this.bodies) {
-            this.stepBody(this.bodies[k], dt);
+        this.step_elapsed += dt;
+
+        if (this.step_elapsed <= this.step_threshold) {
+            return;
         }
+
+        for(const k in this.bodies) {
+            this.stepBody(this.bodies[k], Math.min(this.step_threshold * 2, this.step_elapsed));
+        }
+
+        this.step_elapsed = 0;
     }
 
     stepBody(body: DynamicBody, dt: number) {
-        body.velocity_y += this.gravity.y;
+        body.velocity_y += this.gravity.y * dt / 1000;
 
         let collisions = 0;
 
@@ -105,10 +121,11 @@ class SceneCollisions {
             const collider = this.colliders[k];
             let broadphasebox = this.calcBodyBroadphase(body); 	
             //if (this.testCollisionAabb(broadphasebox, collider)) {
-            const collision = this.sweptAABB(body, collider, this.cache.cr_0);
-            if (collision.time < 1) {
+            const collision = this.sweptAABB(body, collider, this.cache.cr_0, dt);
+            if (collision.time_x < 1 || collision.time_y < 1) {
                 const c = this.cache.contacts[collisions++];
-                c.time = collision.time;
+                c.time_x = collision.time_x;
+                c.time_y = collision.time_y;
                 c.normal_x = collision.normal_x;
                 c.normal_y = collision.normal_y;
             }
@@ -118,11 +135,11 @@ class SceneCollisions {
         let collision_time_y = 1;
         for (let i = 0; i < collisions; i++) {
             const c = this.cache.contacts[i];
-            collision_time_x = c.normal_x ? Math.min(collision_time_x, c.time) : collision_time_x;
-            collision_time_y = c.normal_y ? Math.min(collision_time_y, c.time) : collision_time_y;
+            collision_time_x = c.normal_x ? Math.min(collision_time_x, c.time_x) : collision_time_x;
+            collision_time_y = c.normal_y ? Math.min(collision_time_y, c.time_y) : collision_time_y;
         }
-        let newx = body.collider.pos_x + body.velocity_x * collision_time_x;
-        let newy = body.collider.pos_y + body.velocity_y * collision_time_y;
+        let newx = body.collider.pos_x + body.velocity_x * collision_time_x * dt / 1000;
+        let newy = body.collider.pos_y + body.velocity_y * collision_time_y * dt / 1000;
         SceneCollisions.setColliderPos(body.collider, newx, newy);
         if (collision_time_x < 1e-4) {
             body.velocity_x = 0;
@@ -157,32 +174,49 @@ class SceneCollisions {
         return bbox; 
     }
 
-    sweptAABB(a: DynamicBody, b: BoxCollider, ret: CollisionResult = ({} as any)): CollisionResult {
+    sweptAABB(a: DynamicBody, b: BoxCollider, ret: CollisionResult = ({} as any), dt: number): CollisionResult {
+        const vx = a.velocity_x * dt / 1000;
+        const vy = a.velocity_y * dt / 1000;
+
         const distDirX = Math.sign( b.pos_x - a.collider.pos_x );
         const distDirY = Math.sign( b.pos_y - a.collider.pos_y );
+        // it isn't actually gonna be swept i guess but whatev. fix later (someday yeah)
         const deltaDistX = Math.abs(a.collider.pos_x - b.pos_x) - a.collider.width / 2 - b.width / 2; 
         const deltaDistY = Math.abs(a.collider.pos_y - b.pos_y) - a.collider.height / 2 - b.height / 2;
-        const approaching_x = a.velocity_x && Math.sign(a.velocity_x) == distDirX;
-        const approaching_y = a.velocity_y && Math.sign(a.velocity_y) == distDirY;
 
         ret.normal_x = 0;
         ret.normal_y = 0;
-        ret.time = 1;
+        ret.time_x = 1;
+        //dunno use both times at same time but have feeling that i gonna need it later
+        ret.time_y = 1;
 
-        // means that it's should be check
-        const shiftedDistX = deltaDistX - Math.abs(a.velocity_x);
-        const shiftedDistY = deltaDistY - Math.abs(a.velocity_y);
-        if (shiftedDistX > 0 || shiftedDistY > 0) {
+        const distAfterMoveX = deltaDistX - Math.abs(vx);
+        const distAfterMoveY = deltaDistY - Math.abs(vy);
+        // means that boxes not jonna collide at all
+        if (distAfterMoveX > -1e-4 || distAfterMoveY > -1e-4) {
             return ret;
         }
-        if (shiftedDistX < shiftedDistY) {
-            // Y collisions
-            ret.time = approaching_y && a.velocity_y ? deltaDistY / Math.abs(a.velocity_y) : 1;
-            ret.normal_y = ret.time < 1 ? distDirY : 0;
-        } else {
+
+        const approaching_x = vx && Math.sign(vx) == distDirX;
+        const approaching_y = vy && Math.sign(vy) == distDirY;
+        ret.time_x = (approaching_x && vx) ? deltaDistX / Math.abs(vx) : 1;
+        ret.time_y = (approaching_y && vy) ? deltaDistY / Math.abs(vy) : 1;
+
+        // means that we are certain about axis we have to choose
+        // deltaDistX < 0 means that it's iside X axis bounds
+        const oneAxisBoundsAlready = deltaDistX < 0 || deltaDistY < 0;
+
+        if (
+            // a. it's inside X bounds so it can't collide on X axis
+            (oneAxisBoundsAlready && deltaDistX > deltaDistY) ||
+            // b. it's approaching from somewhere so using axis that peretrates deeper
+            (!oneAxisBoundsAlready && distAfterMoveY < distAfterMoveX) // not sure about this check
+            ) {
             // X collisions
-            ret.time = approaching_x && a.velocity_x ? deltaDistX / Math.abs(a.velocity_x) : 1;
-            ret.normal_x = ret.time < 1 ? distDirX : 0;
+            ret.normal_x = ret.time_x < 1 ? distDirX : 0;
+        } else {
+             // Y collisions
+             ret.normal_y = ret.time_y < 1 ? distDirY : 0;
         }
 
         return ret;

@@ -6,6 +6,7 @@ import { addEventListener, removeEventListeners, EventListenerDetails } from "./
 export default class SceneGame {
     constructor() {
         this.colliders = new SceneCollisions();
+        this.autostep = true;
         this._listeners = [];
     }
     init() {
@@ -16,7 +17,7 @@ export default class SceneGame {
         this.stop();
         this.active = true;
 
-        let playerbox = new Box2().setFromCenterAndSize(new Vector2(0, 1), new Vector2(1, 2));
+        let playerbox = new Box2().setFromCenterAndSize(new Vector2(0, 1), new Vector2(1, 1));
         const body = this.colliders.addBoxBody("player_character", playerbox);
         this.player_character = new Character().init(body);
 
@@ -37,8 +38,10 @@ export default class SceneGame {
         if (!this.active) {
             return;
         }
-        this.player_character.step();
-        this.colliders.step();
+        this.player_character.step(dt);
+        if (this.autostep) {
+            this.colliders.step(dt);
+        }
     }
     
     _keydown(event: KeyboardEvent) {
@@ -50,7 +53,7 @@ export default class SceneGame {
         } else if (key === 'KeyD') {
             this.player_character.action("move_right", CharacterActionCode.START);
         } else if (key === 'KeyS') {
-            this.colliders.step(1);
+            this.colliders.step(100);
         }
     }
     _keyup(event: KeyboardEvent) {
@@ -66,4 +69,5 @@ export default class SceneGame {
     colliders: SceneCollisions;
     private _listeners: Array<EventListenerDetails>;
     private active: boolean;
+    autostep: boolean;
 }

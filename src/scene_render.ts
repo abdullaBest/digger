@@ -6,6 +6,7 @@ import { SceneEdit, SceneElement } from "./scene_edit.js";
 import { TransformControls } from './lib/TransformControls.js';
 import SceneMath from './scene_math.js';
 import { SceneCollisions, BoxCollider } from './scene_collisions.js';
+import { lerp } from './math.js';
 
 class SceneCache {
     constructor() {
@@ -286,7 +287,7 @@ class SceneRender {
         this.addModel(id, model);
     }
 
-    addGLTF(url: string, name?: string) : Promise<THREE.Object3D> {
+    addGLTF(url: string, name?: string) : Promise<any> {
         return new Promise((resolve, reject) => {
             const loading_manager = new THREE.LoadingManager();
             const loader = new GLTFLoader(loading_manager);
@@ -400,8 +401,8 @@ class SceneRender {
             */
             const cha = gltf.scene;
             const body = this.colliders.bodies["player_character"];
-            const x = body.collider.pos_x;
-            const y = body.collider.pos_y - body.collider.height/2;
+            const x = lerp(cha.position.x, body.collider.pos_x, this.colliders.step_elapsed / this.colliders.step_threshold);
+            const y = lerp(cha.position.y, body.collider.pos_y - body.collider.height/2, this.colliders.step_elapsed / this.colliders.step_threshold);
             this.setPos(cha, this.cache.vec3_0.set(x, y, 0))
             cha.lookAt(this.cache.vec3_0.set(x + body.velocity_x, y, 0))
         }

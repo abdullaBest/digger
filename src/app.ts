@@ -7,6 +7,7 @@ import { listenFormSubmit, sendFiles } from "./assets";
 import { reattach, listenClick, popupListSelect, switchPage, querySelector, popupConfirm, popupListSelectMultiple } from "./document";
 import { importGltfSequence } from "./importer";
 import SceneGame from "./scene_game";
+import { time } from "console";
 
 class App {
     constructor() {
@@ -18,6 +19,7 @@ class App {
         this.assets_view = new AssetsView(this.assets, this.scene_render);
 
         this.active = false;
+        this.timestamp = 9;
     }
     init() : App {
         const canvas = document.querySelector("canvas#rootcanvas");
@@ -44,6 +46,8 @@ class App {
 
         this.scene_render.run();
         this.active = true;
+
+        this.timestamp = performance.now();
         this.loop();
     }
 
@@ -52,8 +56,12 @@ class App {
             return;
         }
 
-        this.scene_game.step(1);
-        this.scene_render.step();
+        const now = performance.now();
+        const dt = now - this.timestamp;
+        this.timestamp = now;
+
+        this.scene_game.step(dt);
+        this.scene_render.step(dt);
 
         requestAnimationFrame( this.loop.bind(this) );
     }
@@ -65,14 +73,18 @@ class App {
             this.page(window.location.hash);
         }); 
 
-        querySelector("#scene_edit_tools").addEventListener("click", async (ev: MouseEvent) => {
-            const id = (ev.target as HTMLElement)?.id;
+        listenClick("#scene_edit_tools", async (ev: MouseEvent) => {
+            const target = (ev.target as HTMLElement);
+            const id = target?.id;
             switch (id) {
                 case "play_scene_btn":
                     this.scene_game.run();
                     this.scene_render.removeModel("player_character");
                     const cham = await this.scene_render.addGLTF("res/KayKit_AnimatedCharacter_v1.2.glb", "player_character");
+                    cham.scene.scale.set(0.5, 0.5, 0.5);
                     break;
+                case "physics_toggle_autostep":
+                    this.scene_game.autostep = target.classList.toggle("highlighted");
             }
         });
 
@@ -168,6 +180,7 @@ class App {
     private assets: Assets;
     private assets_view: AssetsView;
     private scene_game: SceneGame;
+    private timestamp: number;
 }
 
 export default App;
