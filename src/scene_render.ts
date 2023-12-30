@@ -195,6 +195,7 @@ class SceneRender {
             let color = tileset[color_id];
             const link = tileset[link_id];
             if (!color || !link) {
+                console.warn(`SceneRender::addTileset error - tile data error color:${color} or link:${link} wasn't defined`);
                 continue;
             }
 
@@ -208,9 +209,6 @@ class SceneRender {
                 throw new Error(`SceneRender::addTileset error - wrong color "${color}" length. It should be like "0x000000" (RGB) or "0x00000000" (RGBA)`);
             }
 
-            if (!link) {
-                throw new Error(`SceneRender::addTileset error - link for color ${color} wasn't defined`);
-            }
             const model = await (await fetch(this.assets.get(link).info.url)).json();
             list[parseInt(color)] = model;
         }

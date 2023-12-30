@@ -32,8 +32,12 @@ export default class SceneEditView {
         addEventListener({name: "click", callback: async (ev) => {
             const id = (ev.target as HTMLElement).id;
             if(id) {
-                await this.scene_edit.load(id);
-                this.propagate();
+                try {
+                    await this.scene_edit.load(id);
+                    this.propagate();
+                } catch(err) {
+                    console.error("SceneEditView: scene select error:", err)
+                }
             }
         }, node: this.list_container}, this._listeners)
 
