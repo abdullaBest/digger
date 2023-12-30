@@ -183,8 +183,8 @@ export function popupConfirm(message, propagete?: (el: HTMLElement) => void) : P
     })
 }
 
-export function listenClick(selector: string, callback: (event: MouseEvent) => any, list?: Array<EventListenerDetails>) : EventListenerDetails {
-    return addEventListener({node: querySelector(selector), callback: callback as any, name: "click"}, list)
+export function listenClick(selector: string, callback: (event: MouseEvent) => any, list?: Array<EventListenerDetails>, container?: HTMLElement) : EventListenerDetails {
+    return addEventListener({node: querySelector(selector, container), callback: callback as any, name: "click"}, list)
 }
 
 export function listenClickAll(selector: string, callback: (event: Event) => any, list?: Array<EventListenerDetails>) : Array<EventListenerDetails> {

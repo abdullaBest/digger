@@ -1,4 +1,4 @@
-import { listenClickAll, EventListenerDetails, addEventListener, removeEventListeners, listenClick, popupListSelectMultiple } from "../document";
+import { querySelector, EventListenerDetails, addEventListener, removeEventListeners, listenClick, popupListSelectMultiple, popupListSelect } from "../document";
 import SceneEdit from "../scene_edit";
 import { AssetsView, AssetPropertyEdit } from "./assets_view";
 import SceneRender from "../scene_render";
@@ -59,8 +59,16 @@ export default class SceneEditView {
                 const modelasset = this.scene_edit.assets.get(modelid);
                 const el = await this.scene_edit.addElement({model: modelid, name: modelasset?.info.name});
                 this.draw(el.id);
-                this.scene_render.addModel(el.id, el.components.model.properties);
             }
+        }, this._listeners)
+
+        listenClick("#add_scene_tileset_btn",  async (ev) => {
+            const popupel = querySelector("container#popup_content") as HTMLElement;
+            AssetsView.propagate(this.scene_edit.assets, popupel, {extension: 'tileset'}, '');
+            const tilesetid = await popupListSelect("select model(s)");
+            const tilesetasset = this.scene_edit.assets.get(tilesetid);
+            const el = await this.scene_edit.addElement({tileset: tilesetid, name: tilesetasset?.info.name});
+            this.draw(el.id);
         }, this._listeners)
 
         // saves and returs to scene list
@@ -104,6 +112,7 @@ export default class SceneEditView {
     closeScene(save: boolean = false) {
         this.props_container.innerHTML = '';
         this.scene_render.clearModels();
+        this.scene_render.clearTilesets();
         this.scene_edit.close(save);
     }
 
@@ -121,15 +130,30 @@ export default class SceneEditView {
         el.dataset["name"] = element.name;
         el.classList.add("collapse");
 
+        const props_container = document.createElement("container");
+        props_container.classList.add("frame_background");
+        el.appendChild(props_container);
+
         new AssetPropertyEdit().init(element, "name", () => {
             el.dataset["name"] = element.name;
         }).drawTextEditOption(el);
 
         if(element.components.model) {
-            AssetsView.drawModelPropertyFields(el, this.scene_edit.assets, element.components.model.properties, () => {
+            const redraw = () => {
                 this.scene_render.removeModel(id);
                 this.scene_render.addModel(id, element.components.model.properties);
-            })
+            };
+            redraw();
+            AssetsView.drawModelPropertyFields(props_container, this.scene_edit.assets, element.components.model.properties, redraw)
+        }
+
+        if(element.components.tileset) {
+            const redraw = () => {
+                this.scene_render.removeTileset(id);
+                this.scene_render.addTileset(id, element.components.tileset.properties);
+            };
+            redraw();
+            AssetsView.drawTilesetPropertyFilelds(props_container, this.scene_edit.assets, element.components.tileset.properties, redraw)
         }
         container.appendChild(el);
     }
@@ -140,15 +164,11 @@ export default class SceneEditView {
     propagate(container: HTMLElement = this.props_container) {
         container.innerHTML = '';
         this.scene_render.clearModels();
+        this.scene_render.clearTilesets();
 
         for(const id in this.scene_edit.elements) {
             const element = this.scene_edit.elements[id];
             this.draw(id);
-
-            const model = element.components.model;
-            if(model) {
-                this.scene_render.addModel(id, model.properties);
-            }
         }
     }
 }

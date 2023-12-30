@@ -30,6 +30,7 @@ body
 					splitter palette
 					container#scene_tools_palette
 						btn#add_scene_model_btn add model
+						btn#add_scene_tileset_btn add tileset
 						btn#add_scene_something_btn add something
 					splitter elements
 					container#scene_edit_elements
@@ -60,6 +61,7 @@ body
 				splitter create
 				a.btn#upload_gltf_btn Import gltf
 				a.btn#create_model_btn Create model
+				a.btn#create_tileset_btn Create tileset
 				a.btn#create_scene_btn Create scene
 				splitter or upload any files
 				form#assets_upload
@@ -114,4 +116,10 @@ body
 				container#asset_details_properties_edit
 					page#details_empty_edit
 					page#details_model_edit
+					page#details_tileset_edit
 				input(type="submit" value="save")
+		template#details_tileset_edit_template
+			container#details_tileset_properties_list
+			splitter aliases
+			container#details_tileset_aliases_list
+			btn#details_tileset_aliases_add add

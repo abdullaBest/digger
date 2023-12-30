@@ -13,6 +13,14 @@ db {
 	display: none;
 }
 
+.frame_background {
+  padding: 4px;
+  display: block;
+  background-color: #0002;
+  border-radius: 8px;
+  margin: 2px;
+}
+
 #rootlayout {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
 
@@ -28,6 +36,7 @@ db {
   & > a {
     margin: auto 2px;
   }
+
 }
 
 .hidden {
@@ -123,17 +132,9 @@ db {
 
   btn {
     min-width: 64px;
-    display: block;
     margin: 2px;
   }
 
-  .frame_background {
-    padding: 4px;
-    display: block;
-    background-color: #0002;
-    border-radius: 8px;
-    margin: 2px;
-  }
 }
 
 page#assets_view, page#scene_view {
@@ -145,13 +146,11 @@ page#assets_view, page#scene_view {
   }
 }
 
-container#scene_tools_palette {
-  background-color: #0003;
-  padding: 16px 8px;
-  border-radius: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+container#scene_tools_palette, page#details_model_edit, page#details_tileset_edit {
+  &:extend(.frame_background);
+  btn {
+    display: block;
+  }
 }
 
 #asset_details, #asset_create, #asset_details_model_template, #scene_edit_elements {
@@ -286,6 +285,7 @@ canvas#rootcanvas {
 
 btn, .btn {
   text-align: center;
+  display: block;
   &:extend(.btn-style);
   &.highlighted {
     &:extend(.btn-highlightable-style);

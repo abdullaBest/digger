@@ -17,7 +17,7 @@ export default class SceneGame {
         this.stop();
         this.active = true;
 
-        let playerbox = new Box2().setFromCenterAndSize(new Vector2(0, 1), new Vector2(1, 1));
+        let playerbox = new Box2().setFromCenterAndSize(new Vector2(0, 4), new Vector2(1, 1));
         const body = this.colliders.addBoxBody("player_character", playerbox);
         this.player_character = new Character().init(body);
 

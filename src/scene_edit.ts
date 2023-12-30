@@ -146,10 +146,13 @@ class SceneEdit {
         this.asset = null;
     }
 
-    async addElement(opts: {model?: string, name?: string} = {}) : Promise<SceneElement> {
+    async addElement(opts: {tileset?: string, model?: string, name?: string} = {}) : Promise<SceneElement> {
         const el = new SceneElement(this.asset?.info.id + '-e' + this.guids++);
         if(opts.model) {
             el.components.model = new OverridedAssetLink(opts.model);
+        }
+        if(opts.tileset) {
+            el.components.tileset = new OverridedAssetLink(opts.tileset);
         }
         if(opts.name) {
             el.name = opts.name;

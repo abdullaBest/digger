@@ -112,15 +112,22 @@ class App {
             res_update_callback(res.ok, res);
         });
 
-
         listenClick("#create_scene_btn", (ev) => {
             const file = new File([`{"guids": 0}`], "newscene.scene", {
                 type: "application/json",
             });
             sendFiles("/assets/upload", [file], res_update_callback);
         });
+        listenClick("#create_tileset_btn", async (ev) => {
+            const texture = await popupListSelect("select texture", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: /(png)/}, ''));
+            const tileset = { guids: 0, texture, color_id_prefix: "tile_color_", link_id_prefix: "tile_link_", tilesize_x: 1, tilesize_y: 1 };
+            const file = new File([JSON.stringify(tileset)], "newtileset.tileset", {
+                type: "application/json",
+            });
+            sendFiles("/assets/upload", [file], res_update_callback);
+        });
         listenClick("#create_model_btn", async (ev) => {
-            const modelid: Array<string> = await popupListSelectMultiple("select model", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: /gltf/}, ''));
+            const modelid: Array<string> = await popupListSelectMultiple("select gltf", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: /gltf/}, ''));
             const modeltexture = await popupListSelect("select texture", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: /(png|jpg)/}, ''));
             const files: Array<File> = []
             for (const i in modelid) {

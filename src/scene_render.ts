@@ -7,6 +7,8 @@ import { TransformControls } from './lib/TransformControls.js';
 import SceneMath from './scene_math.js';
 import { SceneCollisions, BoxCollider } from './scene_collisions.js';
 import { lerp } from './math.js';
+import { resolve } from 'path';
+import { rejects } from 'assert';
 
 class SceneCache {
     constructor() {
@@ -14,6 +16,7 @@ class SceneCache {
         this.vec3_0 = new THREE.Vector3();
         this.gltfs = {};
         this.models = {};
+        this.tilesets = {};
         this.materials = {};
         this.debug_colliders = {};
         this.guids = 0;
@@ -22,11 +25,14 @@ class SceneCache {
     vec2_0: THREE.Vector2;
     vec3_0: THREE.Vector3;
 
-    // used for gltfs
+    // used for gltfs cache
     gltfs: { [id: string] : any; };
+    // used for 3d objects
+    objects: { [id: string] : any; };
     // stores pointers to models data
     // tynroar note: probably bad and unsafe idea
     models: { [id: string] : any; };
+    tilesets: { [id: string] : Array<string>; };
     materials: { [id: string] : THREE.Material; };
     debug_colliders: { [id: string] : THREE.Mesh; };
     guids: number;
@@ -154,11 +160,131 @@ class SceneRender {
         return this;
     }
 
+    removeTileset(id: string) {
+        const tiles = this.cache.tilesets[id];
+        if (!tiles) {
+            return;
+        }
+        console.log("remove tileset " + id)
+        while(tiles?.length) {
+            this.removeModel(tiles.pop() as any)
+        }
+        delete this.cache.tilesets[id];
+    }
+
+    clearTilesets() {
+        for(const id in this.cache.tilesets) {
+            this.removeTileset(id);
+        }
+    }
+
+    async addTileset(id: string, tileset: any) {
+        this.removeTileset(id);
+        console.log("add tileset " + id, tileset)
+        this.cache.tilesets[id] = [];
+
+        const color_id_prefix = tileset.color_id_prefix;
+        const link_id_prefix = tileset.link_id_prefix;
+
+        const list = {}
+
+        // generate tileset list
+        for (let i = 0; i < tileset.guids; i++) {
+            const color_id = color_id_prefix + i;
+            const link_id = link_id_prefix + i;
+            let color = tileset[color_id];
+            const link = tileset[link_id];
+            if (!color || !link) {
+                continue;
+            }
+
+            if (!color.includes("0x")) {
+                throw new Error(`SceneRender::addTileset error - wrong color "${color}" format. It should start with "0x"`);
+            }
+            if (color.length != "0x00000000".length) {
+                color += "ff";
+            }
+            if (color.length != "0x00000000".length) {
+                throw new Error(`SceneRender::addTileset error - wrong color "${color}" length. It should be like "0x000000" (RGB) or "0x00000000" (RGBA)`);
+            }
+
+            if (!link) {
+                throw new Error(`SceneRender::addTileset error - link for color ${color} wasn't defined`);
+            }
+            const model = await (await fetch(this.assets.get(link).info.url)).json();
+            list[parseInt(color)] = model;
+        }
+
+        // extract image tileset data
+        const loadimg = (url) => {
+            const img = document.createElement("img");
+            return new Promise((resolve, reject) => {
+                img.src = url;
+                img.onload = (ev) => resolve(ev.target);
+                img.onerror = reject;
+            })
+        }
+        const img = await loadimg(this.assets.get(tileset.texture).info.url) as HTMLImageElement;
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0);
+        const imgdata = ctx?.getImageData(0, 0, img.width,  img.height).data;
+
+        if (!imgdata) {
+            throw new Error("SceneRender::addTileset error - no image data");
+        }
+
+        // parse image tileset
+        const unused_colors: Array<number> = [];
+        let guids = 0;
+        for(let i = 0; i < imgdata.length && this.cache.tilesets[id]; i += 4) {
+            const r = imgdata[i] & 0xFF;
+            const g = imgdata[i + 1] & 0xFF;
+            const b = imgdata[i + 2] & 0xFF;
+            const a = imgdata[i + 3] & 0xFF;
+            const color = (r<< 24 >>>0) + (g<<16) + (b<<8) + (a<<0);
+
+            const model = list[color];
+            if (!model) {
+                if (!unused_colors.find((c) => c != color)) {
+                    unused_colors.push(color);
+                }
+                continue;
+            }
+
+            // add meshes
+            const pos_x = ((i / 4) % canvas.width) * tileset.tilesize_x;
+            const pos_y = -Math.floor((i / 4) / canvas.width) * tileset.tilesize_y;
+            const modelid = `${id}-tile-${guids++}`;
+            this.removeModel(modelid); // in async cases that possible to have old model listed
+            const obj = await this.addModel( modelid, model, {make_collider: false });
+
+            // something deleted tileset durning loading
+            if (!this.cache.tilesets[id]) {
+                this.removeModel(modelid);
+                break;
+            }
+
+            this.cache.tilesets[id].push(modelid);
+            this.setPos(obj, this.cache.vec3_0.set(pos_x , pos_y, 0));
+            if(model.collider) {
+                this.produceObjectColliders(modelid, obj);
+            }
+        }
+
+        for(const i in unused_colors) {
+            console.warn(`SceneRender::addTileset ref texture has color 0x${unused_colors[i].toString(16).padStart(8, "0")} which does not have tile for that.`);
+        }
+    }
+
     /**
      * "model" works only with "imported" gltf's wich does not have any internal links
      * @param id model asset id
+     * @returns gltf data
      */
-    async addModel(id: string, model: any) {
+    async addModel(id: string, model: any, opts = { make_collider: true }) : Promise<any> {
         const gltfurl = this.assets.get(model.gltf).info.url
         const textureurl = this.assets.get(model.texture).info.url
 
@@ -168,6 +294,38 @@ class SceneRender {
                 gltf = [${model.gltf}:${gltfurl}], 
                 texture = [${model.texture}:${textureurl}]`
                 )
+        }
+        
+        const afterload = (scene: THREE.Object3D) => {
+            this.cache.models[id] = model;
+            this.cache.objects[id] = scene;
+            scene.name = id;
+            this.scene.add( scene );
+
+            if (model.matrix?.length) {
+                (scene as THREE.Object3D).applyMatrix4(new THREE.Matrix4().fromArray(model.matrix))
+            }
+            const material = this.getMaterial(model.material, textureurl);
+            scene.traverse((o) => {
+                if (!o.isMesh) {
+                    return;
+                }
+
+                o.material = material;
+            });
+
+            if (opts.make_collider && model.collider) {
+                this.produceObjectColliders(id, scene);
+            }
+
+            //console.log(dumpObject(scene).join('\n'));
+        }
+
+        let gltf = this.cache.gltfs[model.gltf];
+        if(gltf) {
+            const newscene = gltf.scene.clone(true);
+            afterload(newscene);
+            return newscene;
         }
 
         const loading_manager = new THREE.LoadingManager();
@@ -188,37 +346,28 @@ class SceneRender {
         })
 
 
-        loader.load( gltfurl,  ( gltf ) => {
-            gltf.scene.name = id;
-            this.cache.gltfs[id] = gltf;
-            this.cache.models[id] = model;
-            this.scene.add( gltf.scene );
+        const load = () => {
+            return new Promise((resolve, reject) => {
+                loader.load( gltfurl,  ( gltf ) => {
+                    this.cache.gltfs[model.gltf] = gltf;
+                    const scene = gltf.scene.clone();
+                    afterload(scene);
+                    resolve(scene);
+                }, undefined,  reject );
+            })
+        }
 
-            if (model.matrix?.length) {
-                (gltf.scene as THREE.Object3D).applyMatrix4(new THREE.Matrix4().fromArray(model.matrix))
+        return load();
+    }
+
+    // tmp. only gonna work for gltf.scenes with one mesh
+    produceObjectColliders(id: string, obj: THREE.Object3D) {
+        obj.traverse((o) => {
+            if (!o.isMesh) {
+                return;
             }
-            const material = this.getMaterial(model.material, textureurl);
-            gltf.scene.traverse((o) => {
-                if (!o.isMesh) {
-                    return;
-                }
-
-                o.material = material;
-                
-                // tmp. only gonna work for scenes with one mesh
-                if (model.collider) {
-                    this.makeObjectAabb2d(id, o, gltf.scene);
-                }
-            });
-
-           
-
-            console.log(dumpObject(gltf.scene).join('\n'));
-        }, undefined,  ( error ) => {
-        
-            console.error( error );
-        
-        } );
+            this.makeObjectAabb2d(id, o, obj);
+        });
     }
 
     makeObjectAabb2d(id: string, mesh: THREE.Mesh, transform_node: THREE.Object3D) {
@@ -262,8 +411,11 @@ class SceneRender {
             delete this.cache.debug_colliders[id];
         }
         if(this.cache.gltfs[id]) {
-            this.scene.remove(this.cache.gltfs[id].scene);
             delete this.cache.gltfs[id];
+        }
+        if(this.cache.objects[id]) {
+            this.scene.remove(this.cache.objects[id]);
+            delete this.cache.objects[id];
         }
         delete this.cache.models[id];
         this.colliders.remove(id);
@@ -276,11 +428,15 @@ class SceneRender {
 
         // remove gltfs that wasn't included into models list
         for(const k in this.cache.gltfs) {
-            this.scene.remove(this.cache.gltfs[k].scene);
             delete this.cache.gltfs[k];
+        }
+        for(const k in this.cache.objects) {
+            this.scene.remove(this.cache.objects[k]);
+            delete this.cache.objects[k];
         }
         this.cache.models = {};
         this.cache.gltfs = {};
+        this.cache.objects = {};
     }
     viewModel(id: string, model: any) {
         this.clearModels();
@@ -312,6 +468,7 @@ class SceneRender {
                 let id = name ??  "g_" + this.cache.guids++
                 gltf.scene.name = id;
                 this.cache.gltfs[id] = gltf;
+                this.cache.objects[id] = gltf.scene;
                 console.log(dumpObject(gltf.scene).join('\n'));
                 resolve(gltf);
             }, undefined,  ( error ) => {

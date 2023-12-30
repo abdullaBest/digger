@@ -1,8 +1,7 @@
 import { Assets, listenFormSubmit } from "../assets";
 import SceneRender from "../scene_render";
 import { sprintf } from "../lib/sprintf.js";
-import { reattach, switchPage, querySelector, popupListSelect } from "../document";
-import SceneEdit from "../scene_edit";
+import { listenClick, reattach, switchPage, querySelector, popupListSelect } from "../document";
 
 /**
  * v1: draws property edit with select option
@@ -24,7 +23,7 @@ class AssetPropertyEdit {
     drawSelectOption(onclick: () => Promise<string>, parent?: HTMLElement) : HTMLElement {
         this.element = this.element ?? document.createElement("entry");
         const value = this.object[this.key];
-        this.element.innerHTML = `<label title="${value}">${this.key}:(...)<btn>set</btn></label>`
+        this.element.innerHTML = `<label title="${value}">${this.key}:(${value})<btn>set</btn></label>`
         this.element.querySelector("btn")?.addEventListener('click', async () => {
             const newval = await onclick();
             this.object[this.key] = newval;
@@ -41,9 +40,9 @@ class AssetPropertyEdit {
         return this.element;
     }
 
-    drawTextEditOption(parent?: HTMLElement) : HTMLElement {
+    drawTextEditOption(parent?: HTMLElement, type: string = "text") : HTMLElement {
         this.element = this.element ?? document.createElement("entry");
-        this.element.innerHTML = `<label>${this.key}<input value="${this.object[this.key]}", type="text" name="name"></input></label>`
+        this.element.innerHTML = `<label>${this.key}<input value="${this.object[this.key]}", type="${type}" name="name"></input></label>`
         this.element.querySelector("input")?.addEventListener('change', async (ev) => {
             const newval = (ev.target as HTMLInputElement)?.value;
             this.object[this.key] = newval;
@@ -126,6 +125,8 @@ class AssetsView {
         this.props_container.innerHTML = sprintf(template, info.name, info.extension, info.extension);
 
         this.props_container.querySelector("label#assets_upload_files_label")?.classList[info.extension.includes("model") ? "add" : "remove"]('hidden');
+        const asset_preview = querySelector("container#asset_preview_container");
+        asset_preview.classList.remove("hidden");
 
         // draw previews
         if (info.extension == "gltf" || info.extension == "glb" || info.extension == 'model' || info.extension == "scene") {
@@ -174,8 +175,14 @@ class AssetsView {
             this.scene_render.viewModel(id, asset_json);
             const container = switchPage("#details_model_edit");
             container.innerHTML = "";
-            console.log(asset_json);
             this._drawModelPropertyFields(container, asset_json, () =>  { json_data_changed = true });
+        }
+
+        if (info.extension == "tileset") {
+            asset_preview.classList.remove("add");
+            asset_json = await (await fetch(info.url)).json();
+            const container = switchPage("#details_tileset_edit");
+            AssetsView.drawTilesetPropertyFilelds(container, this.assets, asset_json, () =>  { json_data_changed = true });
         }
 
         listenFormSubmit({
@@ -190,6 +197,84 @@ class AssetsView {
             this.draw(id);
             this.drawDetails(id);
         });
+    }
+
+    static drawTilesetPropertyFilelds(container: HTMLElement, assets: Assets, tilesetdata: any, onchange?: () => void) {
+        const color_id_prefix = tilesetdata.color_id_prefix;
+        const link_id_prefix = tilesetdata.link_id_prefix;
+        
+        container.innerHTML = querySelector("template#details_tileset_edit_template").innerHTML;
+       
+        const properties_container = querySelector("#details_tileset_properties_list", container);
+        const aliases_container = querySelector("#details_tileset_aliases_list", container);
+        properties_container.innerHTML = aliases_container.innerHTML = "";
+
+        const makePropSelectField = (_container, name, extension = name) => {
+            new AssetPropertyEdit().init(tilesetdata, name, onchange).drawSelectOption(async () => {
+                const popupel = querySelector("container#popup_content");
+                AssetsView.propagate(assets, popupel, {extension: extension}, '');
+                const newid = await popupListSelect("select " + extension);
+                return newid;
+            }, _container);
+        };
+        const makePropEditField = (_container, name, type = "text") => {
+            new AssetPropertyEdit().init(tilesetdata, name, onchange).drawTextEditOption(_container, type);
+        }
+
+
+        const add_splitter = (index: number | string, _container: Element = aliases_container) => {
+            const splitter = document.createElement("splitter");
+            splitter.innerHTML = "tile " + index;
+            _container.appendChild(splitter);
+        }
+
+        const getmake_tileenrty = (index: number | string) => {
+            const entry_id = "tile_" + index;
+            let entry = aliases_container.querySelector("entry#" + entry_id);
+            if (!entry) {
+                entry = document.createElement("entry");
+                entry.id = entry_id;
+                aliases_container.appendChild(entry);
+                add_splitter(index, entry);
+            }
+
+            return entry;
+        }
+
+        makePropSelectField(properties_container, "texture", /png/);
+        makePropEditField(properties_container, "tilesize_x", "number");
+        makePropEditField(properties_container, "tilesize_y", "number");
+
+        for(const k in tilesetdata) {
+            const match = k.match(/\w+(\d+)/);
+            if (!match) {
+                continue;
+            }
+            const index = match[1];
+            const entry = getmake_tileenrty(index);
+            if (k.includes(color_id_prefix)) {
+                makePropEditField(entry, k);
+            }
+            else if (k.includes(link_id_prefix)) {
+                makePropSelectField(entry, k, "model");
+            }
+        } 
+
+        listenClick("#details_tileset_aliases_add", () => {
+            const index = tilesetdata.guids++;
+            const color_id = color_id_prefix + index;
+            const link_id = link_id_prefix + index;
+
+            tilesetdata[color_id] = "0x000000";
+            tilesetdata[link_id] = null;
+
+            const entry = getmake_tileenrty(index);
+            makePropEditField(entry, color_id);
+            makePropSelectField(entry, link_id, "model");
+            if(onchange) {
+                onchange();
+            }
+        }, undefined, container);
     }
 
     static drawModelPropertyFields(container: HTMLElement, assets: Assets, modeldata: any, onchange?: () => void) {
@@ -216,7 +301,6 @@ class AssetsView {
 
     _drawModelPropertyFields(container: HTMLElement, modeldata: any, onchange: () => void) {
         AssetsView.drawModelPropertyFields(container, this.assets, modeldata, onchange);
-       
     }
 
     static draw(assets: Assets, id: string, container: HTMLElement, link: string = "#asset_details") {

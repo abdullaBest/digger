@@ -125,6 +125,10 @@ class SceneCollisions {
             const collision = this.sweptAABB(body, collider, this.cache.cr_0, dt);
             if (collision.time_x < 1 || collision.time_y < 1) {
                 const c = this.cache.contacts[collisions++];
+                if (!c) {
+                    throw new Error("SceneCollisions: we havin too much collisions now. Should not happen");
+                    break;
+                }
                 c.time_x = collision.time_x;
                 c.time_y = collision.time_y;
                 c.normal_x = collision.normal_x;
