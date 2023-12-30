@@ -226,6 +226,8 @@ class SceneRender {
                     continue;
                 }
                 model = SceneEditUtils.constructModelData(default_tile_data.gltf, link);
+                model.matrix = default_tile_data.matrix;
+                model.collider = default_tile_data.collider;
             } else {
                 model = await (await fetch(linkinfo.url)).json();
             }

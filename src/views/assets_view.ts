@@ -156,9 +156,9 @@ class AssetsView {
 		} 
         
         let json_data_changed = false;
-        let asset_json = null;
+        let asset_json: any = null;
         const makeJSONFile = () => {
-            if (!json_data_changed) {
+            if (!(json_data_changed || asset_json?.matrix)) {
                 return null;
             }
             const file = new File([JSON.stringify(asset_json)], `v${info.revision}_${info.name}`, {
