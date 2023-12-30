@@ -2,7 +2,7 @@ import * as THREE from './lib/three.module.js';
 import { GLTFLoader } from './lib/GLTFLoader.js';
 import { OrbitControls } from './lib/OrbitControls.js'
 import { Assets } from './assets.js'
-import { SceneEdit, SceneElement } from "./scene_edit.js";
+import { SceneEdit, SceneElement, SceneEditUtils } from "./scene_edit.js";
 import { TransformControls } from './lib/TransformControls.js';
 import SceneMath from './scene_math.js';
 import { SceneCollisions, BoxCollider } from './scene_collisions.js';
@@ -186,6 +186,11 @@ class SceneRender {
         const color_id_prefix = tileset.color_id_prefix;
         const link_id_prefix = tileset.link_id_prefix;
 
+        let default_tile_data: any = null;
+        if (tileset.default_tile) {
+            default_tile_data = await (await fetch(this.assets.get(tileset.default_tile).info.url)).json();
+        }
+
         const list = {}
 
         // generate tileset list
@@ -194,8 +199,12 @@ class SceneRender {
             const link_id = link_id_prefix + i;
             let color = tileset[color_id];
             const link = tileset[link_id];
-            if (!color || !link) {
-                console.warn(`SceneRender::addTileset error - tile data error color:${color} or link:${link} wasn't defined`);
+            if (!color) {
+                console.warn(`SceneRender::addTileset error - no color set. color: (${color})`);
+                continue;
+            }
+            if (!link && !tileset.default_tile) {
+                console.warn(`SceneRender::addTileset error - no link or default tile set. link: (${link})`);
                 continue;
             }
 
@@ -209,7 +218,17 @@ class SceneRender {
                 throw new Error(`SceneRender::addTileset error - wrong color "${color}" length. It should be like "0x000000" (RGB) or "0x00000000" (RGBA)`);
             }
 
-            const model = await (await fetch(this.assets.get(link).info.url)).json();
+            const linkinfo = this.assets.get(link).info;
+            let model;
+            if (linkinfo.extension == "png") {
+                if (!tileset.default_tile || !default_tile_data) {
+                    console.warn(`SceneRender::addTileset error - using tile texture link without default_tile set`);
+                    continue;
+                }
+                model = SceneEditUtils.constructModelData(default_tile_data.gltf, link);
+            } else {
+                model = await (await fetch(linkinfo.url)).json();
+            }
             list[parseInt(color)] = model;
         }
 
@@ -246,7 +265,7 @@ class SceneRender {
 
             const model = list[color];
             if (!model) {
-                if (!unused_colors.find((c) => c != color)) {
+                if (parseInt(tileset.zero_color) != color && !unused_colors.find((c) => c != color)) {
                     unused_colors.push(color);
                 }
                 continue;

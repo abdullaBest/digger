@@ -1,6 +1,6 @@
 import SceneRender from "./scene_render";
 import Assets from "./assets";
-import SceneEdit from "./scene_edit";
+import {SceneEditUtils, SceneEdit } from "./scene_edit";
 import SceneEditView from "./views/scene_edit_view";
 import AssetsView from "./views/assets_view";
 import { listenFormSubmit, sendFiles } from "./assets";
@@ -120,7 +120,7 @@ class App {
         });
         listenClick("#create_tileset_btn", async (ev) => {
             const texture = await popupListSelect("select texture", (container) => AssetsView.propagate(this.scene_edit.assets, container, {extension: /(png)/}, ''));
-            const tileset = { guids: 0, texture, color_id_prefix: "tile_color_", link_id_prefix: "tile_link_", tilesize_x: 1, tilesize_y: 1 };
+            const tileset = SceneEditUtils.contructTilesetData(texture);
             const file = new File([JSON.stringify(tileset)], "newtileset.tileset", {
                 type: "application/json",
             });
@@ -133,7 +133,7 @@ class App {
             for (const i in modelid) {
                 const modelname = this.assets.get(modelid[i])?.info.name ?? "newmodel";
                 // tynroar torefactor 231226: make unified flow for model and other types
-                const model = { gltf: modelid[i], material: "standart", texture: modeltexture };
+                const model = SceneEditUtils.constructModelData(modelid[i], modeltexture);
                 const file = new File([JSON.stringify(model)], modelname.split('.').shift() + ".model", {
                     type: "application/json",
                 });

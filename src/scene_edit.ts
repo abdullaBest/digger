@@ -85,6 +85,16 @@ class SceneElement {
     }
 }
 
+class SceneEditUtils {
+    static constructModelData(gltf: string, texture: string) {
+        return { gltf, material: "standart", texture }
+    }
+
+    static contructTilesetData(texture: string) {
+        return { guids: 0, texture, zero_color: "0xffffff", color_id_prefix: "tile_color_", link_id_prefix: "tile_link_", tilesize_x: 1, tilesize_y: 1, default_tile: null }
+    }
+}
+
 class SceneEdit {
     constructor(asset: Assets) {
         this.assets = asset;
@@ -170,4 +180,4 @@ class SceneEdit {
 }
 
 export default SceneEdit;
-export { SceneEdit, SceneElement };
+export { SceneEdit, SceneElement, SceneEditUtils };

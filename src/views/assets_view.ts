@@ -183,6 +183,13 @@ class AssetsView {
             asset_json = await (await fetch(info.url)).json();
             const container = switchPage("#details_tileset_edit");
             AssetsView.drawTilesetPropertyFilelds(container, this.assets, asset_json, () =>  { json_data_changed = true });
+            switchPage("#img_asset_preview");
+
+            const texid = (asset_json as any)?.texture;
+            if(texid) {
+			    const img = querySelector("img") as HTMLImageElement;
+			    img.src = this.assets.get(texid).info.url;
+            }
         }
 
         listenFormSubmit({
@@ -242,6 +249,8 @@ class AssetsView {
         }
 
         makePropSelectField(properties_container, "texture", /png/);
+        makePropSelectField(properties_container, "default_tile", "model");
+        makePropEditField(properties_container, "zero_color");
         makePropEditField(properties_container, "tilesize_x", "number");
         makePropEditField(properties_container, "tilesize_y", "number");
 
@@ -256,7 +265,7 @@ class AssetsView {
                 makePropEditField(entry, k);
             }
             else if (k.includes(link_id_prefix)) {
-                makePropSelectField(entry, k, "model");
+                makePropSelectField(entry, k, /model|png/);
             }
         } 
 
@@ -270,7 +279,7 @@ class AssetsView {
 
             const entry = getmake_tileenrty(index);
             makePropEditField(entry, color_id);
-            makePropSelectField(entry, link_id, "model");
+            makePropSelectField(entry, link_id, /model|png/);
             if(onchange) {
                 onchange();
             }
