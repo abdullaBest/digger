@@ -194,7 +194,7 @@ class SceneCollisions {
         const distAfterMoveX = deltaDistX - Math.abs(vx);
         const distAfterMoveY = deltaDistY - Math.abs(vy);
         // means that boxes not jonna collide at all
-        if (distAfterMoveX > 0 || distAfterMoveY > 0) {
+        if (distAfterMoveX > -1e-4 || distAfterMoveY > -1e-4) {
             return ret;
         }
 
