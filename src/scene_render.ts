@@ -206,7 +206,7 @@ class SceneRender {
                 o.material = material;
                 
                 // tmp. only gonna work for scenes with one mesh
-                if (this._drawDebug2dAabb && model.collider) {
+                if (model.collider) {
                     this.makeObjectAabb2d(id, o, gltf.scene);
                 }
             });
@@ -382,9 +382,11 @@ class SceneRender {
 
         this.cube.rotateX(0.01);
         this.cube.rotateY(0.01);
-        for(const k in this.colliders.bodies) {
-            const body = this.colliders.bodies[k];
-            this.drawColliderDebug(k, body.collider);
+        if(this._drawDebug2dAabb) {
+            for(const k in this.colliders.bodies) {
+                const body = this.colliders.bodies[k];
+                this.drawColliderDebug(k, body.collider);
+            }
         }
 
         if (this.cache.gltfs["player_character"] && this.colliders.bodies["player_character"]) {
@@ -401,8 +403,22 @@ class SceneRender {
             */
             const cha = gltf.scene;
             const body = this.colliders.bodies["player_character"];
-            const x = lerp(cha.position.x, body.collider.pos_x, this.colliders.step_elapsed / this.colliders.step_threshold);
-            const y = lerp(cha.position.y, body.collider.pos_y - body.collider.height/2, this.colliders.step_elapsed / this.colliders.step_threshold);
+
+            // { tmp. will be moved into object render class
+            if (!cha.steplerpinfo) {
+                cha.steplerpinfo = {step_number: this.colliders.step_number, prev_x: 0, prev_y: 0, next_x: 0, next_y: 0};
+            }
+            if (this.colliders.step_number != cha.steplerpinfo.step_number) {
+                cha.steplerpinfo.prev_x = cha.steplerpinfo.next_x;
+                cha.steplerpinfo.prev_y = cha.steplerpinfo.next_y;
+                cha.steplerpinfo.next_x = body.collider.pos_x;
+                cha.steplerpinfo.next_y = body.collider.pos_y;
+                cha.steplerpinfo.step_number = this.colliders.step_number;
+            }
+            // tmp }
+
+            const x = lerp(cha.steplerpinfo.prev_x, cha.steplerpinfo.next_x, this.colliders.step_elapsed / this.colliders.step_threshold);
+            const y = lerp(cha.steplerpinfo.prev_y - body.collider.height/2, cha.steplerpinfo.next_y - body.collider.height/2, this.colliders.step_elapsed / this.colliders.step_threshold);
             this.setPos(cha, this.cache.vec3_0.set(x, y, 0))
             cha.lookAt(this.cache.vec3_0.set(x + body.velocity_x, y, 0))
         }

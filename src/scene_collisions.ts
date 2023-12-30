@@ -109,6 +109,7 @@ class SceneCollisions {
             this.stepBody(this.bodies[k], Math.min(this.step_threshold * 2, this.step_elapsed));
         }
 
+        this.step_number += 1;
         this.step_elapsed = 0;
     }
 
@@ -193,7 +194,7 @@ class SceneCollisions {
         const distAfterMoveX = deltaDistX - Math.abs(vx);
         const distAfterMoveY = deltaDistY - Math.abs(vy);
         // means that boxes not jonna collide at all
-        if (distAfterMoveX > -1e-4 || distAfterMoveY > -1e-4) {
+        if (distAfterMoveX > 0 || distAfterMoveY > 0) {
             return ret;
         }
 
