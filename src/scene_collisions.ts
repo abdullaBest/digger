@@ -202,12 +202,12 @@ class SceneCollisions {
      * @param body .
      * @returns cached BoxCollider
      */
-    calcBodyBroadphase(body: DynamicBody) : BoxCollider {
+    calcBodyBroadphase(body: DynamicBody, threshold: number = 0.1) : BoxCollider {
         let bbox = this.cache.bc_0;
-        bbox._left = body.collider._left + Math.max(0, body.velocity_x);
-        bbox._bottom = body.collider._bottom + Math.min(0, body.velocity_y);
-        bbox._right = body.collider._right + Math.min(0, body.velocity_x);
-        bbox._top = body.collider._top + Math.max(0, body.velocity_y);
+        bbox._left = Math.min(body.collider._left, body.collider._left + body.velocity_x) - threshold;
+        bbox._bottom = Math.min(body.collider._bottom, body.collider._bottom + body.velocity_y) - threshold;
+        bbox._right = Math.max(body.collider._right, body.collider._right + body.velocity_x) + threshold;
+        bbox._top = Math.max(body.collider._top, body.collider._top + body.velocity_y) + threshold;
       
         return bbox; 
     }
