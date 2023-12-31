@@ -7,8 +7,6 @@ import { TransformControls } from './lib/TransformControls.js';
 import SceneMath from './scene_math.js';
 import { SceneCollisions, BoxCollider } from './scene_collisions.js';
 import { lerp } from './math.js';
-import { resolve } from 'path';
-import { rejects } from 'assert';
 
 class SceneCache {
     constructor() {
@@ -46,7 +44,7 @@ class SceneRender {
     private cube: THREE.Mesh;
     private renderer: THREE.WebGLRenderer;
     private scene: THREE.Scene;
-    private camera: THREE.PerspectiveCamera;
+    camera: THREE.PerspectiveCamera;
     private controls: OrbitControls;
     transform_controls: TransformControls;
     private mousepos: THREE.Vector2;
@@ -56,7 +54,7 @@ class SceneRender {
     assets: Assets;
     scene_edit: SceneEdit;
     private active: Boolean;
-    private cache: SceneCache;
+    cache: SceneCache;
 
     colliders: SceneCollisions;
 
@@ -406,16 +404,24 @@ class SceneRender {
         }
     }
 
-    drawColliderDebug(id: string, collider: BoxCollider) {
+    drawColliderDebug(id: string, collider: BoxCollider, color = 0x00ffff, shift?: THREE.Vector2) {
         let plane = this.cache.debug_colliders[id];
         if (!plane) {
             const geometry = new THREE.PlaneGeometry( 1, 1 );
             // tynroar tmp todo: move material into cache
-            const material = new THREE.MeshStandardMaterial( { color: 0x00ffff, wireframe: true } );
+            const material = new THREE.MeshStandardMaterial( { color, wireframe: true } );
             plane = new THREE.Mesh( geometry, material as any );
             this.scene.add( plane );
         }
-        this.setPos(plane, new THREE.Vector3(collider.pos_x, collider.pos_y, this.colliders.origin.z))
+
+        let shift_x = 0;
+        let shift_y = 0;
+        if (shift) {
+            shift_x = shift.x;
+            shift_y = shift.y;
+        }
+
+        this.setPos(plane, new THREE.Vector3(collider.pos_x + shift_x, collider.pos_y + shift_y, this.colliders.origin.z))
         const planepos = (plane as any).position;
         (plane as any).scale.set(collider.width, collider.height, 1);
         plane.lookAt(planepos.x + this.colliders.normal.x, planepos.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
@@ -549,7 +555,7 @@ class SceneRender {
     stop() {
         this.active = false;
     }
-    step() {
+    step(dt: number) {
         if (!this.active) {
             return;
         }
@@ -562,41 +568,8 @@ class SceneRender {
             for(const k in this.colliders.bodies) {
                 const body = this.colliders.bodies[k];
                 this.drawColliderDebug(k, body.collider);
+                this.drawColliderDebug(k + "_predict", body.collider, 0xff0000, this.colliders.getBodyNextShift(body, this.cache.vec2_0));
             }
-        }
-
-        if (this.cache.gltfs["player_character"] && this.colliders.bodies["player_character"]) {
-            const gltf = this.cache.gltfs["player_character"];
-            /*
-            let m: THREE.AnimationMixer = gltf.mixer;
-            if (!m) {
-                m = new THREE.AnimationMixer(gltf.scene);
-                gltf.mixer = m;
-                let action = m.clipAction(THREE.AnimationClip.findByName(gltf, "Run"));
-                action.play();
-            }
-            m.update(0.01);
-            */
-            const cha = gltf.scene;
-            const body = this.colliders.bodies["player_character"];
-
-            // { tmp. will be moved into object render class
-            if (!cha.steplerpinfo) {
-                cha.steplerpinfo = {step_number: this.colliders.step_number, prev_x: 0, prev_y: 0, next_x: 0, next_y: 0};
-            }
-            if (this.colliders.step_number != cha.steplerpinfo.step_number) {
-                cha.steplerpinfo.prev_x = cha.steplerpinfo.next_x;
-                cha.steplerpinfo.prev_y = cha.steplerpinfo.next_y;
-                cha.steplerpinfo.next_x = body.collider.pos_x;
-                cha.steplerpinfo.next_y = body.collider.pos_y;
-                cha.steplerpinfo.step_number = this.colliders.step_number;
-            }
-            // tmp }
-
-            const x = lerp(cha.steplerpinfo.prev_x, cha.steplerpinfo.next_x, this.colliders.step_elapsed / this.colliders.step_threshold);
-            const y = lerp(cha.steplerpinfo.prev_y - body.collider.height/2, cha.steplerpinfo.next_y - body.collider.height/2, this.colliders.step_elapsed / this.colliders.step_threshold);
-            this.setPos(cha, this.cache.vec3_0.set(x, y, 0))
-            cha.lookAt(this.cache.vec3_0.set(x + body.velocity_x, y, 0))
         }
     
         this.renderer.render( this.scene, this.camera );

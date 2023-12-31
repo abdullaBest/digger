@@ -12,11 +12,13 @@ class Character {
     movement_x: number;
     moving_left: boolean;
     moving_right: boolean;
-    moving_speed: number;
+    movement_speed: number;
+    jump_force: number;
 
     constructor() {
         this.movement_x = 0;
-        this.moving_speed = 2;
+        this.movement_speed = 4;
+        this.jump_force = 6;
         this.moving_right = false;
         this.moving_left = false;
     }
@@ -29,17 +31,20 @@ class Character {
 
     step(dt: number) {
         let movement = 0;
-        movement -= this.moving_left ? this.moving_speed : 0;
-        movement += this.moving_right ? this.moving_speed : 0;
+        movement -= this.moving_left ? this.movement_speed : 0;
+        movement += this.moving_right ? this.movement_speed : 0;
 
-        this.movement_x = lerp(this.movement_x, movement, 0.5);
+        this.movement_x = lerp(this.movement_x, movement, 0.7);
+        if (Math.abs(this.movement_x) < 1e-4) {
+            this.movement_x = 0;
+        }
         this.body.velocity_x = lerp(this.body.velocity_x, this.movement_x, 0.3);
     }
 
     action(tag: string, code: CharacterActionCode = 0) {
         switch(tag) {
             case "jump":
-                this.body.velocity_y = 7;
+                this.body.velocity_y = this.jump_force;
                 break;
             case "move_left":
                 this.moving_left = code == CharacterActionCode.START;

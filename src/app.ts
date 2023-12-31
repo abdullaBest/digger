@@ -7,7 +7,6 @@ import { listenFormSubmit, sendFiles } from "./assets";
 import { reattach, listenClick, popupListSelect, switchPage, querySelector, popupConfirm, popupListSelectMultiple } from "./document";
 import { importGltfSequence } from "./importer";
 import SceneGame from "./scene_game";
-import { time } from "console";
 
 class App {
     constructor() {
@@ -26,7 +25,10 @@ class App {
         if (!canvas) {
             throw new Error("can't find canvas to render");
         }
+
         this.scene_render.init(canvas as HTMLCanvasElement);
+        this.scene_game.init(this.scene_render);
+
         return this;
     }
     dispose() {
@@ -79,12 +81,13 @@ class App {
             switch (id) {
                 case "play_scene_btn":
                     this.scene_game.run();
-                    this.scene_render.removeModel("player_character");
-                    const cham = await this.scene_render.addGLTF("res/KayKit_AnimatedCharacter_v1.2.glb", "player_character");
-                    cham.scene.scale.set(0.5, 0.5, 0.5);
                     break;
                 case "physics_toggle_autostep":
                     this.scene_game.autostep = target.classList.toggle("highlighted");
+                    break;
+                case "physics_toggle_camera_attach":
+                    this.scene_game.attach_camera_to_player = target.classList.toggle("highlighted");
+                    break;
             }
         });
 

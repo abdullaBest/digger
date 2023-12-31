@@ -52,13 +52,17 @@ class SceneCollisions {
     step_threshold: number;
     step_elapsed: number;
     step_number: number;
+    forces_scale: number;
 
     constructor() {
         this.colliders = {};
         this.bodies = {};
         this.origin = new Vector3();
         this.normal = new Vector3(0, 0, 1);
+        
         this.gravity = new Vector2(0, -9.8);
+        this.forces_scale = 1.5;
+
         this.cache = new CollidersCache();
 
         this.step_threshold = 100;
@@ -106,7 +110,7 @@ class SceneCollisions {
         }
 
         for(const k in this.bodies) {
-            this.stepBody(this.bodies[k], Math.min(this.step_threshold * 2, this.step_elapsed));
+            this.stepBody(this.bodies[k], Math.min(this.step_threshold, this.step_elapsed));
         }
 
         this.step_number += 1;
@@ -114,6 +118,7 @@ class SceneCollisions {
     }
 
     stepBody(body: DynamicBody, dt: number) {
+        dt *= this.forces_scale;
         body.velocity_y += this.gravity.y * dt / 1000;
 
         let collisions = 0;
@@ -126,7 +131,7 @@ class SceneCollisions {
             if (collision.time_x < 1 || collision.time_y < 1) {
                 const c = this.cache.contacts[collisions++];
                 if (!c) {
-                    throw new Error("SceneCollisions: we havin too much collisions now. Should not happen");
+                    //throw new Error("SceneCollisions: we havin too much collisions now. Should not happen");
                     break;
                 }
                 c.time_x = collision.time_x;
@@ -140,6 +145,9 @@ class SceneCollisions {
         let collision_time_y = 1;
         for (let i = 0; i < collisions; i++) {
             const c = this.cache.contacts[i];
+            if (!c) {
+                break;
+            }
             collision_time_x = c.normal_x ? Math.min(collision_time_x, c.time_x) : collision_time_x;
             collision_time_y = c.normal_y ? Math.min(collision_time_y, c.time_y) : collision_time_y;
         }
@@ -156,6 +164,14 @@ class SceneCollisions {
         { 
             // ...
         }
+    }
+
+    getBodyNextShift(body: DynamicBody, vec: Vector2) {
+        const dt = this.forces_scale * this.step_threshold  / 1000;
+        const posx = body.velocity_x * dt;
+        const posy = body.velocity_y * dt;
+        
+        return vec.set(posx, posy);
     }
 
     testCollisionAabb(a: BoxCollider, b: BoxCollider) {
