@@ -62,21 +62,23 @@ export default class SceneGame {
     _keydown(event: KeyboardEvent) {
         const key = event.code;
         if (key === 'Space') {
-            this.player_character.action("jump", CharacterActionCode.START);
-        } else if (key === 'KeyA') {
-            this.player_character.action("move_left", CharacterActionCode.START);
-        } else if (key === 'KeyD') {
-            this.player_character.action("move_right", CharacterActionCode.START);
+            this.player_character.actionRequest("jump", CharacterActionCode.START);
+        } else if (key === 'ArrowLeft') {
+            this.player_character.actionRequest("move_left", CharacterActionCode.START);
+        } else if (key === 'ArrowRight') {
+            this.player_character.actionRequest("move_right", CharacterActionCode.START);
         } else if (key === 'KeyS') {
             this.colliders.step(100);
+        } else if (key === 'KeyA') {
+            this.player_character.actionRequest("hit", CharacterActionCode.START);
         }
     }
     _keyup(event: KeyboardEvent) {
         const key = event.code;
-        if (key === 'KeyA') {
-            this.player_character.action("move_left", CharacterActionCode.END);
-        } else if (key === 'KeyD') {
-            this.player_character.action("move_right", CharacterActionCode.END);
+        if (key === 'ArrowLeft') {
+            this.player_character.actionRequest("move_left", CharacterActionCode.END);
+        } else if (key === 'ArrowRight') {
+            this.player_character.actionRequest("move_right", CharacterActionCode.END);
         }
     }
 

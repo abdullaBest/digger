@@ -55,9 +55,13 @@ export default class CharacterRender {
     }
 
     updateCharacterAnimations() {
-        if (this.character.movement_x && this.current_animation_name != "Run") {
+        if(this.character.performed_actions.find((e) => e.tag == "jump")) {
+            this.playAnimation("Jump", { once: true, weight: 0.9, speed: 1.5 });
+        } else if(this.character.performed_actions.find((e) => e.tag == "hit")) {
+            this.playAnimation("Attack(1h)", { once: true, weight: 0.9, speed: 2 });
+        } else if (this.character.movement_x && this.current_animation_name != "Run") {
             this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("Run"), 0.1);
-        } else if (!this.character.movement_x && this.current_animation_name == "Run") {
+        } else if (!this.character.movement_x) {
             this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("Idle"), 0.3);
         }
     }
@@ -100,12 +104,37 @@ export default class CharacterRender {
         let action = this.animations_actions_cache[name] ?? this.animation_mixer.clipAction(THREE.AnimationClip.findByName(gltf, name));
         this.animations_actions_cache[name] = action;
         action.play();
-
+        this.setWeight(action, 0);
         return action;
         //this.current_animation_name = action.getClip().name;
     }
 
+    playAnimation(
+        name: string,  
+        { once = false, weight = 1, fadeout = 0.1, fadein = 0.1, speed = 1 }: {once?: boolean, weight?: number, fadeout?: number, fadein?: number, speed?: number}
+        ) {
+        const anim = this.getAnimation(name);
+        if (anim) {
+            this.setWeight(anim, weight);
+            anim.setEffectiveTimeScale( speed );
+            anim.fadeIn(fadein);
+            if (once) {
+                const onLoopFinished = ( event ) => {
+                    if ( event.action === anim ) {
+                        this.animation_mixer.removeEventListener( 'loop', onLoopFinished );
+                        this.setWeight(anim, 0);
+                        anim.fadeOut( fadeout );
+                    }
+                }
+                this.animation_mixer.addEventListener( 'loop', onLoopFinished );
+            }
+        }
+    }
+
     prepareCrossFade( startAction: THREE.AnimationAction | null, endAction: THREE.AnimationAction | null, duration: number ) {
+        if (startAction == endAction) {
+            return;
+        }
 
         // If the current action is 'idle', execute the crossfade immediately;
         // else wait until the current action has finished its current loop
@@ -118,6 +147,10 @@ export default class CharacterRender {
     }
 
     synchronizeCrossFade( startAction: THREE.AnimationAction | null, endAction: THREE.AnimationAction | null, duration: number ) {
+        if (startAction == endAction) {
+            return;
+        }
+
         const onLoopFinished = ( event ) => {
             if ( event.action === startAction ) {
                 this.animation_mixer.removeEventListener( 'loop', onLoopFinished );
@@ -132,6 +165,10 @@ export default class CharacterRender {
     }
 
     executeCrossFade( startAction: THREE.AnimationAction | null, endAction: THREE.AnimationAction | null, duration: number ) {
+        if (startAction == endAction) {
+            return;
+        }
+
         // Not only the start action, but also the end action must get a weight of 1 before fading
         // (concerning the start action this is already guaranteed in this place)
 

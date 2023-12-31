@@ -29,6 +29,7 @@ interface CollisionResult {
     normal_y: number;
     time_x: number;
     time_y: number;
+    collider: BoxCollider | null;
 }
 
 class CollidersCache {
@@ -37,7 +38,7 @@ class CollidersCache {
     contacts: Array<CollisionResult>;
     constructor() {
         this.bc_0 = SceneCollisions.makeBoxCollider();
-        this.cr_0 = { normal_x: 0, normal_y: 0, time_x: 0, time_y: 0 };
+        this.cr_0 = { normal_x: 0, normal_y: 0, time_x: 0, time_y: 0, collider: null };
         this.contacts = Array.apply(null,{length: 8}).map(() => { return Object.assign({}, this.cr_0) });
     }
 }
@@ -141,19 +142,29 @@ class SceneCollisions {
             }
         }
 
+
+        // all collisions now have to be sorted - some of them has higher priority
+
+
+        // now find aout closes collision on x and y axis
         let collision_time_x = 1;
         let collision_time_y = 1;
         for (let i = 0; i < collisions; i++) {
             const c = this.cache.contacts[i];
             if (!c) {
+                //throw new Error("SceneCollisions: we havin too much collisions now. Should not happen");
                 break;
             }
             collision_time_x = c.normal_x ? Math.min(collision_time_x, c.time_x) : collision_time_x;
             collision_time_y = c.normal_y ? Math.min(collision_time_y, c.time_y) : collision_time_y;
         }
+
+        // apply
         let newx = body.collider.pos_x + body.velocity_x * collision_time_x * dt / 1000;
         let newy = body.collider.pos_y + body.velocity_y * collision_time_y * dt / 1000;
         SceneCollisions.setColliderPos(body.collider, newx, newy);
+
+        // post-collision actions
         if (collision_time_x < 1e-4) {
             body.velocity_x = 0;
         }
