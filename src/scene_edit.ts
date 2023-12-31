@@ -87,11 +87,11 @@ class SceneElement {
 
 class SceneEditUtils {
     static constructModelData(gltf: string, texture: string) {
-        return { gltf, material: "standart", texture, matrix: null, collider: false }
+        return { gltf, material: "standart", texture, matrix: null, collider: false, durablity: 0x00 }
     }
 
     static contructTilesetData(texture: string) {
-        return { guids: 0, texture, zero_color: "0xffffff", color_id_prefix: "tile_color_", link_id_prefix: "tile_link_", tilesize_x: 1, tilesize_y: 1, default_tile: null }
+        return { guids: 0, texture, zero_color: "0xffffff", color_id_prefix: "tile_color_", link_id_prefix: "tile_link_", durability_id_prefix: "tile_durablity_", tilesize_x: 1, tilesize_y: 1, default_tile: null }
     }
 }
 

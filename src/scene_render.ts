@@ -69,7 +69,7 @@ class SceneRender {
         this.raycaster = new THREE.Raycaster();
         this.scene_math = new SceneMath();
         this.colliders = colliders;
-        this._drawDebug2dAabb = true;
+        this._drawDebug2dAabb = false;
     }
     init(canvas: HTMLCanvasElement) : SceneRender {
         const scene = new THREE.Scene();
@@ -183,6 +183,7 @@ class SceneRender {
 
         const color_id_prefix = tileset.color_id_prefix;
         const link_id_prefix = tileset.link_id_prefix;
+        const durability_id_prefix = tileset.durability_id_prefix;
 
         let default_tile_data: any = null;
         if (tileset.default_tile) {
@@ -195,8 +196,11 @@ class SceneRender {
         for (let i = 0; i < tileset.guids; i++) {
             const color_id = color_id_prefix + i;
             const link_id = link_id_prefix + i;
+            const durability_id = durability_id_prefix + i;
             let color = tileset[color_id];
             const link = tileset[link_id];
+            const durability = tileset[durability_id];
+
             if (!color) {
                 console.warn(`SceneRender::addTileset error - no color set. color: (${color})`);
                 continue;
@@ -229,6 +233,9 @@ class SceneRender {
             } else {
                 model = await (await fetch(linkinfo.url)).json();
             }
+
+            model.durability = durability;
+
             list[parseInt(color)] = model;
         }
 

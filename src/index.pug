@@ -46,6 +46,7 @@ body
 						btn#play_scene_btn play
 						btn#physics_toggle_autostep.highlighted autostep
 						btn#physics_toggle_camera_attach attach camera
+						btn#physics_toggle_collision_debug phys debug
 				canvas#rootcanvas
 			.footer
 				o scene viewer
@@ -78,6 +79,11 @@ body
 		page#dev_view
 			.sidebar_l
 			.view
+				splitter игра
+				ul
+					li 
+						| model и tile durability задаются числом вида 0xAB или 0xAABB где A/AA - запас прочности, B/BB - сопротивление повреждениям. 
+						| Если сопротивление выше урона, то повреждений не наносится. Если сопротивление ниже, то повредления = (урон - сопротивление)
 				splitter запросы
 				ul
 					li GET /, /editor - alias для папки сборки ./dist

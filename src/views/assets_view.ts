@@ -209,6 +209,7 @@ class AssetsView {
     static drawTilesetPropertyFilelds(container: HTMLElement, assets: Assets, tilesetdata: any, onchange?: () => void) {
         const color_id_prefix = tilesetdata.color_id_prefix;
         const link_id_prefix = tilesetdata.link_id_prefix;
+        const durability_id_prefix = tilesetdata.durability_id_prefix;
         
         container.innerHTML = querySelector("template#details_tileset_edit_template").innerHTML;
        
@@ -254,32 +255,32 @@ class AssetsView {
         makePropEditField(properties_container, "tilesize_x", "number");
         makePropEditField(properties_container, "tilesize_y", "number");
 
-        for(const k in tilesetdata) {
-            const match = k.match(/\w+(\d+)/);
-            if (!match) {
-                continue;
-            }
-            const index = match[1];
-            const entry = getmake_tileenrty(index);
-            if (k.includes(color_id_prefix)) {
-                makePropEditField(entry, k);
-            }
-            else if (k.includes(link_id_prefix)) {
-                makePropSelectField(entry, k, /model|png/);
-            }
-        } 
 
+        for (let i = 0; i < tilesetdata.guids; i++) {
+            const color_id = color_id_prefix + i;
+            const link_id = link_id_prefix + i;
+            const durability_id = durability_id_prefix + i;
+            const entry = getmake_tileenrty(i);
+            makePropEditField(entry, color_id);
+            makePropSelectField(entry, link_id, /model|png/);
+            makePropEditField(entry, durability_id);
+        }
+        
         listenClick("#details_tileset_aliases_add", () => {
             const index = tilesetdata.guids++;
             const color_id = color_id_prefix + index;
             const link_id = link_id_prefix + index;
+            const durability_id = durability_id_prefix + index;
 
             tilesetdata[color_id] = "0x000000";
             tilesetdata[link_id] = null;
+            tilesetdata[durability_id] = "0x00";
 
             const entry = getmake_tileenrty(index);
             makePropEditField(entry, color_id);
             makePropSelectField(entry, link_id, /model|png/);
+            makePropEditField(entry, durability_id);
+
             if(onchange) {
                 onchange();
             }
@@ -295,8 +296,8 @@ class AssetsView {
                 return newid;
             }, container);
         };
-        const makePropEditField = (name) => {
-            new AssetPropertyEdit().init(modeldata, name, onchange).drawTextEditOption(container);
+        const makePropEditField = (name, type = "text") => {
+            new AssetPropertyEdit().init(modeldata, name, onchange).drawTextEditOption(container, type);
         }
         const makeCkeckboxField = (name) => {
             new AssetPropertyEdit().init(modeldata, name, onchange).drawCkeckboxOption(container);
@@ -306,6 +307,7 @@ class AssetsView {
         makePropEditField("material")
         makePropSelectField("texture", /png|jpg/);
         makeCkeckboxField("collider");
+        makePropEditField("durability");
     }
 
     _drawModelPropertyFields(container: HTMLElement, modeldata: any, onchange: () => void) {

@@ -22,6 +22,9 @@ interface DynamicBody {
      */
     velocity_x: number;
     velocity_y: number;
+
+    contacts: number;
+    contacts_list: Array<CollisionResult>;
 }
 
 interface CollisionResult {
@@ -84,7 +87,9 @@ class SceneCollisions {
             id,
             collider,
             velocity_x: 0,
-            velocity_y: 0
+            velocity_y: 0,
+            contacts: 0,
+            contacts_list: this.cache.contacts
         }
         this.bodies[id] = body;
 
@@ -162,6 +167,7 @@ class SceneCollisions {
         // apply
         let newx = body.collider.pos_x + body.velocity_x * collision_time_x * dt / 1000;
         let newy = body.collider.pos_y + body.velocity_y * collision_time_y * dt / 1000;
+        body.contacts = collisions;
         SceneCollisions.setColliderPos(body.collider, newx, newy);
 
         // post-collision actions

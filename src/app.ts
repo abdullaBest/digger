@@ -88,6 +88,8 @@ class App {
                 case "physics_toggle_camera_attach":
                     this.scene_game.attach_camera_to_player = target.classList.toggle("highlighted");
                     break;
+                case "physics_toggle_collision_debug":
+                    this.scene_render._drawDebug2dAabb = target.classList.toggle("highlighted");
             }
         });
 

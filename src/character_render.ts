@@ -88,8 +88,8 @@ export default class CharacterRender {
         const y = lerp(cha.steplerpinfo.prev_y - body.collider.height/2, cha.steplerpinfo.next_y - body.collider.height/2, this.colliders.step_elapsed / this.colliders.step_threshold);
         this.scene_render.setPos(cha, this.scene_render.cache.vec3_0.set(x, y, 0));
 
-        this.character_x_rot = lerp(this.character_x_rot, this.character.movement_x / this.character.movement_speed, 0.3) ;
-        cha.lookAt(this.scene_render.cache.vec3_0.set(x + this.character_x_rot, y,  1 - Math.abs(this.character_x_rot)));
+        this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.3) ;
+        cha.lookAt(this.scene_render.cache.vec3_0.set(x + this.character_x_rot, y + this.character.look_direction_y * 0.3,  1 - Math.abs(this.character_x_rot)));
     }
 
     getAnimation(name: string | null, gltf = this.character_gltf) : THREE.AnimationAction | null {
