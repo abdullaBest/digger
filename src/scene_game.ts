@@ -117,7 +117,6 @@ export default class SceneGame {
             resistance = durability & 0x00FF;
         }
 
-        console.log(durability, endurance, resistance);
         if (hit_damage <= resistance) {
             return;
         }
@@ -136,7 +135,6 @@ export default class SceneGame {
         }
 
         this.breakable_objects[hit_result] = newdurability;
-        console.log(endurance, resistance);
     }
     
     _keydown(event: KeyboardEvent) {

@@ -62,7 +62,7 @@ export default class CharacterRender {
         } else if (this.character.movement_x && this.current_animation_name != "Run") {
             this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("Run"), 0.1);
         } else if (!this.character.movement_x) {
-            this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("Idle"), 0.3);
+            this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("Idle"), 0.8);
         }
     }
 
