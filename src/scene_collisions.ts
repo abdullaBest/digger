@@ -218,75 +218,65 @@ class SceneCollisions {
         return bbox; 
     }
 
-    // https://github.com/OneLoneCoder/Javidx9/blob/master/PixelGameEngine/SmallerProjects/OneLoneCoder_PGE_Rectangles.cpp#L78
+    // https://gdbooks.gitbooks.io/3dcollisions/content/Chapter3/raycast_aabb.html
+    /**
+     * 
+     * @param ray_origin 
+     * @param ray_dir 
+     * @param collider 
+     * @param ret 
+     * @returns Infinity or NaN possible. Be aware
+     */
     testRayRect(ray_origin: Vector2, ray_dir: Vector2, collider: BoxCollider, ret: CollisionResult = ({} as any)) : boolean {
+        // In could produce Infinity if ray_dir equals zero wich is ok
+        // It could produce evenn NaN if collider._edge == ray_origin wich seems to be ok too
+
+        const min_x = (collider._left - ray_origin.x) / ray_dir.x;
+        const max_x = (collider._right - ray_origin.x) / ray_dir.x;
+        const near_x = Math.min(min_x, max_x);
+        const far_x = Math.max(min_x, max_x);
+
+        const min_y = (collider._bottom - ray_origin.y) / ray_dir.y;
+        const max_y = (collider._top - ray_origin.y) / ray_dir.y;
+        const near_y = Math.min(min_y, max_y);
+        const far_y = Math.max(min_y, max_y);
+
+        const tmin = Math.max(near_x, near_y);
+        const tmax = Math.min(far_x, far_y);
+    
+        ret.time = 1;
         ret.normal_x = 0;
         ret.normal_y = 0;
-        ret.time = 1;
 
-        // Cache division
-        const invdir_x = 1.0 / ray_dir.x;
-        const invdir_y = 1.0 / ray_dir.y;
-        let t_near_x = -invdir_x;
-        let t_far_x = invdir_x;
-        let t_near_y = -invdir_y;
-        let t_far_y = invdir_y;
-        // Calculate intersections with rectangle bounding axes
-        //if (Number.isFinite(invdir_x)) {
-            t_near_x = (collider._left - ray_origin.x) * invdir_x;
-            t_far_x = (collider._right - ray_origin.x) * invdir_x;
-        //}
-        //if (Number.isFinite(invdir_y)) {
-            t_near_y = (collider._top - ray_origin.y) * invdir_y;
-            t_far_y = (collider._bottom - ray_origin.y) * invdir_y;
-        //}
-
-        if (Number.isNaN(t_far_y) || Number.isNaN(t_far_x)) return false;
-        if (Number.isNaN(t_near_y) || Number.isNaN(t_near_x)) return false;
-
-        // Sort distances
-        if (t_near_x > t_far_x) { 
-            const tmp = t_near_x;
-            t_near_x = t_far_x;
-            t_far_x = tmp;
-        }
-
-        if (t_near_y > t_far_y) {
-            const tmp = t_near_y;
-            t_near_y = t_far_y;
-            t_far_y = tmp;
-        };
-
-        // Early rejection		
-        if (t_near_x >= t_far_y || t_near_y > t_far_x) {
+        // if tmax < 0, ray (line) is intersecting AABB, but whole AABB is behing us
+        if (tmax < 0) {
             return false;
         }
 
-        // Closest 'time' will be the first contact
-        const t_hit_near = Math.max(t_near_x, t_near_y);
-
-        // Furthest 'time' is contact on opposite side of target
-        const t_hit_far = Math.min(t_far_x, t_far_y);
-
-        // Reject if ray direction is pointing away from object
-        if (t_hit_far < 0) {
+        // if tmin > 1 intersection far away from segment
+        if (tmin >= 1) {
             return false;
         }
 
-        ret.time = t_hit_near;
+        // if tmin > tmax, ray doesn't intersect AABB
+        if (tmin > tmax) {
+            return false;
+        }
+    
+        /*
+        if (tmin < 0) {
+            ret.time = tmax; // ?
+        }
+        */
 
-        // Contact point of collision from parametric line equation
-        //contact_point_x = ray_origin + t_hit_near * ray_dir;
+        ret.time = tmin;
 
-        if (t_near_x > t_near_y) {
-            ret.normal_x = Math.sign(invdir_x);
-        } else if (t_near_x < t_near_y) {
-            ret.normal_y = Math.sign(invdir_y);
+        if (near_x > near_y) {
+            ret.normal_x = Math.sign(ray_dir.x);
+        } else if (near_x < near_y) {
+            ret.normal_y = Math.sign(ray_dir.y);
         }
 
-        // Note if t_near == t_far, collision is principly in a diagonal
-        // so pointless to resolve. By returning a CN={0,0} even though its
-        // considered a hit, the resolver wont change anything.
         return true;
     }
 
