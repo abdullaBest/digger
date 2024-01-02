@@ -2,7 +2,7 @@ import * as THREE from './lib/three.module.js';
 import Character from "./character";
 import SceneRender from "./scene_render";
 import { SceneCollisions } from './scene_collisions.js';
-import { lerp } from './math.js';
+import { lerp, distlerp } from './math.js';
 
 export default class CharacterRender {
     character: Character;
@@ -86,10 +86,13 @@ export default class CharacterRender {
 
         const x = lerp(cha.steplerpinfo.prev_x, cha.steplerpinfo.next_x, this.colliders.step_elapsed / this.colliders.step_threshold);
         const y = lerp(cha.steplerpinfo.prev_y - body.collider.height/2, cha.steplerpinfo.next_y - body.collider.height/2, this.colliders.step_elapsed / this.colliders.step_threshold);
-        this.scene_render.setPos(cha, this.scene_render.cache.vec3_0.set(x, y, 0));
+
+        const lx = distlerp(cha.position.x, x, 0.5);
+        const ly = distlerp(cha.position.y, y, 0.5);
+        this.scene_render.setPos(cha, this.scene_render.cache.vec3_0.set(lx, ly, 0));
 
         this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.3) ;
-        cha.lookAt(this.scene_render.cache.vec3_0.set(x + this.character_x_rot, y + this.character.look_direction_y * 0.3,  1 - Math.abs(this.character_x_rot)));
+        cha.lookAt(this.scene_render.cache.vec3_0.set(lx + this.character_x_rot, ly + this.character.look_direction_y * 0.3,  1 - Math.abs(this.character_x_rot)));
     }
 
     getAnimation(name: string | null, gltf = this.character_gltf) : THREE.AnimationAction | null {

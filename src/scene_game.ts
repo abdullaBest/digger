@@ -1,9 +1,10 @@
 import { Character, CharacterActionCode } from "./character";
-import { SceneCollisions, BoxCollider } from './scene_collisions.js';
+import { SceneCollisions, BoxCollider } from './scene_collisions';
 import { Box2, Vector2 } from "./lib/three.module";
 import { addEventListener, removeEventListeners, EventListenerDetails } from "./document";
 import CharacterRender from "./character_render";
 import SceneRender from "./scene_render";
+import { lerp } from "./math";
 
 export default class SceneGame {
     constructor() {
@@ -56,6 +57,10 @@ export default class SceneGame {
         if (this.attach_camera_to_player && this.player_character_render.character_gltf) {
             const pos = this.scene_render.cache.vec3_0.copy(this.player_character_render.character_gltf.scene.position);
             pos.z = 10;
+            const lposx = this.scene_render.camera.position.x;
+            const lposy = this.scene_render.camera.position.y;
+            pos.x = lerp(lposx, pos.x, 0.1);
+            pos.y = lerp(lposy, pos.y, 0.1);
             this.scene_render.setPos(this.scene_render.camera, pos);
             this.scene_render.camera.lookAt(pos.x, pos.y, pos.z - 7);
         }
