@@ -80,7 +80,7 @@ class SceneCollisions {
 
         this.cache = new CollidersCache();
 
-        this.step_threshold = 100;
+        this.step_threshold = 0.1;
         this.step_elapsed = 0;
         this.step_number = 0;
     }
@@ -136,7 +136,7 @@ class SceneCollisions {
 
     stepBody(body: DynamicBody, dt: number) {
         dt *= this.forces_scale;
-        body.velocity_y += this.gravity.y * dt / 1000;
+        body.velocity_y += this.gravity.y * dt;
 
         let colliders_list: Array<BoxCollider> = [];
         body.contacts = 0;
@@ -176,13 +176,14 @@ class SceneCollisions {
             applySwept(colliders_list.shift());
         }
 
-        const vx = body.velocity_x * dt / 1000;
-        const vy = body.velocity_y * dt / 1000;
+        const vx = body.velocity_x * dt;
+        const vy = body.velocity_y * dt;
         let newx = body.collider.pos_x + vx;
         let newy = body.collider.pos_y + vy;
         SceneCollisions.setColliderPos(body.collider, newx, newy);
 
         // discard velocities
+        /*
         for (let i = 0; i < body.contacts; i++) {
             const c = body.contacts_list[i];
             if (c.normal_x && c.time < 1) {
@@ -192,10 +193,11 @@ class SceneCollisions {
                 body.velocity_y = 0;
             }
         } 
+        */
     }
 
     getBodyNextShift(body: DynamicBody, vec: Vector2) {
-        const dt = this.forces_scale * this.step_threshold  / 1000;
+        const dt = this.forces_scale * this.step_threshold;
         const posx = body.velocity_x * dt;
         const posy = body.velocity_y * dt;
         
@@ -214,8 +216,8 @@ class SceneCollisions {
      * @returns cached BoxCollider
      */
     calcBodyBroadphase(body: DynamicBody, dt: number, threshold: number = 0.1) : BoxCollider {
-        const vx = body.velocity_x * dt / 1000;
-        const vy = body.velocity_y * dt / 1000;
+        const vx = body.velocity_x * dt;
+        const vy = body.velocity_y * dt;
         let bbox = this.cache.bc_0;
         bbox._left = Math.min(body.collider._left, body.collider._left + vx) - threshold;
         bbox._bottom = Math.min(body.collider._bottom, body.collider._bottom + vy) - threshold;
@@ -288,8 +290,8 @@ class SceneCollisions {
     }
 
     sweptAABB(a: DynamicBody, b: BoxCollider, ret: CollisionResult = ({} as any), dt: number): boolean {
-        const vx = a.velocity_x * dt / 1000;
-        const vy = a.velocity_y * dt / 1000;
+        const vx = a.velocity_x * dt;
+        const vy = a.velocity_y * dt;
 
         const apos = this.cache.vec2_0.set(a.collider.pos_x, a.collider.pos_y);
         const adir = this.cache.vec2_1.set(vx, vy);

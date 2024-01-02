@@ -41,7 +41,7 @@ class Character {
         this.movement_x = 0;
         this.movement_speed = 4;
         this.jump_force = 6;
-        this.jump_threshold = 150;
+        this.jump_threshold = 0.15;
         this.jump_elapsed = 0;
         this.moving_right = false;
         this.moving_left = false;

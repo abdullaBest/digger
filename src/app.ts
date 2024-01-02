@@ -59,7 +59,8 @@ class App {
         }
 
         const now = performance.now();
-        const dt = now - this.timestamp;
+        const dt = (now - this.timestamp) / 1000;
+        console.log(dt);
         this.timestamp = now;
 
         this.scene_game.step(dt);

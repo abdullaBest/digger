@@ -19,7 +19,7 @@ export default class CharacterRender {
     init(scene_render: SceneRender, colliders: SceneCollisions) {
         this.scene_render = scene_render;
         this.colliders = colliders;
-        this.animation_time_scale = 0.001;
+        this.animation_time_scale = 1;
         
     }
 
