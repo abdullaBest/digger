@@ -30,6 +30,11 @@ class Character {
     look_direction_x: number;
     look_direction_y: number;
 
+    collided_left: boolean;
+    collided_right: boolean;
+    collided_top: boolean;
+    collided_bottom: boolean;
+
     // actions that should be executed next step
     requested_actions: Array<CharacterAction>;
     // actions that was executed previous step
@@ -51,6 +56,10 @@ class Character {
         this.requested_actions = [];
         this.performed_actions = [];
         this.scene_collisions = scene_collisions;
+        this.collided_bottom = false;
+        this.collided_left = false;
+        this.collided_right = false;
+        this.collided_top = false;
     }
 
     init(body: DynamicBody) : Character {
@@ -60,10 +69,14 @@ class Character {
     }
 
     step(dt: number) {
+        // zero-out step variables
         this.performed_actions.length = 0;
         let movement = 0;
         this.jumping_left = this.jumping_right = this.jumping_up = false;
 
+        this.updateCollideDirections();
+
+        // apply actions
         while(this.requested_actions.length) {
             const action = this.requested_actions.pop();
             if (action) {
@@ -71,21 +84,20 @@ class Character {
             }
         }
 
+        // movement
         movement -= this.moving_left ? this.movement_speed : 0;
         movement += this.moving_right ? this.movement_speed : 0;
-
+        this.movement_x = lerp(this.movement_x, movement, 0.7);
+        if (Math.abs(this.movement_x) < 1e-4) {
+            this.movement_x = 0;
+        }
+        this.body.velocity_x = lerp(this.body.velocity_x, this.movement_x, 0.3);
 
         if(movement) {
             this.look_direction_x = Math.sign(movement);
         }
 
-        this.movement_x = lerp(this.movement_x, movement, 0.7);
-        if (Math.abs(this.movement_x) < 1e-4) {
-            this.movement_x = 0;
-        }
-
-        this.body.velocity_x = lerp(this.body.velocity_x, this.movement_x, 0.3);
-
+        // jump
         if (this.jump_elapsed > this.jump_threshold) {
             if (this.jumping_left || this.jumping_right || this.jumping_up) {
                 this.jump_elapsed = 0;
@@ -97,6 +109,30 @@ class Character {
         this.jump_elapsed += dt;
     }
 
+    updateCollideDirections() {
+        // left "collided" untouched if no movemend was happen
+        this.collided_left = false;
+        this.collided_right = false;
+        this.collided_bottom = false;
+        this.collided_top = false;
+
+        for (let i = 0; i < this.body.contacts; i++) {
+            const c = this.body.contacts_list[i];
+            if (!c.normal_x && !c.normal_y) {
+                continue;
+            }
+            if (c.normal_y == -1) {
+                this.collided_bottom = true;
+            } else  if (c.normal_y == 1) {
+                this.collided_top = true;
+            } else  if (c.normal_x == -1) {
+                this.collided_left = true;
+            } else  if (c.normal_x == 1) {
+                this.collided_right = true;
+            }
+        }
+    }
+
 
     private _actiunJump(): boolean {
         const freejump = false;
@@ -104,18 +140,13 @@ class Character {
         if (freejump) {
             this.jumping_up = true;
         } else {
-            for (let i = 0; i < this.body.contacts; i++) {
-                const c = this.body.contacts_list[i];
-                if (c.normal_y == -1 && c.time < 1) {
-                    this.jumping_up = true;
-                }
+            // floor jump
+            this.jumping_up = this.collided_bottom;
 
-                if (!this.jumping_up && c.normal_x != 0 && c.time < 1) {
-                    this.jumping_up = true;
-                    this.jumping_left = c.normal_x > 0;
-                    this.jumping_right = c.normal_x < 0;
-                }
-            }
+            // wall jump
+            this.jumping_left = !this.jumping_up && this.collided_left;
+            this.jumping_right = !this.jumping_up && this.collided_right;
+            this.jumping_up =  this.jumping_up || this.jumping_left || this.jumping_right;
         }
 
         return this.jumping_up || this.jumping_left || this.jumping_right;
@@ -124,7 +155,6 @@ class Character {
     private _action(action: CharacterAction) {
         const tag = action.tag;
         const code = action.code;
-
         switch(tag) {
             case "jump":
                 if (this._actiunJump() ) {
