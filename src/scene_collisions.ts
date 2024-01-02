@@ -1,11 +1,18 @@
 import { Vector2, Box2, Vector3 } from "./lib/three.module";
 
+enum ColliderType {
+    RIGID = 0,
+    SIGNAL = 1
+}
+
 interface BoxCollider {
     width: number;
     height: number;
     
     pos_x: number;
     pos_y: number;
+
+    type: ColliderType;
 
     _left: number;
     _top: number;
@@ -305,7 +312,7 @@ class SceneCollisions {
         collider._top = y + half_hieght;
     }
 
-    static makeBoxCollider(box?: Box2) : BoxCollider {
+    static makeBoxCollider(box?: Box2, type: ColliderType = ColliderType.RIGID) : BoxCollider {
         const collider = {
             width: 0,
             height: 0,
@@ -314,7 +321,8 @@ class SceneCollisions {
             _left: 0,
             _top: 0,
             _right: 0,
-            _bottom: 0
+            _bottom: 0,
+            type
         }
 
         if (box) {
