@@ -282,7 +282,7 @@ class SceneCollisions {
 
         if (near_x > near_y) {
             ret.normal_x = Math.sign(ray_dir.x);
-        } else if (near_x < near_y) {
+        } else /* if (near_x < near_y) */ {
             ret.normal_y = Math.sign(ray_dir.y);
         }
 
