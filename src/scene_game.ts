@@ -24,7 +24,7 @@ export default class SceneGame {
         this.stop();
         this.active = true;
 
-        let playerbox = new Box2().setFromCenterAndSize(new Vector2(0.1, 4), new Vector2(0.5, 1));
+        let playerbox = new Box2().setFromCenterAndSize(new Vector2(0.1, 4), new Vector2(0.5, 0.8));
         const body = this.colliders.addBoxBody("player_character", playerbox);
         this.player_character = new Character(this.colliders).init(body);
         await this.player_character_render.run(this.player_character);
@@ -33,6 +33,12 @@ export default class SceneGame {
 
         addEventListener({callback: this._keydown.bind(this), name: "keydown", node: document.body}, this._listeners)
         addEventListener({callback: this._keyup.bind(this), name: "keyup", node: document.body}, this._listeners)
+        addEventListener({callback: ()=> {
+            console.log("blur");
+            this.player_character.actionRequest("move_left", CharacterActionCode.END);
+            this.player_character.actionRequest("move_right", CharacterActionCode.END)
+        }, name: "blur", node: window as any}, this._listeners)
+        //addEventListener({callback: ()=> {console.log("focus")}, name: "focus", node: window as any}, this._listeners)
     }
 
     stop() {
@@ -143,6 +149,8 @@ export default class SceneGame {
     }
     
     _keydown(event: KeyboardEvent) {
+        if (event.repeat) return;
+
         const key = event.code;
         if (key === 'Space') {
             this.player_character.actionRequest("jump", CharacterActionCode.START);
@@ -163,6 +171,8 @@ export default class SceneGame {
         }
     }
     _keyup(event: KeyboardEvent) {
+        if (event.repeat) return;
+        
         const key = event.code;
         if (key === 'ArrowLeft') {
             this.player_character.actionRequest("move_left", CharacterActionCode.END);

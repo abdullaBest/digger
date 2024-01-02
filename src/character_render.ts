@@ -47,7 +47,7 @@ export default class CharacterRender {
         }
        
         this.updateCharacterAnimations();
-        this.renderCharacterModel();
+        this.renderCharacterModel(dt);
        
         if (this.animation_mixer) {
             this.animation_mixer.update(dt * this.animation_time_scale);
@@ -66,7 +66,7 @@ export default class CharacterRender {
         }
     }
 
-    renderCharacterModel() {
+    renderCharacterModel(dt: number) {
         const cha = this.character_gltf.scene;
         const body = this.character.body;
 
@@ -84,11 +84,14 @@ export default class CharacterRender {
         }
         // tmp }
 
-        const x = lerp(cha.steplerpinfo.prev_x, cha.steplerpinfo.next_x, this.colliders.step_elapsed / this.colliders.step_threshold);
-        const y = lerp(cha.steplerpinfo.prev_y - body.collider.height/2, cha.steplerpinfo.next_y - body.collider.height/2, this.colliders.step_elapsed / this.colliders.step_threshold);
+        let x = lerp(cha.steplerpinfo.prev_x, cha.steplerpinfo.next_x, this.colliders.step_elapsed / this.colliders.step_threshold);
+        let y = lerp(cha.steplerpinfo.prev_y - body.collider.height/2, cha.steplerpinfo.next_y - body.collider.height/2, this.colliders.step_elapsed / this.colliders.step_threshold);
+        //x += body.velocity_x * this.colliders.step_threshold;
+        //y += body.velocity_y * this.colliders.step_threshold;
 
-        const lx = distlerp(cha.position.x, x, 0.5);
-        const ly = distlerp(cha.position.y, y, 0.5);
+
+        const lx = distlerp(cha.position.x, x, 0.7);
+        const ly = distlerp(cha.position.y, y, 0.7);
         this.scene_render.setPos(cha, this.scene_render.cache.vec3_0.set(lx, ly, 0));
 
         this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.3) ;

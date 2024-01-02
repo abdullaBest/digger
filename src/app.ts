@@ -71,7 +71,7 @@ class App {
     // tmp
     private listenersRun() {
         // tynroar todo: unlisten
-        addEventListener("hashchange", (event) => {
+        window.addEventListener("hashchange", (event) => {
             this.page(window.location.hash);
         }); 
 
