@@ -71,8 +71,8 @@ export default class SceneGame {
             pos.z = 7;
             const lposx = this.scene_render.camera.position.x;
             const lposy = this.scene_render.camera.position.y;
-            pos.x = lerp(lposx, pos.x, 0.1 * dr);
-            pos.y = lerp(lposy, pos.y, 0.1 * dr);
+            pos.x = lerp(lposx, pos.x, Math.pow(Math.abs(lposx - pos.x), 2) * 0.05 * dr);
+            pos.y = lerp(lposy, pos.y, Math.pow(Math.abs(lposy - pos.y), 2) * 0.05 * dr);
             this.scene_render.setPos(this.scene_render.camera, pos);
             this.scene_render.camera.lookAt(pos.x, pos.y, pos.z - 7);
         }
@@ -92,7 +92,7 @@ export default class SceneGame {
         let test_b = cha.body.collider.pos_y;
 
         // shift ray towards look x direction.
-        // Y look idrection in priority
+        // Y look direction in priority
         if (!cha.look_direction_y) {
             test_l = cha.body.collider._left + cha.body.collider.width * cha.look_direction_x * ray_size;
             test_r = cha.body.collider._right + cha.body.collider.width * cha.look_direction_x * ray_size;
