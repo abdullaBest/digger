@@ -18,7 +18,8 @@ class App {
         this.assets_view = new AssetsView(this.assets, this.scene_render);
 
         this.active = false;
-        this.timestamp = 9;
+        this.timestamp = 0;
+        this.REF_DELTATIME = 10;
     }
     init() : App {
         const canvas = document.querySelector("canvas#rootcanvas");
@@ -59,11 +60,13 @@ class App {
         }
 
         const now = performance.now();
-        const dt = (now - this.timestamp) / 1000;
+        const dt = (now - this.timestamp);
+        const dtscaled = dt / 1000;
         this.timestamp = now;
+        const deltaref = dt / this.REF_DELTATIME;
 
-        this.scene_game.step(dt);
-        this.scene_render.step(dt);
+        this.scene_game.step(dtscaled, deltaref);
+        this.scene_render.step(dtscaled, deltaref);
 
         requestAnimationFrame( this.loop.bind(this) );
     }
@@ -193,6 +196,8 @@ class App {
     private assets_view: AssetsView;
     private scene_game: SceneGame;
     private timestamp: number;
+    
+    private REF_DELTATIME: number;
 }
 
 export default App;

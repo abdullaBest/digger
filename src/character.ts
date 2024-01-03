@@ -68,7 +68,7 @@ class Character {
         return this;
     }
 
-    step(dt: number) {
+    step(dt: number, dr: number) {
         // zero-out step variables
         this.performed_actions.length = 0;
         let movement = 0;
@@ -87,11 +87,11 @@ class Character {
         // movement
         movement -= this.moving_left ? this.movement_speed : 0;
         movement += this.moving_right ? this.movement_speed : 0;
-        this.movement_x = lerp(this.movement_x, movement, 0.7);
+        this.movement_x = lerp(this.movement_x, movement, 0.7 * dr);
         if (Math.abs(this.movement_x) < 1e-4) {
             this.movement_x = 0;
         }
-        this.body.velocity_x = lerp(this.body.velocity_x, this.movement_x, 0.3);
+        this.body.velocity_x = lerp(this.body.velocity_x, this.movement_x, 0.3 * dr);
         if (Math.abs(this.body.velocity_x) < 1e-4) {
             this.body.velocity_x = 0;
         }

@@ -50,23 +50,29 @@ export default class SceneGame {
         }
     }
 
-    step(dt: number) {
+    /**
+     * 
+     * @param dt 
+     * @param dr 
+     * @returns 
+     */
+    step(dt: number, dr: number) {
         if (!this.active) {
             return;
         }
-        this.player_character.step(dt);
+        this.player_character.step(dt, dr);
         if (this.autostep) {
             this.colliders.step(dt);
         }
-        this.player_character_render.step(dt);
+        this.player_character_render.step(dt, dr);
 
         if (this.attach_camera_to_player && this.player_character_render.character_gltf) {
             const pos = this.scene_render.cache.vec3_0.copy(this.player_character_render.character_gltf.scene.position);
             pos.z = 10;
             const lposx = this.scene_render.camera.position.x;
             const lposy = this.scene_render.camera.position.y;
-            pos.x = lerp(lposx, pos.x, 0.1);
-            pos.y = lerp(lposy, pos.y, 0.1);
+            pos.x = lerp(lposx, pos.x, 0.1 * dr);
+            pos.y = lerp(lposy, pos.y, 0.1 * dr);
             this.scene_render.setPos(this.scene_render.camera, pos);
             this.scene_render.camera.lookAt(pos.x, pos.y, pos.z - 7);
         }

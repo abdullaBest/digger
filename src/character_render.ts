@@ -39,7 +39,7 @@ export default class CharacterRender {
         this.scene_render.removeModel("player_character");
     }
 
-    step(dt: number) {
+    step(dt: number, dr: number) {
         const gltf = this.character_gltf;
         // character still loads
         if (!gltf) {
@@ -47,7 +47,7 @@ export default class CharacterRender {
         }
        
         this.updateCharacterAnimations();
-        this.renderCharacterModel(dt);
+        this.renderCharacterModel(dt, dr);
        
         if (this.animation_mixer) {
             this.animation_mixer.update(dt * this.animation_time_scale);
@@ -66,7 +66,7 @@ export default class CharacterRender {
         }
     }
 
-    renderCharacterModel(dt: number) {
+    renderCharacterModel(dt: number, dr: number) {
         const cha = this.character_gltf.scene;
         const body = this.character.body;
 
@@ -90,11 +90,11 @@ export default class CharacterRender {
         //y += body.velocity_y * this.colliders.step_threshold;
 
 
-        const lx = distlerp(cha.position.x, x, 0.7);
-        const ly = distlerp(cha.position.y, y, 0.7);
+        const lx = distlerp(cha.position.x, x, 0.3 * dr);
+        const ly = distlerp(cha.position.y, y, 0.3 * dr);
         this.scene_render.setPos(cha, this.scene_render.cache.vec3_0.set(lx, ly, 0));
 
-        this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.3) ;
+        this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.2 * dr) ;
         cha.lookAt(this.scene_render.cache.vec3_0.set(lx + this.character_x_rot, ly + this.character.look_direction_y * 0.3,  1 - Math.abs(this.character_x_rot)));
     }
 
