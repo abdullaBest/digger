@@ -24,7 +24,7 @@ export default class SceneGame {
         this.stop();
         this.active = true;
 
-        let playerbox = new Box2().setFromCenterAndSize(new Vector2(0.1, 4), new Vector2(0.5, 0.8));
+        let playerbox = new Box2().setFromCenterAndSize(new Vector2(0.1, 4), new Vector2(0.5, 0.6));
         const body = this.colliders.addBoxBody("player_character", playerbox);
         this.player_character = new Character(this.colliders).init(body);
         await this.player_character_render.run(this.player_character);
@@ -68,7 +68,7 @@ export default class SceneGame {
 
         if (this.attach_camera_to_player && this.player_character_render.character_gltf) {
             const pos = this.scene_render.cache.vec3_0.copy(this.player_character_render.character_gltf.scene.position);
-            pos.z = 10;
+            pos.z = 7;
             const lposx = this.scene_render.camera.position.x;
             const lposy = this.scene_render.camera.position.y;
             pos.x = lerp(lposx, pos.x, 0.1 * dr);

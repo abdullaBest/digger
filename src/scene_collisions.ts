@@ -76,11 +76,11 @@ class SceneCollisions {
         this.normal = new Vector3(0, 0, 1);
         
         this.gravity = new Vector2(0, -9.8);
-        this.forces_scale = 1.5;
+        this.forces_scale = 1.7;
 
         this.cache = new CollidersCache();
 
-        this.step_threshold = 0.1;
+        this.step_threshold = 0.05;
         this.step_elapsed = 0;
         this.step_number = 0;
     }
