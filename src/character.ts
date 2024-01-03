@@ -92,7 +92,9 @@ class Character {
             this.movement_x = 0;
         }
         this.body.velocity_x = lerp(this.body.velocity_x, this.movement_x, 0.3);
-
+        if (Math.abs(this.body.velocity_x) < 1e-4) {
+            this.body.velocity_x = 0;
+        }
         if(movement) {
             this.look_direction_x = Math.sign(movement);
         }

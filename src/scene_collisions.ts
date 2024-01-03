@@ -142,13 +142,40 @@ class SceneCollisions {
         body.contacts = 0;
         const applySwept = (collider) => {
             const collision = this.cache.cr_0;
-            if (this.sweptAABB(body, collider, this.cache.cr_0, dt)) {
+            if (this.sweptAABB(body, collider, collision, dt)) {
                 body.velocity_x -= collision.normal_x * Math.abs(body.velocity_x) * (1 - collision.time)
                 body.velocity_y -= collision.normal_y * Math.abs(body.velocity_y) * (1 - collision.time)
 
                 const c = body.contacts_list[body.contacts++];
                 c.normal_x = collision.normal_x;
                 c.normal_y = collision.normal_y;
+                c.time = collision.time;
+            } 
+            if (this.testAABB(body.collider, collider, collision)) {
+            // second collision test: pushes out bounding box and registers zero-time collisions
+                const cx = collision.normal_x && (collision.normal_x == Math.sign(body.velocity_x) || !body.velocity_x);
+                const cy = collision.normal_y && (collision.normal_y == Math.sign(body.velocity_y) || !body.velocity_y);
+                if (!cx && !cy) {
+                    return;
+                }
+
+                // a. corner detection. push out body from corner
+                if (Math.abs(collision.normal_x) + Math.abs(collision.normal_y) < 0.1) {
+                    body.velocity_x -= collision.normal_x / dt;
+                    body.velocity_y -= collision.normal_y / dt;
+                }
+
+                /*
+                if (cx) {
+                    body.velocity_x = collision.normal_x * collision.time / dt;
+                } else if (cy) {
+                    body.velocity_y = collision.normal_y * collision.time / dt;
+                }
+                */
+
+                const c = body.contacts_list[body.contacts++];
+                c.normal_y = collision.normal_y;
+                c.normal_x = collision.normal_x;
                 c.time = collision.time;
             }
         }
@@ -183,7 +210,7 @@ class SceneCollisions {
         SceneCollisions.setColliderPos(body.collider, newx, newy);
 
         // discard velocities
-        /*
+        // it nod gonna be affected by testAABB in applySwept cause testAABB do not use time
         for (let i = 0; i < body.contacts; i++) {
             const c = body.contacts_list[i];
             if (c.normal_x && c.time < 1) {
@@ -193,7 +220,6 @@ class SceneCollisions {
                 body.velocity_y = 0;
             }
         } 
-        */
     }
 
     getBodyNextShift(body: DynamicBody, vec: Vector2) {
@@ -215,7 +241,7 @@ class SceneCollisions {
      * @param body .
      * @returns cached BoxCollider
      */
-    calcBodyBroadphase(body: DynamicBody, dt: number, threshold: number = 0.1) : BoxCollider {
+    calcBodyBroadphase(body: DynamicBody, dt: number, threshold: number = 0) : BoxCollider {
         const vx = body.velocity_x * dt;
         const vy = body.velocity_y * dt;
         let bbox = this.cache.bc_0;
@@ -282,9 +308,37 @@ class SceneCollisions {
 
         if (near_x > near_y) {
             ret.normal_x = Math.sign(ray_dir.x);
-        } else /* if (near_x < near_y) */ {
+        } else /*if (near_x < near_y)*/ {
             ret.normal_y = Math.sign(ray_dir.y);
+        } /*else {
+            // Both axes now have equal intersection depth (direct and perfect corner collision).
+        }*/
+
+        return true;
+    }
+
+    /**
+     * does not use ret time. instead writes collision depth into nornal_x normal_y
+     */
+    testAABB(a: BoxCollider, b: BoxCollider, ret: CollisionResult = ({} as any)) : boolean {
+        ret.time = 1;
+        ret.normal_x = 0;
+        ret.normal_y = 0;
+
+        const dx = a.pos_x - b.pos_x;
+        const px = Math.abs(dx) - a.width / 2 - b.width / 2;
+        if (px > 0) {
+            return false;
         }
+
+        const dy = a.pos_y - b.pos_y;
+        const py = Math.abs(dy) - a.height / 2 - b.height / 2;
+        if (py > 0) {
+            return false;
+        }
+
+        ret.normal_x = px * Math.sign(dx);
+        ret.normal_y = py * Math.sign(dy);
 
         return true;
     }
