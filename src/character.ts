@@ -153,8 +153,7 @@ class Character {
 
         // wall glide
         if (perform_physics_actions && !this.collided_bottom && this.body.velocity_y <= 0 && (this.collided_left || this.collided_right)) {
-            this.body.velocity_y = lerp(this.body.velocity_y, -3, 0.3 * dr );
-            console.log(this.body.velocity_y)
+            this.body.velocity_y = lerp(this.body.velocity_y, -3, 0.3 );
         }
     }
 
