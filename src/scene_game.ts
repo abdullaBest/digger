@@ -35,6 +35,11 @@ export default class SceneGame {
         this.player_character = new Character(this.scene_collisions).init(body);
         await this.player_character_render.run(this.player_character);
 
+        {
+            const pos = this.scene_render.cache.vec3_0.copy(this.player_character_render.character_gltf.scene.position);
+            this.scene_render.setPos(this.scene_render.camera, pos);
+        }
+
         this.breakable_objects = {};
 
         addEventListener({callback: this._keydown.bind(this), name: "keydown", node: document.body}, this._listeners)
@@ -192,6 +197,7 @@ export default class SceneGame {
                 const ontop = ca.pos_y > cb.pos_y;
                 if (collides_x && collides_y && ontop) {
                     if (this.falling_blocks[k]) {
+                        // other falling blocks atop already falling block
                         shaking = false;
                         continue;
                     } else {
