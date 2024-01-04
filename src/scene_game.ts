@@ -35,7 +35,7 @@ export default class SceneGame {
         this.player_character = new Character(this.scene_collisions).init(body);
         await this.player_character_render.run(this.player_character);
 
-        {
+        if (this.attach_camera_to_player) {
             const pos = this.scene_render.cache.vec3_0.copy(this.player_character_render.character_gltf.scene.position);
             this.scene_render.setPos(this.scene_render.camera, pos);
         }
@@ -270,6 +270,13 @@ export default class SceneGame {
                     if (c && c.normal_y < 0 && c.time <= 0) {
                         delete this.falling_blocks[k];
                         this.scene_collisions.removeBody(k, false);
+                        
+                        const obj = this.scene_render.cache.objects[k];
+                        const collider = this.scene_collisions.colliders[k];
+                        if (obj) {
+                            obj.position.x  = collider.pos_x;
+                            obj.position.y  = collider.pos_y;
+                        }
                     }
                 }
             }
