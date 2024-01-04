@@ -1,12 +1,12 @@
 import * as THREE from './lib/three.module.js';
 import { GLTFLoader } from './lib/GLTFLoader.js';
 import { OrbitControls } from './lib/OrbitControls.js'
-import { Assets } from './assets.js'
-import { SceneEdit, SceneElement, SceneEditUtils } from "./scene_edit.js";
+import { Assets } from './assets'
+import { SceneEdit, SceneElement, SceneEditUtils } from "./scene_edit";
 import { TransformControls } from './lib/TransformControls.js';
-import SceneMath from './scene_math.js';
-import { SceneCollisions, BoxCollider } from './scene_collisions.js';
-import { lerp } from './math.js';
+import SceneMath from './scene_math';
+import { SceneCollisions, BoxCollider } from './scene_collisions';
+import { lerp, distlerp } from './math';
 
 class SceneCache {
     constructor() {
@@ -191,7 +191,6 @@ class SceneRender {
         }
 
         const list = {}
-
         // generate tileset list
         for (let i = 0; i < tileset.guids; i++) {
             const color_id = color_id_prefix + i;
@@ -405,7 +404,7 @@ class SceneRender {
             return;
         }
         this.colliders.removeCollider(id);
-        const collider = this.colliders.addBoxCollider(id, box);
+        const collider = this.colliders.createBoxCollider(id, box);
         if (this._drawDebug2dAabb) {
             this.drawColliderDebug(id, collider);
         }
@@ -450,7 +449,7 @@ class SceneRender {
             delete this.cache.objects[id];
         }
         delete this.cache.models[id];
-        this.colliders.remove(id);
+        this.colliders.removeBody(id, true);
     }
     clearModels() {
         this.transform_controls.detach();
@@ -571,13 +570,20 @@ class SceneRender {
 
         this.cube.rotateX(0.01);
         this.cube.rotateY(0.01);
-        if(this._drawDebug2dAabb) {
             for(const k in this.colliders.bodies) {
                 const body = this.colliders.bodies[k];
-                this.drawColliderDebug(k, body.collider);
-                this.drawColliderDebug(k + "_predict", body.collider, 0xff0000, this.colliders.getBodyNextShift(body, this.cache.vec2_0));
+                const obj = this.cache.objects[k];
+                if (obj && this.cache.models[k]) {
+                    const x = distlerp(obj.position.x, body.collider.pos_x, 0.2 * dr);
+                    const y = distlerp(obj.position.y, body.collider.pos_y, 0.2 * dr);
+                    obj.position.x  = x;
+                    obj.position.y  = y;
+                }
+                if(this._drawDebug2dAabb) {
+                    this.drawColliderDebug(k, body.collider);
+                    this.drawColliderDebug(k + "_predict", body.collider, 0xff0000, this.colliders.getBodyNextShift(body, this.cache.vec2_0));
+                }
             }
-        }
     
         this.renderer.render( this.scene, this.camera );
     }
@@ -751,16 +757,16 @@ class SceneRender {
 
         {
             let groundbox = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(0, -1), new THREE.Vector2(1, 1));
-            const groundbody = this.colliders.addBoxCollider("ground", groundbox);
+            const groundbody = this.colliders.createBoxCollider("ground", groundbox);
             this.drawColliderDebug("ground", groundbody);
         }
         {
             let groundbox = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(2, -1), new THREE.Vector2(1, 1));
-            const groundbody = this.colliders.addBoxCollider("ground2", groundbox);
+            const groundbody = this.colliders.createBoxCollider("ground2", groundbox);
             this.drawColliderDebug("ground2", groundbody);
         }
         let groundbox1 = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(-1.5, 0.5), new THREE.Vector2(1, 1));
-        const groundbody1 = this.colliders.addBoxCollider("ground1", groundbox1);
+        const groundbody1 = this.colliders.createBoxCollider("ground1", groundbox1);
         this.drawColliderDebug("ground1", groundbody1);
     }
 

@@ -2,6 +2,7 @@ import { Assets, listenFormSubmit } from "../assets";
 import SceneRender from "../scene_render";
 import { sprintf } from "../lib/sprintf.js";
 import { listenClick, reattach, switchPage, querySelector, popupListSelect } from "../document";
+import { SceneEditUtils } from "../scene_edit";
 
 /**
  * v1: draws property edit with select option
@@ -255,32 +256,32 @@ class AssetsView {
         makePropEditField(properties_container, "tilesize_x", "number");
         makePropEditField(properties_container, "tilesize_y", "number");
 
-
-        for (let i = 0; i < tilesetdata.guids; i++) {
-            const color_id = color_id_prefix + i;
-            const link_id = link_id_prefix + i;
-            const durability_id = durability_id_prefix + i;
-            const entry = getmake_tileenrty(i);
-            makePropEditField(entry, color_id);
-            makePropSelectField(entry, link_id, /model|png/);
-            makePropEditField(entry, durability_id);
-        }
-        
-        listenClick("#details_tileset_aliases_add", () => {
-            const index = tilesetdata.guids++;
+        const writeTileEntry = (index, create = false) => {
             const color_id = color_id_prefix + index;
             const link_id = link_id_prefix + index;
             const durability_id = durability_id_prefix + index;
 
-            tilesetdata[color_id] = "0x000000";
-            tilesetdata[link_id] = null;
-            tilesetdata[durability_id] = "0x00";
+            if (!create && (!(color_id in tilesetdata) || !(link_id in tilesetdata))) {
+                return;
+            }
+
+            tilesetdata[color_id] =  tilesetdata[color_id] ?? "0x000000";
+            tilesetdata[link_id] =  tilesetdata[link_id] ?? null;
+            tilesetdata[durability_id] = tilesetdata[durability_id] ?? "0x00";
 
             const entry = getmake_tileenrty(index);
             makePropEditField(entry, color_id);
             makePropSelectField(entry, link_id, /model|png/);
             makePropEditField(entry, durability_id);
+        }
 
+        for (let i = 0; i < tilesetdata.guids; i++) {
+            writeTileEntry(i);
+        }
+        
+        listenClick("#details_tileset_aliases_add", () => {
+            const index = tilesetdata.guids++;
+            writeTileEntry(index, true);
             if(onchange) {
                 onchange();
             }
@@ -308,6 +309,7 @@ class AssetsView {
         makePropSelectField("texture", /png|jpg/);
         makeCkeckboxField("collider");
         makePropEditField("durability");
+        makePropEditField("tags");
     }
 
     _drawModelPropertyFields(container: HTMLElement, modeldata: any, onchange: () => void) {

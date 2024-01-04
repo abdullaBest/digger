@@ -13,7 +13,7 @@ class App {
         this.assets = new Assets();
         this.scene_edit = new SceneEdit(this.assets);
         this.scene_game = new SceneGame();
-        this.scene_render = new SceneRender(this.scene_edit, this.scene_game.colliders);
+        this.scene_render = new SceneRender(this.scene_edit, this.scene_game.scene_collisions);
         this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render);
         this.assets_view = new AssetsView(this.assets, this.scene_render);
 

@@ -50,10 +50,14 @@ class CollidersCache {
     constructor() {
         this.bc_0 = SceneCollisions.makeBoxCollider();
         this.cr_0 = { normal_x: 0, normal_y: 0, time: 0,  };
-        this.contacts = Array.apply(null,{length: 8}).map(() => { return Object.assign({}, this.cr_0) });
+        this.contacts = CollidersCache.constructContactsArray(8);
         this.vec2_0 = new Vector2();
         this.vec2_1 = new Vector2();
         this.vec2_2 = new Vector2();
+    }
+
+    static constructContactsArray(length: number): Array<CollisionResult> {
+        return Array.apply(null,{ length }).map(() => { return Object.assign({}, { normal_x: 0, normal_y: 0, time: 0,  }) });
     }
 }
 
@@ -85,37 +89,42 @@ class SceneCollisions {
         this.step_number = 0;
     }
 
-    addBoxCollider(id: string, box: Box2) : BoxCollider {
+    createBoxCollider(id: string, box: Box2) : BoxCollider {
         const collider = SceneCollisions.makeBoxCollider(box);
         this.colliders[id] = collider;
 
         return collider;
     }
 
-    addBoxBody(id, box: Box2) : DynamicBody {
+    createBoxBody(id, box: Box2) : DynamicBody {
         const collider = SceneCollisions.makeBoxCollider(box);
+
+        return this.addBoxBody(id, collider);
+    }
+
+    addBoxBody(id: string, collider: BoxCollider) : DynamicBody {
         const body = {
             id,
             collider,
             velocity_x: 0,
             velocity_y: 0,
             contacts: 0,
-            contacts_list: this.cache.contacts
+            contacts_list: CollidersCache.constructContactsArray(4)
         }
         this.bodies[id] = body;
 
         return body;
     }
 
-    removeBody(id: string) {
+    removeBody(id: string, with_collider: boolean) {
         delete this.bodies[id];
+
+        if (with_collider) {
+            this.removeCollider(id);
+        }
     }
 
     removeCollider(id: string) {
-        delete this.colliders[id];
-    }
-
-    remove(id: string) {
         delete this.colliders[id];
     }
 
@@ -147,9 +156,11 @@ class SceneCollisions {
                 body.velocity_y -= collision.normal_y * Math.abs(body.velocity_y) * (1 - collision.time)
 
                 const c = body.contacts_list[body.contacts++];
-                c.normal_x = collision.normal_x;
-                c.normal_y = collision.normal_y;
-                c.time = collision.time;
+                if (c) {
+                    c.normal_x = collision.normal_x;
+                    c.normal_y = collision.normal_y;
+                    c.time = collision.time;
+                }
             } 
             if (this.testAABB(body.collider, collider, collision)) {
             // second collision test: pushes out bounding box and registers zero-time collisions
@@ -174,16 +185,18 @@ class SceneCollisions {
                 */
 
                 const c = body.contacts_list[body.contacts++];
-                c.normal_y = collision.normal_y;
-                c.normal_x = collision.normal_x;
-                c.time = collision.time;
+                if (c) {
+                    c.normal_y = collision.normal_y;
+                    c.normal_x = collision.normal_x;
+                    c.time = collision.time;
+                }
             }
         }
 
         let broadphasebox = this.calcBodyBroadphase(body, dt); 
         for(const k in this.colliders) {
             const collider = this.colliders[k];
-            if (this.testCollisionAabb(broadphasebox, collider)) {
+            if (this.checkCollisionAabb(broadphasebox, collider)) {
                 colliders_list.push(collider);
             }
         }
@@ -230,7 +243,12 @@ class SceneCollisions {
         return vec.set(posx, posy);
     }
 
-    testCollisionAabb(a: BoxCollider, b: BoxCollider) {
+    checkCollisionAabb(a: BoxCollider, b: BoxCollider) {
+        // should test by id
+        if (a == b) {
+            return false;
+        }
+        
         return a._left <= b._right &&
                 a._right >= b._left &&
                 a._top >= b._bottom &&
@@ -320,7 +338,7 @@ class SceneCollisions {
     /**
      * does not use ret time. instead writes collision depth into nornal_x normal_y
      */
-    testAABB(a: BoxCollider, b: BoxCollider, ret: CollisionResult = ({} as any)) : boolean {
+    testAABB(a: BoxCollider, b: BoxCollider, ret: CollisionResult) : boolean {
         ret.time = 1;
         ret.normal_x = 0;
         ret.normal_y = 0;

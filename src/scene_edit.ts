@@ -87,7 +87,7 @@ class SceneElement {
 
 class SceneEditUtils {
     static constructModelData(gltf: string, texture: string) {
-        return { gltf, material: "standart", texture, matrix: null, collider: false, durablity: 0x00 }
+        return { gltf, material: "standart", texture, matrix: null, collider: false, durability: "0x00", tags: "" }
     }
 
     static contructTilesetData(texture: string) {

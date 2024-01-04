@@ -24,10 +24,10 @@ export default class CharacterRender {
     }
 
     async run(character: Character) {
-        this.stop();
         this.character = character;
 
         this.character_gltf = await this.scene_render.addGLTF("res/KayKit_AnimatedCharacter_v1.2.glb", "player_character");
+        //this.character_gltf.scene.children[0].position.y = -0.5;
         this.character_gltf.scene.scale.set(0.5, 0.5, 0.5);
         this.animation_mixer = new THREE.AnimationMixer(this.character_gltf.scene);
         this.animations_actions_cache = {};
