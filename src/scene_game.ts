@@ -76,13 +76,22 @@ export default class SceneGame {
 
         if (this.attach_camera_to_player && this.player_character_render.character_gltf) {
             const pos = this.scene_render.cache.vec3_0.copy(this.player_character_render.character_gltf.scene.position);
+
             pos.z = 7;
-            const lposx = this.scene_render.camera.position.x;
-            const lposy = this.scene_render.camera.position.y;
+            const lposx = (this.scene_render.camera as any).position.x;
+            const lposy = (this.scene_render.camera as any).position.y;
+            const shift_y = 1;
+            const targ_y = pos.y + shift_y;
             pos.x = lerp(lposx, pos.x, Math.pow(Math.abs(lposx - pos.x), 2) * 0.05 * dr);
-            pos.y = lerp(lposy, pos.y, Math.pow(Math.abs(lposy - pos.y), 2) * 0.05 * dr);
+            pos.y = lerp(lposy, targ_y, Math.pow(Math.abs(lposy - targ_y), 2) * 0.05 * dr);
+
+            //pos.y = lerp(pos.y, pos.y - this.player_character.look_direction_y * 2, 0.1);
+
             this.scene_render.setPos(this.scene_render.camera, pos);
-            this.scene_render.camera.lookAt(pos.x, pos.y, pos.z - 7);
+
+            pos.z -= 7;
+
+            this.scene_render.camera.lookAt(pos.x, targ_y - shift_y, pos.z);
         }
 
         if(this.player_character.performed_actions.find((e) => e.tag == "hit")) { 
