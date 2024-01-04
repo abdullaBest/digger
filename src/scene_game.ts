@@ -8,6 +8,7 @@ import { lerp } from "./math";
 
 interface FallingBlockData {
     elapsed: number;
+    shaking: boolean;
 }
 
 export default class SceneGame {
@@ -179,7 +180,8 @@ export default class SceneGame {
     findFallingBlockAround(id: string) {
         const activate = (blockid: string) => {
             // b. iterate all blocks around activating block and find out if it stays on something
-            const ca = this.scene_collisions.colliders[blockid]
+            const ca = this.scene_collisions.colliders[blockid];
+            let shaking = true;
             for (const k in this.scene_collisions.colliders) {
                 if (k == id) {
                     continue;
@@ -189,12 +191,17 @@ export default class SceneGame {
                 const collides_y = ca._bottom <= cb._top && cb._bottom <= ca._top;
                 const ontop = ca.pos_y > cb.pos_y;
                 if (collides_x && collides_y && ontop) {
-                    // do not activate if it stil stays on something
-                    return;
+                    if (this.falling_blocks[k]) {
+                        shaking = false;
+                        continue;
+                    } else {
+                        // do not activate if it stil stays on something
+                        return;
+                    }
                 }
             }
 
-            this.activateFallingBlock(blockid);
+            this.activateFallingBlock(blockid, shaking);
         }
 
         // a. Iterate over all block around broken tile and try to activate falling blocks
@@ -215,24 +222,26 @@ export default class SceneGame {
         }
     }
 
-    activateFallingBlock(id: string) {
+    activateFallingBlock(id: string, shaking: boolean) {
         if (this.falling_blocks[id]) {
             return;
         }
 
         this.falling_blocks[id] = {
-            elapsed: 0
+            elapsed: 0,
+            shaking
         }
     }
     
     stepFallingBlocks(dt: number) {
         for(const k in this.falling_blocks) {
             const b = this.falling_blocks[k];
-            b.elapsed += dt;
 
             const collider = this.scene_collisions.colliders[k];
             const body = this.scene_collisions.bodies[k];
-            if (b.elapsed < 1) {
+            if (b.elapsed == 0) {
+                this.findFallingBlockAround(k);
+            } else if (b.elapsed < 1) {
                 // a. 1 sec shaking, 
                 const obj = this.scene_render.cache.objects[k];
                 if (!obj || !collider) {
@@ -258,6 +267,8 @@ export default class SceneGame {
                     }
                 }
             }
+
+            b.elapsed += dt;
         }
     }
     
