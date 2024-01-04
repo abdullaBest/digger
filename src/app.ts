@@ -63,7 +63,7 @@ class App {
         const dt = (now - this.timestamp);
         const dtscaled = dt / 1000;
         this.timestamp = now;
-        const deltaref = Math.max(dt / this.REF_DELTATIME, 3);
+        const deltaref = Math.min(dt / this.REF_DELTATIME, 3);
 
         this.scene_game.step(dtscaled, deltaref);
         this.scene_render.step(dtscaled, deltaref);
