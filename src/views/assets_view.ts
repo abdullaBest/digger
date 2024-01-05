@@ -332,6 +332,28 @@ class AssetsView {
         makePropEditField("tags");
     }
 
+    static drawTriggerPropertyFields(container: HTMLElement, assets: Assets, modeldata: any, onchange?: () => void) {
+        const makePropSelectField = (name, extension = name) => {
+            new AssetPropertyEdit().init(modeldata, name, onchange).drawSelectOption(async () => {
+                const popupel = querySelector("container#popup_content");
+                AssetsView.propagate(assets, popupel, {extension: extension}, '');
+                const newid = await popupListSelect("select " + extension);
+                return newid;
+            }, container);
+        };
+        const makePropEditField = (name, type = "text") => {
+            new AssetPropertyEdit().init(modeldata, name, onchange).drawTextEditOption(container, type);
+        }
+        const makeCkeckboxField = (name) => {
+            new AssetPropertyEdit().init(modeldata, name, onchange).drawCkeckboxOption(container);
+        }
+        // tynroar torefactor 231226: make unified flow for model and other types
+        makePropEditField("type");
+        makePropEditField("signal");
+        makePropEditField("width", "number");
+        makePropEditField("height", "number");
+    }
+
     _drawModelPropertyFields(container: HTMLElement, modeldata: any, onchange: () => void) {
         AssetsView.drawModelPropertyFields(container, this.assets, modeldata, onchange);
     }

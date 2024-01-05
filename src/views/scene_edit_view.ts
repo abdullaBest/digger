@@ -89,6 +89,16 @@ export default class SceneEditView {
             this.draw(el.id);
         }, this._listeners)
 
+        listenClick("#add_scene_trigger_btn",  async (ev) => {
+            const el = await this.scene_edit.addElement({trigger: { type: "not defined", signal: "unset", width: 1, height: 1 }});
+            this.draw(el.id);
+        }, this._listeners)
+
+        listenClick("#add_scene_mapentry_btn",  async (ev) => {
+            const el = await this.scene_edit.addElement({trigger: { type: "mapentry", signal: "unset", width: 1, height: 1 }});
+            this.draw(el.id);
+        }, this._listeners)
+
         // saves and returs to scene list
         listenClick("#back_to_scene_list_btn_save",  async (ev) => {
             this.closeScene(true);
@@ -179,13 +189,22 @@ export default class SceneEditView {
             AssetsView.drawModelPropertyFields(props_container, this.scene_edit.assets, element.components.model.properties, redraw)
         }
 
-        if(element.components.tileset) {
+        if (element.components.tileset) {
             const redraw = () => {
                 this.scene_render.removeTileset(id);
                 this.scene_render.addTileset(id, element.components.tileset.properties);
             };
             redraw();
             AssetsView.drawTilesetPropertyFilelds(props_container, this.scene_edit.assets, element.components.tileset.properties, redraw)
+        }
+
+        if (element.components.trigger) {
+            const redraw = () => {
+                this.scene_render.removeElement(element.id);
+                this.scene_render.addTriggerElement(element.id, element.components.trigger.properties);
+            };
+            redraw();
+            AssetsView.drawTriggerPropertyFields(props_container, this.scene_edit.assets, element.components.trigger.properties, redraw)
         }
 
         if (!el.querySelector("controls")) {

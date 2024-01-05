@@ -89,8 +89,8 @@ class SceneCollisions {
         this.step_number = 0;
     }
 
-    createBoxCollider(id: string, box: Box2) : BoxCollider {
-        const collider = SceneCollisions.makeBoxCollider(box);
+    createBoxCollider(id: string, box: Box2, type: ColliderType = ColliderType.RIGID) : BoxCollider {
+        const collider = SceneCollisions.makeBoxCollider(box, type);
         this.colliders[id] = collider;
 
         return collider;
@@ -254,6 +254,12 @@ class SceneCollisions {
         // apply collisions
         while(colliders_list.length) {
             const c = colliders_list.shift();
+            if (!c) { break; }
+            
+            if (c.type == ColliderType.SIGNAL) {
+                continue;
+            }
+
             applySimpleAabb(c);
             applySwept(c);
         }
@@ -429,6 +435,10 @@ class SceneCollisions {
         collider._top = y + half_hieght;
     }
 
+    setColliderPos(collider: BoxCollider, x: number, y: number) {
+        SceneCollisions.setColliderPos(collider, x, y);
+    }
+
     static makeBoxCollider(box?: Box2, type: ColliderType = ColliderType.RIGID) : BoxCollider {
         const collider = {
             width: 0,
@@ -453,4 +463,4 @@ class SceneCollisions {
 }
 
 export default SceneCollisions;
-export { SceneCollisions, BoxCollider, DynamicBody }
+export { SceneCollisions, BoxCollider, DynamicBody, ColliderType }

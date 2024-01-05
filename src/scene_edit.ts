@@ -6,13 +6,17 @@ import { Assets, Asset, sendFiles } from "./assets";
 class OverridedAssetLink {
     id: string;
     properties: any;
-    constructor(id?, properties = {}) {
+    _has_link: boolean;
+
+    constructor(id?, properties = {}, has_link = true) {
         this.id = id;
-        this.properties = properties;
+        this.properties = Object.assign({}, properties);
+        this._has_link = has_link;
     }
 
-    init(opts: {id: string, properties: any}) : OverridedAssetLink {
+    init(opts: {id: string, properties: any, has_link: boolean}) : OverridedAssetLink {
         this.id = opts.id;
+        this._has_link = opts.has_link;
         this.properties = Object.assign(this.properties, opts.properties);
 
         return this;
@@ -26,16 +30,22 @@ class OverridedAssetLink {
     store() {
         return {
             id: this.id,
-            properties: this.properties
+            properties: this.properties,
+            has_link: this.has_link
         }
     }
 
     clone(other: OverridedAssetLink): OverridedAssetLink {
         this.id = other.id;
+        this._has_link = other.has_link;
         this.properties = Object.assign(this.properties, other.properties);
         Object.setPrototypeOf(this.properties, Object.getPrototypeOf(other.properties));
 
         return this;
+    }
+
+    get has_link(): boolean {
+        return this._has_link != false;
     }
 }
 
@@ -55,7 +65,9 @@ class SceneElement {
     async load(assets: Assets) {
         for(const k in this.components) {
             const component = this.components[k]
-            await component.load(assets.get(component.id).info.url);
+            if (component.has_link) {
+                await component.load(assets.get(component.id).info.url);
+            }
         }
     }
 
@@ -176,13 +188,16 @@ class SceneEdit {
         this.asset = null;
     }
 
-    async addElement(opts: {tileset?: string, model?: string, name?: string} = {}) : Promise<SceneElement> {
+    async addElement(opts: {trigger?: any, tileset?: string, model?: string, name?: string} = {}) : Promise<SceneElement> {
         const el = new SceneElement(this.asset?.info.id + '-e' + this.guids++);
         if(opts.model) {
             el.components.model = new OverridedAssetLink(opts.model);
         }
         if(opts.tileset) {
             el.components.tileset = new OverridedAssetLink(opts.tileset);
+        }
+        if(opts.trigger) {
+            el.components.trigger = new OverridedAssetLink(el.id, opts.trigger, false);
         }
         if(opts.name) {
             el.name = opts.name;

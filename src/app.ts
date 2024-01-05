@@ -83,7 +83,7 @@ class App {
             const id = target?.id;
             switch (id) {
                 case "play_scene_btn":
-                    this.scene_game.run();
+                    this.scene_game.run(this.scene_edit.elements);
                     break;
                 case "physics_toggle_autostep":
                     this.scene_game.autostep = target.classList.toggle("highlighted");

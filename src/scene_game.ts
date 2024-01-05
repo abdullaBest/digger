@@ -5,6 +5,7 @@ import { addEventListener, removeEventListeners, EventListenerDetails } from "./
 import CharacterRender from "./character_render";
 import SceneRender from "./scene_render";
 import { lerp } from "./math";
+import { SceneElement } from "./scene_edit";
 
 interface FallingBlockData {
     elapsed: number;
@@ -26,17 +27,34 @@ export default class SceneGame {
         return this;
     }
 
-    async run() {
+    async run(elements: { [id: string] : SceneElement; }) {
         this.stop();
         this.active = true;
+        this.elements = elements;
 
-        let playerbox = new Box2().setFromCenterAndSize(new Vector2(0.1, 4), new Vector2(0.5, 0.6));
+        // find start pos
+        const startpos = new Vector2(0.1, 4);
+        for(const k in elements) {
+            const el = elements[k];
+            const props = el.components.trigger?.properties;
+            if (props && props.type == "mapentry") {
+                startpos.x = props.pos_x ?? 0;
+                startpos.y = props.pos_y ?? 0;
+            } 
+        }
+
+        // init player
+        let playerbox = new Box2().setFromCenterAndSize(startpos, new Vector2(0.5, 0.6));
         const body = this.scene_collisions.createBoxBody("player_character", playerbox);
         this.player_character = new Character(this.scene_collisions).init(body);
         await this.player_character_render.run(this.player_character);
 
+        // teleport it at start
+        this.player_character_render.character_gltf.scene.position.set(startpos.x, startpos.y, 0);
+
+        // teleport camera
         if (this.attach_camera_to_player) {
-            const pos = this.scene_render.cache.vec3_0.copy(this.player_character_render.character_gltf.scene.position);
+            const pos = this.scene_render.cache.vec3_0.set(startpos.x, startpos.y, 10);
             this.scene_render.setPos(this.scene_render.camera, pos);
         }
 
@@ -88,8 +106,8 @@ export default class SceneGame {
             const lposy = (this.scene_render.camera as any).position.y;
             const shift_y = 1;
             const targ_y = pos.y + shift_y;
-            pos.x = lerp(lposx, pos.x, Math.pow(Math.abs(lposx - pos.x), 2) * 0.05 * dr);
-            pos.y = lerp(lposy, targ_y, Math.pow(Math.abs(lposy - targ_y), 2) * 0.05 * dr);
+            pos.x = lerp(lposx, pos.x, Math.min(1, Math.pow(Math.abs(lposx - pos.x), 2) * 0.05 * dr));
+            pos.y = lerp(lposy, targ_y, Math.min(1, Math.pow(Math.abs(lposy - targ_y), 2) * 0.05 * dr));
 
             //pos.y = lerp(pos.y, pos.y - this.player_character.look_direction_y * 2, 0.1);
 
@@ -335,4 +353,5 @@ export default class SceneGame {
     private _listeners: Array<EventListenerDetails>;
     private active: boolean;
     autostep: boolean;
+    elements: { [id: string] : SceneElement; }
 }

@@ -5,7 +5,7 @@ import { Assets } from './assets'
 import { SceneEdit, SceneElement, SceneEditUtils } from "./scene_edit";
 import { TransformControls } from './lib/TransformControls.js';
 import SceneMath from './scene_math';
-import { SceneCollisions, BoxCollider } from './scene_collisions';
+import { SceneCollisions, BoxCollider, ColliderType } from './scene_collisions';
 import { lerp, distlerp } from './math';
 
 class SceneCache {
@@ -14,6 +14,7 @@ class SceneCache {
         this.vec3_0 = new THREE.Vector3();
         this.gltfs = {};
         this.models = {};
+        this.triggers = {};
         this.tilesets = {};
         this.materials = {};
         this.debug_colliders = {};
@@ -30,6 +31,7 @@ class SceneCache {
     // stores pointers to models data
     // tynroar note: probably bad and unsafe idea
     models: { [id: string] : any; };
+    triggers: { [id: string] : any; };
     tilesets: { [id: string] : Array<string>; };
     materials: { [id: string] : THREE.Material; };
     debug_colliders: { [id: string] : THREE.Mesh; };
@@ -104,23 +106,36 @@ class SceneRender {
             const id = object.name;
             const el = this.scene_edit.elements && this.scene_edit.elements[id];
 
-            let mproperties = this.cache.models[id];
+            let mproperties = this.cache.models[id] ?? this.cache.triggers[id];
 
             // just in case: if scene elements has required element - use pointer from there
             if (el && el.components.model) {
                 mproperties = el.components.model.properties;
-            }
-            if (mproperties) {
-                mproperties.matrix = object.matrixWorld.toArray()
+                if (mproperties) {
+                    mproperties.matrix = object.matrixWorld.toArray()
 
-                object.traverse((o) => {
-                    if (!o.isMesh) {
-                        return;
-                    }
-                    if(mproperties.collider) {
-                        this.makeObjectAabb2d(id, o, object);
-                    }
-                });
+                    object.traverse((o) => {
+                        if (!o.isMesh) {
+                            return;
+                        }
+                        if(mproperties.collider) {
+                            this.makeObjectAabb2d(id, o, object);
+                        }
+                    });
+                }
+            } else if (el && el.components.trigger) {
+                mproperties = el.components.trigger.properties;
+
+                const pos_x = (object as any).position.x;
+                const pos_y = (object as any).position.y;
+                mproperties.pos_x = pos_x;
+                mproperties.pos_y = pos_y;
+
+                const collider = this.colliders.colliders[id];
+                this.colliders.setColliderPos(collider, pos_x, pos_y);
+                if (this._drawDebug2dAabb) {
+                    this.drawColliderDebug(id, collider);
+                }
             }
         });
         this.transform_controls.addEventListener( 'mouseDown', ( event ) => {
@@ -383,6 +398,35 @@ class SceneRender {
         return load();
     }
 
+    async addTriggerElement(id: string, properties: any) {
+        const type = properties.type;
+        const spritenames = {
+            "mapentry": "./res/icons/character_place.png",
+            "mapexit": "./res/icons/character_lift.png",
+            "unknown": "./res/icons/hexagon_question.png",
+        }
+        let spritename = spritenames[type] || spritenames.unknown;
+
+        const sprite = new THREE.Sprite( this.getMaterial("sprite", spritename, true) as THREE.SpriteMaterial);
+
+        sprite.name = id;
+        this.scene.add(sprite);
+        this.cache.triggers[id] = properties;
+        this.cache.objects[id] = sprite;
+
+        if (properties.pos_x || properties.pos_y) {
+            this.setPos(sprite, this.cache.vec3_0.set(properties.pos_x ?? 0, properties.pos_y ?? 0, 0))
+        }
+        
+        const pos_x = (sprite as any).position.x;
+        const pos_y = (sprite as any).position.y;
+        let box = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(pos_x, pos_y), new THREE.Vector2(properties.width, properties.height));
+        const collider = this.colliders.createBoxCollider(id, box, ColliderType.SIGNAL);
+        if (this._drawDebug2dAabb) {
+            this.drawColliderDebug(id, collider);
+        }
+    }
+
     // tmp. only gonna work for gltf.scenes with one mesh
     produceObjectColliders(id: string, obj: THREE.Object3D) {
         obj.traverse((o) => {
@@ -410,8 +454,11 @@ class SceneRender {
         }
     }
 
-    drawColliderDebug(id: string, collider: BoxCollider, color = 0x00ffff, shift?: THREE.Vector2) {
+    drawColliderDebug(id: string, collider: BoxCollider, color?: number, shift?: THREE.Vector2) {
         let plane = this.cache.debug_colliders[id];
+
+        color = color ?? collider.type == ColliderType.RIGID ? 0x00ffff : 0xff00ff;
+
         if (!plane) {
             const geometry = new THREE.PlaneGeometry( 1, 1 );
             // tynroar tmp todo: move material into cache
@@ -450,7 +497,19 @@ class SceneRender {
         }
         delete this.cache.models[id];
         this.colliders.removeBody(id, true);
+        this.colliders.removeCollider(id);
     }
+
+    /**
+     * removes anything that could be found with required id
+     * @param id 
+     */
+    removeElement(id: string) {
+        this.removeModel(id);
+        this.removeTileset(id);
+        delete this.cache.triggers[id];
+    }
+
     clearModels() {
         this.transform_controls.detach();
         for(const k in this.cache.models) {
@@ -524,8 +583,8 @@ class SceneRender {
      * @param name material name
      * @param texture_url path to lexture
      */
-    getMaterial(name: string, texture_url: string) : THREE.Material {
-        const materialTypes = { standart: THREE.MeshStandardMaterial, toon: THREE.MeshToonMaterial }
+    getMaterial(name: string, texture_url: string, flipY: boolean = false) : THREE.Material {
+        const materialTypes = { standart: THREE.MeshStandardMaterial, toon: THREE.MeshToonMaterial, sprite: THREE.SpriteMaterial }
 
         if(!name || !materialTypes[name]) {
             console.warn(`SceneRender::getMaterial meterial preset has no type ${name}. Using 'standart'`);
@@ -539,7 +598,7 @@ class SceneRender {
 
         const texture = new THREE.TextureLoader().load( texture_url );
         texture.colorSpace = THREE.SRGBColorSpace;
-        texture.flipY = false;
+        texture.flipY = flipY;
 
         const materialOptions = { 
             standart:  { roughness: 0.7 },
@@ -629,7 +688,7 @@ class SceneRender {
             const intersect = intersects[i];
             let o = intersect.object;
             while(o) {
-                if (this.cache.models[o.name]) {
+                if (this.cache.models[o.name] || this.cache.triggers[o.name]) {
                     object = o;
                     break;
                 }
