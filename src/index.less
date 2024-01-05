@@ -99,6 +99,7 @@ db {
     display: flex;
     flex-direction: row;
     gap: 2px;
+    flex-shrink: 0;
   }
 
   #scene_view, #assets_view, #dev_view {
@@ -152,6 +153,18 @@ container#scene_tools_palette, page#details_model_edit, page#details_tileset_edi
   &:extend(.frame_background);
   btn {
     display: block;
+  }
+}
+
+#assets_view #assets_taglist {
+  margin: 4px;
+  margin-bottom: 8px;
+  font-size: 0.7em;
+  display: flex;
+  &:extend(.frame_background);
+
+  btn {
+    margin: 0 4px;
   }
 }
 
@@ -221,6 +234,11 @@ canvas#rootcanvas {
   gap: 8px;
 } 
 
+#assets_view tilegrid {
+  align-items: center;
+  justify-content: center;
+}
+
 #assets_view tilegrid, #scene_edit_list, #scene_edit_elements, container#popup_content {
   a, entry {
     user-select: none;
@@ -228,7 +246,7 @@ canvas#rootcanvas {
     flex-direction: column;
 
     &[id]::after {
-      content: attr(id);
+      content: attr(id) ". " attr(data-tags);
       font-size: 0.7em;
       color: gray;
     }
@@ -302,6 +320,11 @@ btn, .btn {
 
 .padded {
   padding: 4px;
+}
+
+.disabled {
+  pointer-events: none;
+  filter: contrast(0.5) blur(1px);
 }
 
 splitter {

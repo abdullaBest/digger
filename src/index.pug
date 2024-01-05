@@ -70,6 +70,8 @@ body
 					input#assets_upload_files(type="file" name="files" multiple)
 					input(type="submit" value="Upload")
 			.view
+				container#assets_taglist
+				splitter &
 				tilegrid#assets_list
 				splitter &
 				a.btn(href="#asset_create") Create new
@@ -115,6 +117,8 @@ body
 			form#asset_props
 				label name
 					input(value="%s", type="text" name="name", required)
+				label tags
+					input(value="%s", type="text" name="tags")
 				label extension
 					input(value="%s", type="text", name="extension" required disabled)
 				label#assets_upload_files_label reupload 

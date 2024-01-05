@@ -101,8 +101,11 @@ class App {
             for(const i in ids) {
                 const id = ids[i];
                 await this.assets.loadAsset(id);
+
+                // draw in main assets view
                 this.assets_view.draw(id);
 
+                // draw in scene list
                 if (this.assets.filter(id, {extension: "scene"})) {
                     this.assets_view.draw(id, this.scene_edit_view.list_container, "#scene_edit_details");
                 }
@@ -151,13 +154,19 @@ class App {
         });
     }
     async load() {
+        this.scene_edit_view.list_container.classList.add("disabled");
+        
         await this.assets.load((id)=> {
+            // draw in main assets view
             this.assets_view.draw(id);
 
+            // draw scene list
             if (this.assets.filter(id, {extension: "scene"})) {
                 this.assets_view.draw(id, this.scene_edit_view.list_container, "#scene_edit_details");
             }
         });
+
+        this.scene_edit_view.list_container.classList.remove("disabled");
     }
     stop() {
         this.scene_render.stop();

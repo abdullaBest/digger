@@ -104,6 +104,7 @@ enum AssetStatus {
 interface AssetInfo {
     url: string;
     name: string;
+    tags: string;
     id: string;
     type: string;
     extension: string;
@@ -204,7 +205,8 @@ class Assets {
             id: data.id,
             type: data.type,
             extension: data.extension,
-            revision: data.revision
+            revision: data.revision,
+            tags: data.tags ?? ""
         });
         this.list[id] = asset;
         if(onprogress) {

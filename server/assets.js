@@ -39,7 +39,7 @@ export default class Assets {
      * @param {String} opts.extension file extension based on filename
      * @param {Number} opts.size data size
      */
-    async register({ id, filename, name, type, size, extension }) {
+    async register({ id, filename, name, type, size, extension, tags }) {
         this.content.data[id] = {
             id,
             filename,
@@ -48,7 +48,8 @@ export default class Assets {
             size,
             extension,
             revision: 0,
-            revisions: [filename]
+            revisions: [filename],
+            tags
         }
 
         await this.save();

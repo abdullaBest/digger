@@ -70,6 +70,7 @@ function updateFiles(req, res) {
 
   const file = req.file;
   const name = req.body.name;
+  const tags = req.body.tags;
   const extension = req.body.extension;
 
   if (file) {
@@ -79,6 +80,9 @@ function updateFiles(req, res) {
   }
   if (name) {
     asset.name = name;
+  }
+  if (tags) {
+    asset.tags = tags;
   }
   assets.save();
 
@@ -97,6 +101,7 @@ function uploadFiles(req, res) {
       type: f.mimetype, 
       size: f.size,
       extension: f.originalname.split('.').pop(),
+      tags: ""
     })
     ids.push(id);
   }

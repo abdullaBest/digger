@@ -108,6 +108,26 @@ class AssetsView {
             }
         });
 
+        listenClick("container#assets_taglist", (ev) => {
+            const targ = ev.target as HTMLElement;
+            if (!targ) {
+                return;
+            }
+            const id = targ.id;
+            if (!id || id == "assets_taglist") {
+                return;
+            }
+
+            targ.classList.toggle("highlighted");
+
+            const tags = document.querySelectorAll("container#assets_taglist .highlighted");
+            const tags_arr: Array<string> = [];
+            for(let i = 0; i < tags.length; i++) {
+                tags_arr.push(tags[i].id);
+            }
+            this.propagateTagsFiltered(tags_arr);
+        });
+
         return this;
     }
 
@@ -123,7 +143,7 @@ class AssetsView {
 		if(!template) {
 			throw new Error("Couldn't find template#asset_details_template");
 		}
-        this.props_container.innerHTML = sprintf(template, info.name, info.extension, info.extension);
+        this.props_container.innerHTML = sprintf(template, info.name, info.tags, info.extension, info.extension);
 
         this.props_container.querySelector("label#assets_upload_files_label")?.classList[info.extension.includes("model") ? "add" : "remove"]('hidden');
         const asset_preview = querySelector("container#asset_preview_container");
@@ -196,7 +216,7 @@ class AssetsView {
         listenFormSubmit({
             form: querySelector("form#asset_props", this.props_container) as HTMLFormElement,
             url: `/assets/upload/${id}`,
-            fields: ["name", "extension"],
+            fields: ["name", "extension", "tags"],
             files: ["files"],
             custom: {"files": makeJSONFile}
         }, async (s, res) => {
@@ -325,13 +345,34 @@ class AssetsView {
         const el = (container.querySelector('#' + id) || document.createElement('a')) as HTMLLinkElement;
         el.id = asset.info.id;
         el.dataset["name"] = asset.info.name; 
+        el.dataset["tags"] = asset.info.tags; 
         if(link) {
             el.href = link;
         }
         container.appendChild(el);
     }
 
+    registerFilterTagEl(tags: string) {
+        if (!tags) {
+            return;
+        }
+        const tags_arr = tags.split(',');
+        for(const i in tags_arr) {
+            const tag = tags_arr[i];
+            const container = querySelector("container#assets_taglist");
+            if (!container.querySelector("#" + tag)) {
+                const el = document.createElement("btn");
+                el.innerHTML = tag;
+                el.id = tag;
+                container.appendChild(el);
+            }
+        }
+    }
+
     draw(id: string, container: HTMLElement = this.list_container, link: string = "#asset_details") {
+        const asset = this.assets.get(id);
+        const tags = asset.info.tags;
+        this.registerFilterTagEl(tags);
         AssetsView.draw(this.assets, id, container, link);
     }
 
@@ -342,6 +383,28 @@ class AssetsView {
         for(const k in _assets) {
             AssetsView.draw(assets, k, container, link);
         }
+    }
+
+    propagateTagsFiltered(tags: Array<string>) {
+        console.log(tags);
+        if (!tags.length) {
+            this.propagate();
+            return;
+        }
+
+        let regexquery = "";
+        for(let i = 0; i < tags.length; i++) {
+            if (regexquery.length) {
+                regexquery += "|";
+            }
+            regexquery += `(${tags[i]})`;
+        }
+        const regexpbase = `(\\b(?:${regexquery})\\b)+`
+        
+        const regex = new RegExp(regexpbase);
+        console.log(regex);
+
+        this.propagate(this.list_container, {tags: regex});
     }
 
     propagate(container: HTMLElement = this.list_container, filter: any = {}, link: string = "#asset_details") {
