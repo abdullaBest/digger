@@ -149,50 +149,88 @@ class SceneCollisions {
 
         let colliders_list: Array<BoxCollider> = [];
         body.contacts = 0;
-        const applySwept = (collider) => {
-            const collision = this.cache.cr_0;
-            if (this.sweptAABB(body, collider, collision, dt)) {
-                body.velocity_x -= collision.normal_x * Math.abs(body.velocity_x) * (1 - collision.time)
-                body.velocity_y -= collision.normal_y * Math.abs(body.velocity_y) * (1 - collision.time)
 
-                const c = body.contacts_list[body.contacts++];
-                if (c) {
-                    c.normal_x = collision.normal_x;
-                    c.normal_y = collision.normal_y;
-                    c.time = collision.time;
+        const addBodyContactResult = (contact : CollisionResult) => {
+            let c: null | CollisionResult = null;
+
+            // find existing collision with same normal
+            for(let i = 0; i < body.contacts; i++) {
+                const cc = body.contacts_list[i];
+                if (cc && cc.normal_x == contact.normal_x && cc.normal_y == contact.normal_y) {
+                    c = cc;
+                    c.time = Infinity;
+                    break;
                 }
-            } 
+            }
+
+            // use existing or new collision
+            c = c || body.contacts_list[body.contacts++];
+            if (c) {
+                c.normal_x = contact.normal_x;
+                c.normal_y = contact.normal_y;
+                c.time = Math.min(c.time, contact.time);
+            }
+        }
+
+        // generic (stitic) collisions test
+        const applySimpleAabb = (collider) => {
+            const collision = this.cache.cr_0;
+
             if (this.testAABB(body.collider, collider, collision)) {
-            // second collision test: pushes out bounding box and registers zero-time collisions
+                // second collision test: pushes out bounding box and registers zero-time collisions
                 const cx = collision.normal_x && (collision.normal_x == Math.sign(body.velocity_x) || !body.velocity_x);
                 const cy = collision.normal_y && (collision.normal_y == Math.sign(body.velocity_y) || !body.velocity_y);
                 if (!cx && !cy) {
                     return;
                 }
 
+                const absnx = Math.abs(collision.normal_x);
+                const absny = Math.abs(collision.normal_y);
+
                 // a. corner detection. push out body from corner
-                if (Math.abs(collision.normal_x) + Math.abs(collision.normal_y) < 0.1) {
+                if (absnx + absny < 0.1) {
                     body.velocity_x -= collision.normal_x / dt;
                     body.velocity_y -= collision.normal_y / dt;
                 }
 
-                /*
-                if (cx) {
-                    body.velocity_x = collision.normal_x * collision.time / dt;
-                } else if (cy) {
-                    body.velocity_y = collision.normal_y * collision.time / dt;
+                // b. intersect collision detection. Push body out of collision bounds
+                if (absnx < absny) {
+                    body.velocity_x -= collision.normal_x / dt;
+                } else {
+                    body.velocity_y -= collision.normal_y / dt;
                 }
-                */
 
-                const c = body.contacts_list[body.contacts++];
-                if (c) {
-                    c.normal_y = collision.normal_y;
-                    c.normal_x = collision.normal_x;
-                    c.time = collision.time;
+                const time = Math.min(absnx, absny);
+                let nx = 0;
+                let ny = 0;
+                if (absnx > absny) {
+                    nx = Math.sign(collider.pos_y - body.collider.pos_y);
+                    ny = 0;
+                } else {
+                    nx = 0;
+                    ny = Math.sign(collider.pos_x - body.collider.pos_x);
                 }
+                collision.time = time;
+                collision.normal_x = nx;
+                collision.normal_y = ny;
+                addBodyContactResult(collision);
             }
         }
 
+        // movement collisions test
+        const applySwept = (collider) => {
+            const collision = this.cache.cr_0;
+
+            if (this.sweptAABB(body, collider, collision, dt)) {
+                body.velocity_x -= collision.normal_x * Math.abs(body.velocity_x) * (1 - collision.time)
+                body.velocity_y -= collision.normal_y * Math.abs(body.velocity_y) * (1 - collision.time)
+
+                addBodyContactResult(collision);
+            } 
+           
+        }
+
+        // find all collisions in velocity bounds
         let broadphasebox = this.calcBodyBroadphase(body, dt); 
         for(const k in this.colliders) {
             const collider = this.colliders[k];
@@ -201,6 +239,7 @@ class SceneCollisions {
             }
         }
 
+        // sort by distance
         colliders_list.sort((a, b) => {
             const adx = a.pos_x - body.collider.pos_x;
             const ady = a.pos_y - body.collider.pos_y;
@@ -212,10 +251,14 @@ class SceneCollisions {
             return la - lb;
         })
 
+        // apply collisions
         while(colliders_list.length) {
-            applySwept(colliders_list.shift());
+            const c = colliders_list.shift();
+            applySimpleAabb(c);
+            applySwept(c);
         }
 
+        // apply velocity
         const vx = body.velocity_x * dt;
         const vy = body.velocity_y * dt;
         let newx = body.collider.pos_x + vx;
@@ -223,7 +266,7 @@ class SceneCollisions {
         SceneCollisions.setColliderPos(body.collider, newx, newy);
 
         // discard velocities
-        // it nod gonna be affected by testAABB in applySwept cause testAABB do not use time
+        /*
         for (let i = 0; i < body.contacts; i++) {
             const c = body.contacts_list[i];
             if (c.normal_x && c.time < 1) {
@@ -232,7 +275,7 @@ class SceneCollisions {
             if (c.normal_y && c.time < 1) {
                 body.velocity_y = 0;
             }
-        } 
+        }*/ 
     }
 
     getBodyNextShift(body: DynamicBody, vec: Vector2) {
