@@ -29,6 +29,14 @@ class OverridedAssetLink {
             properties: this.properties
         }
     }
+
+    clone(other: OverridedAssetLink): OverridedAssetLink {
+        this.id = other.id;
+        this.properties = Object.assign(this.properties, other.properties);
+        Object.setPrototypeOf(this.properties, Object.getPrototypeOf(other.properties));
+
+        return this;
+    }
 }
 
 class SceneElement {
@@ -71,7 +79,7 @@ class SceneElement {
      * Stores class properties into object
      * @param json object to store data in to
      */
-    store(json: any): any {
+    store(json: any = {}): any {
         json.parent = this.parent;
         json.id = this.id;
         json.name = this.name;
@@ -82,6 +90,18 @@ class SceneElement {
         }
 
         return json;
+    }
+
+    clone(other: SceneElement) {
+        this.parent = other.parent;
+        this.name = other.name;
+
+        for(const k in other.components) {
+            const component = other.components[k];
+            this.components[k] = new OverridedAssetLink().clone(component);
+        }
+
+        return this;
     }
 }
 
@@ -170,6 +190,23 @@ class SceneEdit {
         await el.load(this.assets);
         this.elements[el.id] = el;
         return el;
+    }
+
+    cloneElement(id: string): SceneElement {
+        const eltoclone = this.elements[id];
+        if (!eltoclone) {
+            throw new Error("SceneEdit::clone element error: no element with id " + id);
+        }
+
+        const el = new SceneElement(this.asset?.info.id + '-e' + this.guids++);
+        el.clone(eltoclone);
+        this.elements[el.id] = el;
+
+        return el;
+    }
+
+    removeElement(id: string) {
+        delete this.elements[id];
     }
 
     assets: Assets;

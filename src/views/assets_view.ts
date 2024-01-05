@@ -261,13 +261,13 @@ class AssetsView {
             const link_id = link_id_prefix + index;
             const durability_id = durability_id_prefix + index;
 
-            if (!create && (!(color_id in tilesetdata) || !(link_id in tilesetdata))) {
+            if (!create && !tilesetdata[color_id]) {
                 return;
+            } else if (create) {
+                tilesetdata[color_id] =  tilesetdata[color_id] ?? "0x000000";
+                tilesetdata[link_id] =  tilesetdata[link_id] ?? null;
+                tilesetdata[durability_id] = tilesetdata[durability_id] ?? "0x00";
             }
-
-            tilesetdata[color_id] =  tilesetdata[color_id] ?? "0x000000";
-            tilesetdata[link_id] =  tilesetdata[link_id] ?? null;
-            tilesetdata[durability_id] = tilesetdata[durability_id] ?? "0x00";
 
             const entry = getmake_tileenrty(index);
             makePropEditField(entry, color_id);

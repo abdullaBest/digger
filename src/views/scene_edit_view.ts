@@ -43,9 +43,22 @@ export default class SceneEditView {
 
         // select scene element to edit
         addEventListener({name: "click", callback: async (ev) => {
-            const id = (ev.target as HTMLElement).id;
-            if(this.scene_edit.elements[id]) {
+            const el = (ev.target as HTMLElement);
+            if(this.scene_edit.elements[el.id]) {
                 (ev.target as HTMLElement).classList.toggle('collapse');
+            } else {
+                // element actions
+                const id = el.parentElement?.dataset["elementid"];
+                if (id && this.scene_edit.elements[id]) {
+                    switch(el.id) {
+                        case "delete":
+                            this.removeElement(id);
+                            break;
+                        case "clone":
+                            this.cloneElement(id);
+                            break;
+                    }
+                }
             }
         }, node: this.props_container}, this._listeners);
 
@@ -120,6 +133,20 @@ export default class SceneEditView {
         this.scene_edit.close(save);
     }
 
+    removeElement(id: string) {
+        this.scene_edit.removeElement(id);
+        this.scene_render.removeModel(id);
+        const htmlelement = this.props_container.querySelector('#' + id);
+        if (htmlelement) {
+            htmlelement.parentElement?.removeChild(htmlelement);
+        }
+    }
+
+    cloneElement(id: string) {
+        const el = this.scene_edit.cloneElement(id);
+        this.draw(el.id);
+    }
+
     /**
      * draws element in html and render
      * 
@@ -159,6 +186,15 @@ export default class SceneEditView {
             redraw();
             AssetsView.drawTilesetPropertyFilelds(props_container, this.scene_edit.assets, element.components.tileset.properties, redraw)
         }
+
+        if (!el.querySelector("controls")) {
+            const c = document.createElement("controls");
+            c.dataset["elementid"] = id;
+            c.innerHTML = "<btn id='delete'>delete</btn><btn id='clone'>clone</btn>"
+            c.classList.add("small", "padded", "scene_element_controls");
+            el.appendChild(c);
+        }
+
         container.appendChild(el);
     }
 

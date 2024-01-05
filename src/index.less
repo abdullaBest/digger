@@ -125,11 +125,13 @@ db {
 
 }
 
-#scene_edit_tools, .scene_edit_tools{
+#scene_edit_tools, .scene_edit_tools {
   position: absolute;
   z-index: 1;
   padding: 4px;
+}
 
+#scene_edit_tools, .scene_edit_tools, .scene_element_controls{
   btn {
     min-width: 64px;
     margin: 2px;
@@ -290,6 +292,16 @@ btn, .btn {
   &.highlighted {
     &:extend(.btn-highlightable-style);
   }
+
+}
+
+
+.small {
+  font-size: 0.7em;
+}
+
+.padded {
+  padding: 4px;
 }
 
 splitter {
