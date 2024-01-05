@@ -624,27 +624,38 @@ class SceneRender {
         this.raycaster.setFromCamera( this.mousepos, this.camera );
         const intersects = this.raycaster.intersectObjects( this.scene.children, true );
 
-        let model: THREE.Object3D | null = null;
+        let object: THREE.Object3D | null = null;
         for(const i in intersects) {
             const intersect = intersects[i];
             let o = intersect.object;
             while(o) {
                 if (this.cache.models[o.name]) {
-                    model = o;
+                    object = o;
                     break;
                 }
                 o = o.parent;
             } 
-            if (model) {
+            if (object) {
                 break;
             }
         }
 
-        if ( model ) {
-            console.log("transform attached to " + model.name)
-            this.transform_controls.attach(model);
+        if ( object ) {
+            console.log("transform attached to " + object.name)
+            this.transform_controls.attach(object);
         }
 
+    }
+
+    /**
+     * 
+     * @param id model id
+     */
+    attachTransformControls(id: string) {
+        const object = this.cache.objects[id];
+        if (object) {
+            this.transform_controls.attach(object);
+        }
     }
 
     /**

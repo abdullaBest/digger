@@ -45,7 +45,8 @@ export default class SceneEditView {
         addEventListener({name: "click", callback: async (ev) => {
             const el = (ev.target as HTMLElement);
             if(this.scene_edit.elements[el.id]) {
-                (ev.target as HTMLElement).classList.toggle('collapse');
+                el.classList.toggle('collapse');
+                this.scene_render.attachTransformControls(el.id);
             } else {
                 // element actions
                 const id = el.parentElement?.dataset["elementid"];
