@@ -17,42 +17,80 @@ class BoxColliderC {
      */
     b2AABB: any;
     type: ColliderType;
+    cache: any;
 
     constructor(aabb, type: ColliderType) {
         this.b2AABB = aabb;
         this.type = type;
+        this.cache = {};
+        this.discache();
+    }
+
+    discache() {
+        this.cache.lbx = null;
+        this.cache.lby = null;
+        this.cache.ubx = null;
+        this.cache.uby = null;
+        this.cache.w = null;
+        this.cache.h = null;
+        this.cache.x = null;
+        this.cache.y = null;
     }
 
     get _left(): number {
-        return this.b2AABB.lowerBound.x * UNITS_SCALE_DIV;
+        if (this.cache.lbx === null) {
+            this.cache.lbx = this.b2AABB.lowerBound.x * UNITS_SCALE_DIV;
+        }
+        return this.cache.lbx;
     }
 
     get _right(): number {
-        return this.b2AABB.upperBound.x * UNITS_SCALE_DIV;
+        if (this.cache.ubx === null) {
+            this.cache.ubx = this.b2AABB.upperBound.x * UNITS_SCALE_DIV;
+        }
+        return this.cache.ubx;
     }
 
     get _bottom(): number {
-        return this.b2AABB.lowerBound.y * UNITS_SCALE_DIV;
+        if (this.cache.lby === null) {
+            this.cache.lby = this.b2AABB.lowerBound.y * UNITS_SCALE_DIV;
+        }
+        return this.cache.lby;
     }
 
     get _top(): number {
-        return this.b2AABB.upperBound.y * UNITS_SCALE_DIV;
+        if (this.cache.uby === null) {
+            this.cache.uby = this.b2AABB.upperBound.y * UNITS_SCALE_DIV;
+        }
+        return this.cache.uby;
     }
 
     get width(): number {
-        return this._right - this._left;
+        if (this.cache.w === null) {
+            this.cache.w = this._right - this._left;
+        }
+        return this.cache.w;
     }
 
     get height(): number {
-        return this._right - this._left;
+        if (this.cache.h === null) {
+            this.cache.h = this._top - this._bottom;
+        }
+        return this.cache.h;
     }
 
     get x(): number {
-        return this._left + this.width / 2;
+        if (this.cache.x === null) {
+            this.cache.x = this._left + this.width / 2;
+        }
+        return this.cache.x;
     }
 
     get y(): number {
-        return this._bottom + this.height / 2;
+        if (this.cache.y === null) {
+            this.cache.y = this._bottom + this.height / 2;
+        }
+        return this.cache.y;
     }
 }
 
@@ -183,17 +221,25 @@ class SceneCollisions {
             (body.collider.y + body.velocity_y * dt) * UNITS_SCALE_MUL);
 
         this.core.b2AABB_setPos(body.collider.b2AABB, newpos.x, newpos.y);
+        body.collider.discache();
 
         body.contacts = 0;
         for (const k in this.colliders) {
-            if(this.detailedAABBCollision(body.collider, this.colliders[k], this.cache.cr_0)) {
+            const collider = this.colliders[k];
+            const contact = this.cache.cr_0;
+            if(this.detailedAABBCollision(body.collider, collider, contact)) {
                 const c = body.contacts_list[body.contacts];
                 if (!c) {
                     break;
                 }
-                c.normal_x = this.cache.cr_0.normal_x;
-                c.normal_y = this.cache.cr_0.normal_y;
-                c.time = this.cache.cr_0.time;
+                if (collider.type == ColliderType.RIGID) {
+                    c.normal_x = contact.normal_x;
+                    c.normal_y = contact.normal_y;
+                    c.time = contact.time;
+                } else {
+                    c.normal_x = c.normal_y = 0
+                    c.time = 1;
+                }
                 c.id = k;
                 body.contacts += 1;
             }
@@ -273,6 +319,7 @@ class SceneCollisions {
 
     setColliderPos(collider: BoxColliderC, x: number, y: number) {
         this.core.b2AABB_setPos(collider.b2AABB, x * UNITS_SCALE_MUL, y * UNITS_SCALE_MUL);
+        collider.discache();
     }
 
 
