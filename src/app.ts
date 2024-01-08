@@ -4,7 +4,7 @@ import {SceneEditUtils, SceneEdit } from "./scene_edit";
 import SceneEditView from "./views/scene_edit_view";
 import AssetsView from "./views/assets_view";
 import { listenFormSubmit, sendFiles } from "./assets";
-import { reattach, listenClick, popupListSelect, switchPage, querySelector, popupConfirm, popupListSelectMultiple } from "./document";
+import { reattach, listenClick, popupListSelect, switchPage, querySelector, addEventListener, popupListSelectMultiple, EventListenerDetails } from "./document";
 import { importGltfSequence } from "./importer";
 import SceneGame from "./scene_game";
 
@@ -20,6 +20,8 @@ class App {
         this.active = false;
         this.timestamp = 0;
         this.REF_DELTATIME = 10;
+
+        this.frame_threshold = 16;
     }
     init() : App {
         const canvas = document.querySelector("canvas#rootcanvas");
@@ -52,6 +54,17 @@ class App {
 
         this.timestamp = performance.now();
         this.loop();
+
+        addEventListener({callback: ()=> {
+            querySelector("#rootlayout").classList.add("paused");
+            this.active = false;
+        }, name: "blur", node: window as any}, this._listeners)
+        addEventListener({callback: ()=> {
+            querySelector("#rootlayout").classList.remove("paused");
+            this.active = true;
+            this.timestamp = performance.now();
+            this.loop();
+        }, name: "focus", node: window as any}, this._listeners)
     }
 
     private loop() {
@@ -61,9 +74,15 @@ class App {
 
         const now = performance.now();
         const dt = (now - this.timestamp);
+
+        if (dt < this.frame_threshold) {
+            requestAnimationFrame( this.loop.bind(this) );
+            return;
+        }
+
         const dtscaled = dt / 1000;
         this.timestamp = now;
-        const deltaref = Math.min(dt / this.REF_DELTATIME, 3);
+        const deltaref = Math.min(dt / this.REF_DELTATIME, 2);
 
         this.scene_game.step(dtscaled, deltaref);
         this.scene_render.step(dtscaled, deltaref);
@@ -205,6 +224,8 @@ class App {
     private assets_view: AssetsView;
     private scene_game: SceneGame;
     private timestamp: number;
+    private frame_threshold: number;
+    private _listeners: Array<EventListenerDetails>;
     
     private REF_DELTATIME: number;
 }
