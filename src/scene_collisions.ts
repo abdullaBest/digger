@@ -212,7 +212,8 @@ class SceneCollisions {
 
         if (!body.collider) {
             console.warn(`body ${body.id} without collider. removing it.`)
-
+            this.removeBody(body.id, false);
+            return;
         }
 
         const newpos = this.core.test(

@@ -232,6 +232,9 @@ export default class SceneGame {
 
         // a. Iterate over all block around broken tile and try to activate falling blocks
         const ca = this.scene_collisions.colliders[id];
+        if (!ca) {
+            return;
+        }
         for (const k in this.scene_collisions.colliders) {
             const cb = this.scene_collisions.colliders[k];
             const collides_x = ca._left < cb._right && cb._left < ca._right;
