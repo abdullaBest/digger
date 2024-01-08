@@ -81,14 +81,14 @@ class BoxColliderC {
 
     get x(): number {
         if (this.cache.x === null) {
-            this.cache.x = this._left + this.width / 2;
+            this.cache.x = this._left + this.width * 0.5;
         }
         return this.cache.x;
     }
 
     get y(): number {
         if (this.cache.y === null) {
-            this.cache.y = this._bottom + this.height / 2;
+            this.cache.y = this._bottom + this.height * 0.5;
         }
         return this.cache.y;
     }

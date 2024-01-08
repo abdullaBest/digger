@@ -138,12 +138,13 @@ export default class SceneGame {
 
         // shift ray towards look x direction.
         // Y look direction in priority
+        console.log(cha.look_direction_x, cha.look_direction_y);
         if (!cha.look_direction_y) {
-            test_l = cha.body.collider._left + cha.body.collider.width * cha.look_direction_x * ray_size;
-            test_r = cha.body.collider._right + cha.body.collider.width * cha.look_direction_x * ray_size;
+            test_l = cha.body.collider.x + cha.body.collider.width * 0.5 * cha.look_direction_x + ray_size * cha.look_direction_x;
+            test_r = cha.body.collider.x + cha.body.collider.width * 0.5 * cha.look_direction_x + ray_size * cha.look_direction_x;
         } else {
-            test_t = cha.body.collider._top + cha.body.collider.width * cha.look_direction_y * ray_size;
-            test_b = cha.body.collider._bottom + cha.body.collider.width * cha.look_direction_y * ray_size;
+            test_t = cha.body.collider.y + cha.body.collider.height * 0.5 * cha.look_direction_y + ray_size * cha.look_direction_y;
+            test_b = cha.body.collider.y + cha.body.collider.height * 0.5 * cha.look_direction_y + ray_size * cha.look_direction_y;
         }
         let hit_collider: string | null = null;
         for(const k in this.scene_collisions.colliders) {
