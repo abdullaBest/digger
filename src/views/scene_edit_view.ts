@@ -141,7 +141,9 @@ export default class SceneEditView {
         this.props_container.innerHTML = '';
         this.scene_render.clearModels();
         this.scene_render.clearTilesets();
+        this.scene_render.clearTiggers();
         this.scene_edit.close(save);
+        this.scene_render.colliders.clear();
     }
 
     removeElement(id: string) {

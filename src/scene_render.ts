@@ -5,7 +5,7 @@ import { Assets } from './assets'
 import { SceneEdit, SceneElement, SceneEditUtils } from "./scene_edit";
 import { TransformControls } from './lib/TransformControls.js';
 import SceneMath from './scene_math';
-import { SceneCollisions, BoxCollider, ColliderType } from './scene_collisions';
+import { SceneCollisions, BoxColliderC, ColliderType } from './scene_collisions';
 import { lerp, distlerp } from './math';
 
 class SceneCache {
@@ -454,7 +454,7 @@ class SceneRender {
         }
     }
 
-    drawColliderDebug(id: string, collider: BoxCollider, color?: number, shift?: THREE.Vector2) {
+    drawColliderDebug(id: string, collider: BoxColliderC, color?: number, shift?: THREE.Vector2) {
         let plane = this.cache.debug_colliders[id];
 
         color = color ?? collider.type == ColliderType.RIGID ? 0x00ffff : 0xff00ff;
@@ -474,7 +474,7 @@ class SceneRender {
             shift_y = shift.y;
         }
 
-        this.setPos(plane, new THREE.Vector3(collider.pos_x + shift_x, collider.pos_y + shift_y, this.colliders.origin.z))
+        this.setPos(plane, new THREE.Vector3(collider.x + shift_x, collider.y + shift_y, this.colliders.origin.z))
         const planepos = (plane as any).position;
         (plane as any).scale.set(collider.width, collider.height, 1);
         plane.lookAt(planepos.x + this.colliders.normal.x, planepos.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
@@ -508,6 +508,12 @@ class SceneRender {
         this.removeModel(id);
         this.removeTileset(id);
         delete this.cache.triggers[id];
+    }
+
+    clearTiggers() {
+        for (const k in this.cache.triggers) {
+            this.removeElement(k);
+        }
     }
 
     clearModels() {
@@ -633,14 +639,14 @@ class SceneRender {
                 const body = this.colliders.bodies[k];
                 const obj = this.cache.objects[k];
                 if (obj && this.cache.models[k]) {
-                    const x = distlerp(obj.position.x, body.collider.pos_x, 0.3 * dr);
-                    const y = distlerp(obj.position.y, body.collider.pos_y, 0.3 * dr);
+                    const x = distlerp(obj.position.x, body.collider.x, 0.3 * dr);
+                    const y = distlerp(obj.position.y, body.collider.y, 0.3 * dr);
                     obj.position.x  = x;
                     obj.position.y  = y;
                 }
                 if(this._drawDebug2dAabb) {
                     this.drawColliderDebug(k, body.collider);
-                    this.drawColliderDebug(k + "_predict", body.collider, 0xff0000, this.colliders.getBodyNextShift(body, this.cache.vec2_0));
+                    //this.drawColliderDebug(k + "_predict", body.collider, 0xff0000, this.colliders.getBodyNextShift(body, this.cache.vec2_0));
                 }
             }
     

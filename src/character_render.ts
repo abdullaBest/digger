@@ -78,8 +78,8 @@ export default class CharacterRender {
         if (this.colliders.step_number != cha.steplerpinfo.step_number) {
             cha.steplerpinfo.prev_x = cha.steplerpinfo.next_x;
             cha.steplerpinfo.prev_y = cha.steplerpinfo.next_y;
-            cha.steplerpinfo.next_x = body.collider.pos_x;
-            cha.steplerpinfo.next_y = body.collider.pos_y;
+            cha.steplerpinfo.next_x = body.collider.x;
+            cha.steplerpinfo.next_y = body.collider.y;
             cha.steplerpinfo.step_number = this.colliders.step_number;
         }
         // tmp }

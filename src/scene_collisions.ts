@@ -1,28 +1,64 @@
 import { Vector2, Box2, Vector3 } from "./lib/three.module";
 
+// https://github.com/tynrare/collisions-wasm
+import CollisionsModule from "./lib/generated/collisions.js";
+
+const UNITS_SCALE_MUL = 1e2;
+const UNITS_SCALE_DIV = 1e-2;
+
 enum ColliderType {
     RIGID = 0,
     SIGNAL = 1
 }
 
-interface BoxCollider {
-    width: number;
-    height: number;
-    
-    pos_x: number;
-    pos_y: number;
-
+class BoxColliderC {
+    /**
+     * @type {CollisionsModule.b2AABB}
+     */
+    b2AABB: any;
     type: ColliderType;
 
-    _left: number;
-    _top: number;
-    _right: number;
-    _bottom: number;
+    constructor(aabb, type: ColliderType) {
+        this.b2AABB = aabb;
+        this.type = type;
+    }
+
+    get _left(): number {
+        return this.b2AABB.lowerBound.x * UNITS_SCALE_DIV;
+    }
+
+    get _right(): number {
+        return this.b2AABB.upperBound.x * UNITS_SCALE_DIV;
+    }
+
+    get _bottom(): number {
+        return this.b2AABB.lowerBound.y * UNITS_SCALE_DIV;
+    }
+
+    get _top(): number {
+        return this.b2AABB.upperBound.y * UNITS_SCALE_DIV;
+    }
+
+    get width(): number {
+        return this._right - this._left;
+    }
+
+    get height(): number {
+        return this._right - this._left;
+    }
+
+    get x(): number {
+        return this._left + this.width / 2;
+    }
+
+    get y(): number {
+        return this._bottom + this.height / 2;
+    }
 }
 
 interface DynamicBody {
     id: string;
-    collider: BoxCollider;
+    collider: BoxColliderC;
 
     /**
      * units/second
@@ -38,18 +74,18 @@ interface CollisionResult {
     normal_x: number;
     normal_y: number;
     time: number;
+    id: string | null;
 }
 
 class CollidersCache {
     vec2_0: Vector2;
     vec2_1: Vector2;
     vec2_2: Vector2;
-    bc_0: BoxCollider;
+    bc_0: BoxColliderC;
     cr_0: CollisionResult;
     contacts: Array<CollisionResult>;
     constructor() {
-        this.bc_0 = SceneCollisions.makeBoxCollider();
-        this.cr_0 = { normal_x: 0, normal_y: 0, time: 0,  };
+        this.cr_0 = { normal_x: 0, normal_y: 0, time: 0, id: null };
         this.contacts = CollidersCache.constructContactsArray(8);
         this.vec2_0 = new Vector2();
         this.vec2_1 = new Vector2();
@@ -62,7 +98,11 @@ class CollidersCache {
 }
 
 class SceneCollisions {
-    colliders: { [id: string] : BoxCollider; };
+    /**
+     * @type {CollisionsModule.Collisions}
+     */
+    core: any;
+    colliders: { [id: string] : BoxColliderC; };
     bodies: { [id: string] : DynamicBody; };
     origin: Vector3;
     normal: Vector3;
@@ -89,45 +129,30 @@ class SceneCollisions {
         this.step_number = 0;
     }
 
-    createBoxCollider(id: string, box: Box2, type: ColliderType = ColliderType.RIGID) : BoxCollider {
-        const collider = SceneCollisions.makeBoxCollider(box, type);
-        this.colliders[id] = collider;
-
-        return collider;
+    async init() {
+        this.dispose();
+        this.core = new (await CollisionsModule()).Collisions(1);
     }
 
-    createBoxBody(id, box: Box2) : DynamicBody {
-        const collider = SceneCollisions.makeBoxCollider(box);
-
-        return this.addBoxBody(id, collider);
-    }
-
-    addBoxBody(id: string, collider: BoxCollider) : DynamicBody {
-        const body = {
-            id,
-            collider,
-            velocity_x: 0,
-            velocity_y: 0,
-            contacts: 0,
-            contacts_list: CollidersCache.constructContactsArray(4)
+    clear() {
+        for(const k in this.bodies) {
+            this.removeBody(k, true);
         }
-        this.bodies[id] = body;
 
-        return body;
-    }
-
-    removeBody(id: string, with_collider: boolean) {
-        delete this.bodies[id];
-
-        if (with_collider) {
-            this.removeCollider(id);
+        for(const k in this.colliders) {
+            this.removeCollider(k);
         }
     }
 
-    removeCollider(id: string) {
-        delete this.colliders[id];
+    dispose() {
+        this.clear();
+        if (this.core) {
+            delete this.core;
+            this.core = null;
+        }
+        
     }
-
+    
     step(dt: number) {
         this.step_elapsed += dt;
 
@@ -147,132 +172,34 @@ class SceneCollisions {
         dt *= this.forces_scale;
         body.velocity_y += this.gravity.y * dt;
 
-        let colliders_list: Array<BoxCollider> = [];
+        if (!body.collider) {
+            console.warn(`body ${body.id} without collider. removing it.`)
+
+        }
+
+        const newpos = this.core.test(
+            body.collider.b2AABB, 
+            (body.collider.x + body.velocity_x * dt) * UNITS_SCALE_MUL, 
+            (body.collider.y + body.velocity_y * dt) * UNITS_SCALE_MUL);
+
+        this.core.b2AABB_setPos(body.collider.b2AABB, newpos.x, newpos.y);
+
         body.contacts = 0;
-
-        const addBodyContactResult = (contact : CollisionResult) => {
-            let c: null | CollisionResult = null;
-
-            // find existing collision with same normal
-            for(let i = 0; i < body.contacts; i++) {
-                const cc = body.contacts_list[i];
-                if (cc && cc.normal_x == contact.normal_x && cc.normal_y == contact.normal_y) {
-                    c = cc;
-                    c.time = Infinity;
+        for (const k in this.colliders) {
+            if(this.detailedAABBCollision(body.collider, this.colliders[k], this.cache.cr_0)) {
+                const c = body.contacts_list[body.contacts];
+                if (!c) {
                     break;
                 }
-            }
-
-            // use existing or new collision
-            c = c || body.contacts_list[body.contacts++];
-            if (c) {
-                c.normal_x = contact.normal_x;
-                c.normal_y = contact.normal_y;
-                c.time = Math.min(c.time, contact.time);
+                c.normal_x = this.cache.cr_0.normal_x;
+                c.normal_y = this.cache.cr_0.normal_y;
+                c.time = this.cache.cr_0.time;
+                c.id = k;
+                body.contacts += 1;
             }
         }
-
-        // generic (stitic) collisions test
-        const applySimpleAabb = (collider) => {
-            const collision = this.cache.cr_0;
-
-            if (this.testAABB(body.collider, collider, collision)) {
-                // second collision test: pushes out bounding box and registers zero-time collisions
-                const cx = collision.normal_x && (collision.normal_x == Math.sign(body.velocity_x) || !body.velocity_x);
-                const cy = collision.normal_y && (collision.normal_y == Math.sign(body.velocity_y) || !body.velocity_y);
-                if (!cx && !cy) {
-                    return;
-                }
-
-                const absnx = Math.abs(collision.normal_x);
-                const absny = Math.abs(collision.normal_y);
-
-                // a. corner detection. push out body from corner
-                if (absnx + absny < 0.1) {
-                    body.velocity_x -= collision.normal_x / dt;
-                    body.velocity_y -= collision.normal_y / dt;
-                }
-
-                // b. intersect collision detection. Push body out of collision bounds
-                if (absnx < absny) {
-                    body.velocity_x -= collision.normal_x / dt;
-                } else {
-                    body.velocity_y -= collision.normal_y / dt;
-                }
-
-                const time = Math.min(absnx, absny);
-                let nx = 0;
-                let ny = 0;
-                if (absnx > absny) {
-                    nx = Math.sign(collider.pos_y - body.collider.pos_y);
-                    ny = 0;
-                } else {
-                    nx = 0;
-                    ny = Math.sign(collider.pos_x - body.collider.pos_x);
-                }
-                collision.time = time;
-                collision.normal_x = nx;
-                collision.normal_y = ny;
-                addBodyContactResult(collision);
-            }
-        }
-
-        // movement collisions test
-        const applySwept = (collider) => {
-            const collision = this.cache.cr_0;
-
-            if (this.sweptAABB(body, collider, collision, dt)) {
-                body.velocity_x -= collision.normal_x * Math.abs(body.velocity_x) * (1 - collision.time)
-                body.velocity_y -= collision.normal_y * Math.abs(body.velocity_y) * (1 - collision.time)
-
-                addBodyContactResult(collision);
-            } 
-           
-        }
-
-        // find all collisions in velocity bounds
-        let broadphasebox = this.calcBodyBroadphase(body, dt); 
-        for(const k in this.colliders) {
-            const collider = this.colliders[k];
-            if (this.checkCollisionAabb(broadphasebox, collider)) {
-                colliders_list.push(collider);
-            }
-        }
-
-        // sort by distance
-        colliders_list.sort((a, b) => {
-            const adx = a.pos_x - body.collider.pos_x;
-            const ady = a.pos_y - body.collider.pos_y;
-            const bdx = b.pos_x - body.collider.pos_x;
-            const bdy = b.pos_y - body.collider.pos_y;
-            const la = Math.sqrt(adx * adx + ady * ady);
-            const lb = Math.sqrt(bdx * bdx + bdy * bdy);
-
-            return la - lb;
-        })
-
-        // apply collisions
-        while(colliders_list.length) {
-            const c = colliders_list.shift();
-            if (!c) { break; }
-            
-            if (c.type == ColliderType.SIGNAL) {
-                continue;
-            }
-
-            applySimpleAabb(c);
-            applySwept(c);
-        }
-
-        // apply velocity
-        const vx = body.velocity_x * dt;
-        const vy = body.velocity_y * dt;
-        let newx = body.collider.pos_x + vx;
-        let newy = body.collider.pos_y + vy;
-        SceneCollisions.setColliderPos(body.collider, newx, newy);
 
         // discard velocities
-        /*
         for (let i = 0; i < body.contacts; i++) {
             const c = body.contacts_list[i];
             if (c.normal_x && c.time < 1) {
@@ -281,18 +208,111 @@ class SceneCollisions {
             if (c.normal_y && c.time < 1) {
                 body.velocity_y = 0;
             }
-        }*/ 
+        }
     }
 
-    getBodyNextShift(body: DynamicBody, vec: Vector2) {
-        const dt = this.forces_scale * this.step_threshold;
-        const posx = body.velocity_x * dt;
-        const posy = body.velocity_y * dt;
-        
-        return vec.set(posx, posy);
+    createBoxCollider(id: string, box: Box2, type: ColliderType = ColliderType.RIGID) : BoxColliderC {
+        const w = (box.max.x - box.min.x) * UNITS_SCALE_MUL;
+        const h = (box.max.y - box.min.y) * UNITS_SCALE_MUL;
+        const x = box.min.x * UNITS_SCALE_MUL + w / 2;
+        const y = box.min.y * UNITS_SCALE_MUL + h / 2;
+
+        //const aabb = this.core.addAABB(id, x, y, w, h);
+        let aabb;
+        if (type == ColliderType.RIGID) {
+            aabb = this.core.addAABB(id, x, y, w, h);
+        } else {
+            aabb = this.core.b2AABB_ConstructFromCenterSizeP(x, y, w, h);
+        }
+        const boxc = new BoxColliderC(aabb, type);
+
+        this.colliders[id] = boxc;
+
+        return boxc;
     }
 
-    checkCollisionAabb(a: BoxCollider, b: BoxCollider) {
+    createBoxBody(id, box: Box2) : DynamicBody {
+        const collider = this.createBoxCollider(id, box);
+
+        return this.addBoxBody(id, collider);
+    }
+
+    addBoxBody(id: string, collider: BoxColliderC) : DynamicBody {
+        const body = {
+            id,
+            collider,
+            velocity_x: 0,
+            velocity_y: 0,
+            contacts: 0,
+            contacts_list: CollidersCache.constructContactsArray(4)
+        }
+        this.bodies[id] = body;
+
+        return body;
+    }
+
+    removeBody(id: string, with_collider: boolean) {
+        if (!this.bodies[id]) {
+            return;
+        }
+        delete this.bodies[id];
+
+        if (with_collider) {
+            this.removeCollider(id);
+        }
+    }
+
+    removeCollider(id: string) {
+        if (this.colliders[id]) {
+            if(!this.core.eraseAABB(id)) {
+                this.core.freeP(this.colliders[id].b2AABB);
+            }
+            delete this.colliders[id];
+        }
+    }
+
+    setColliderPos(collider: BoxColliderC, x: number, y: number) {
+        this.core.b2AABB_setPos(collider.b2AABB, x * UNITS_SCALE_MUL, y * UNITS_SCALE_MUL);
+    }
+
+
+    detailedAABBCollision(a: BoxColliderC, b: BoxColliderC, ret: CollisionResult): boolean {
+        ret.normal_x = 0;
+        ret.normal_y = 0;
+        ret.time = 1;
+
+        if (a == b) {
+            return false;
+        }
+
+        const d1x = b._left - a._right;
+        const d1y = b._bottom - a._top;
+        const d2x = a._left - b._right;
+        const d2y = a._bottom - b._top;
+
+        if (d1x > 0.0 || d1y > 0.0)
+            return false;
+
+        if (d2x > 0.0 || d2y > 0.0)
+            return false;
+
+        const x = -Math.max(d1x, d2x);
+        const y = -Math.max(d1y, d2y);
+        const normal_y = d1y > d2y ? 1 : -1;
+        const normal_x = d1x > d2x ? 1 : -1;
+
+        if (x < y) {
+            ret.normal_x = normal_x;
+            ret.time = -x;
+        } else {
+            ret.normal_y = normal_y;
+            ret.time = -y;
+        } 
+
+        return true;
+    }
+
+    simpleAABBCollision(a: BoxColliderC, b: BoxColliderC) {
         // should test by id
         if (a == b) {
             return false;
@@ -303,164 +323,7 @@ class SceneCollisions {
                 a._top >= b._bottom &&
                 a._bottom <= b._top;
     }
-
-    /**
-     * @param body .
-     * @returns cached BoxCollider
-     */
-    calcBodyBroadphase(body: DynamicBody, dt: number, threshold: number = 0) : BoxCollider {
-        const vx = body.velocity_x * dt;
-        const vy = body.velocity_y * dt;
-        let bbox = this.cache.bc_0;
-        bbox._left = Math.min(body.collider._left, body.collider._left + vx) - threshold;
-        bbox._bottom = Math.min(body.collider._bottom, body.collider._bottom + vy) - threshold;
-        bbox._right = Math.max(body.collider._right, body.collider._right + vx) + threshold;
-        bbox._top = Math.max(body.collider._top, body.collider._top + vy) + threshold;
-      
-        return bbox; 
-    }
-
-    // https://gdbooks.gitbooks.io/3dcollisions/content/Chapter3/raycast_aabb.html
-    /**
-     * 
-     * @param ray_origin 
-     * @param ray_dir 
-     * @param collider 
-     * @param ret 
-     * @returns Infinity or NaN possible. Be aware
-     */
-    testRayRect(ray_origin: Vector2, ray_dir: Vector2, collider: BoxCollider, ret: CollisionResult = ({} as any)) : boolean {
-        // In could produce Infinity if ray_dir equals zero wich is ok
-        // It could produce evenn NaN if collider._edge == ray_origin wich seems to be ok too
-
-        const min_x = (collider._left - ray_origin.x) / ray_dir.x;
-        const max_x = (collider._right - ray_origin.x) / ray_dir.x;
-        const near_x = Math.min(min_x, max_x);
-        const far_x = Math.max(min_x, max_x);
-
-        const min_y = (collider._bottom - ray_origin.y) / ray_dir.y;
-        const max_y = (collider._top - ray_origin.y) / ray_dir.y;
-        const near_y = Math.min(min_y, max_y);
-        const far_y = Math.max(min_y, max_y);
-
-        const tmin = Math.max(near_x, near_y);
-        const tmax = Math.min(far_x, far_y);
-    
-        ret.time = 1;
-        ret.normal_x = 0;
-        ret.normal_y = 0;
-
-        // if tmax < 0, ray (line) is intersecting AABB, but whole AABB is behing us
-        if (tmax < 0) {
-            return false;
-        }
-
-        // if tmin > 1 intersection far away from segment
-        if (tmin >= 1) {
-            return false;
-        }
-
-        // if tmin > tmax, ray doesn't intersect AABB
-        if (tmin > tmax) {
-            return false;
-        }
-    
-        /*
-        if (tmin < 0) {
-            ret.time = tmax; // ?
-        }
-        */
-
-        ret.time = tmin;
-
-        if (near_x > near_y) {
-            ret.normal_x = Math.sign(ray_dir.x);
-        } else /*if (near_x < near_y)*/ {
-            ret.normal_y = Math.sign(ray_dir.y);
-        } /*else {
-            // Both axes now have equal intersection depth (direct and perfect corner collision).
-        }*/
-
-        return true;
-    }
-
-    /**
-     * does not use ret time. instead writes collision depth into nornal_x normal_y
-     */
-    testAABB(a: BoxCollider, b: BoxCollider, ret: CollisionResult) : boolean {
-        ret.time = 1;
-        ret.normal_x = 0;
-        ret.normal_y = 0;
-
-        const dx = a.pos_x - b.pos_x;
-        const px = Math.abs(dx) - a.width / 2 - b.width / 2;
-        if (px > 0) {
-            return false;
-        }
-
-        const dy = a.pos_y - b.pos_y;
-        const py = Math.abs(dy) - a.height / 2 - b.height / 2;
-        if (py > 0) {
-            return false;
-        }
-
-        ret.normal_x = px * Math.sign(dx);
-        ret.normal_y = py * Math.sign(dy);
-
-        return true;
-    }
-
-    sweptAABB(a: DynamicBody, b: BoxCollider, ret: CollisionResult = ({} as any), dt: number): boolean {
-        const vx = a.velocity_x * dt;
-        const vy = a.velocity_y * dt;
-
-        const apos = this.cache.vec2_0.set(a.collider.pos_x, a.collider.pos_y);
-        const adir = this.cache.vec2_1.set(vx, vy);
-        const extended_box = this.cache.bc_0;
-        extended_box.width = b.width + a.collider.width;
-        extended_box.height = b.height + a.collider.height;
-        SceneCollisions.setColliderPos(extended_box, b.pos_x, b.pos_y);
-
-        return this.testRayRect(apos, adir, extended_box, ret) && ret.time >= 0 && ret.time < 1 && !!(ret.normal_x || ret.normal_y);
-    }
-
-    static setColliderPos(collider: BoxCollider, x: number, y: number) {
-        collider.pos_x = x;
-        collider.pos_y = y;
-        const half_width = collider.width / 2;
-        const half_hieght = collider.height / 2;
-        collider._left = x - half_width;
-        collider._right = x + half_width;
-        collider._bottom = y - half_hieght;
-        collider._top = y + half_hieght;
-    }
-
-    setColliderPos(collider: BoxCollider, x: number, y: number) {
-        SceneCollisions.setColliderPos(collider, x, y);
-    }
-
-    static makeBoxCollider(box?: Box2, type: ColliderType = ColliderType.RIGID) : BoxCollider {
-        const collider = {
-            width: 0,
-            height: 0,
-            pos_x: 0,
-            pos_y: 0,
-            _left: 0,
-            _top: 0,
-            _right: 0,
-            _bottom: 0,
-            type
-        }
-
-        if (box) {
-            collider.width = box.max.x - box.min.x;
-            collider.height = box.max.y - box.min.y;
-            SceneCollisions.setColliderPos(collider, (box.max.x + box.min.x) / 2, (box.max.y + box.min.y) / 2);
-        }
-
-        return collider;
-    }
 }
 
 export default SceneCollisions;
-export { SceneCollisions, BoxCollider, DynamicBody, ColliderType }
+export { SceneCollisions, BoxColliderC, DynamicBody, ColliderType }

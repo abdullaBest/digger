@@ -1,5 +1,5 @@
 import { Character, CharacterActionCode } from "./character";
-import { SceneCollisions, BoxCollider } from './scene_collisions';
+import { SceneCollisions, BoxColliderC } from './scene_collisions';
 import { Box2, Vector2 } from "./lib/three.module";
 import { addEventListener, removeEventListeners, EventListenerDetails } from "./document";
 import CharacterRender from "./character_render";
@@ -20,15 +20,19 @@ export default class SceneGame {
         this._listeners = [];
         this.falling_blocks = {};
     }
-    init(scene_render: SceneRender) {
+    
+    async init(scene_render: SceneRender): Promise<SceneGame> {
         this.scene_render = scene_render;
         this.player_character_render.init(scene_render, this.scene_collisions);
         this.attach_camera_to_player = false;
+        await this.scene_collisions.init();
+
         return this;
     }
 
     async run(elements: { [id: string] : SceneElement; }) {
         this.stop();
+
         this.active = true;
         this.elements = elements;
 
@@ -127,10 +131,10 @@ export default class SceneGame {
         const tile_size = 1;
         const ray_size = tile_size * 0.9;
         // default in center
-        let test_l = cha.body.collider.pos_x;
-        let test_r = cha.body.collider.pos_x;
-        let test_t = cha.body.collider.pos_y;
-        let test_b = cha.body.collider.pos_y;
+        let test_l = cha.body.collider.x;
+        let test_r = cha.body.collider.x;
+        let test_t = cha.body.collider.y;
+        let test_b = cha.body.collider.y;
 
         // shift ray towards look x direction.
         // Y look direction in priority
@@ -163,7 +167,7 @@ export default class SceneGame {
 
         const hit_damage = 2;
 
-        const durability = this.breakable_objects[hit_result] ?? this.scene_render.cache.models[hit_result].durability;
+        const durability = this.breakable_objects[hit_result] ?? this.scene_render.cache.models[hit_result]?.durability;
         if (!durability) {
             return;
         }
@@ -200,11 +204,10 @@ export default class SceneGame {
         this.breakable_objects[hit_result] = newdurability;
     }
 
-    findFallingBlockAround(id: string) {
+    findFallingBlockAround(id: string, shaketime: number = 1,) {
         const activate = (blockid: string) => {
             // b. iterate all blocks around activating block and find out if it stays on something
             const ca = this.scene_collisions.colliders[blockid];
-            let shaking = true;
             for (const k in this.scene_collisions.colliders) {
                 if (k == id) {
                     continue;
@@ -212,11 +215,10 @@ export default class SceneGame {
                 const cb = this.scene_collisions.colliders[k];
                 const collides_x = ca._left < cb._right && cb._left < ca._right;
                 const collides_y = ca._bottom <= cb._top && cb._bottom <= ca._top;
-                const ontop = ca.pos_y > cb.pos_y;
+                const ontop = ca.y > cb.y;
                 if (collides_x && collides_y && ontop) {
                     if (this.falling_blocks[k]) {
                         // other falling blocks atop already falling block
-                        shaking = false;
                         continue;
                     } else {
                         // do not activate if it stil stays on something
@@ -225,7 +227,7 @@ export default class SceneGame {
                 }
             }
 
-            this.activateFallingBlock(blockid, shaking);
+            this.activateFallingBlock(blockid, shaketime);
         }
 
         // a. Iterate over all block around broken tile and try to activate falling blocks
@@ -234,26 +236,26 @@ export default class SceneGame {
             const cb = this.scene_collisions.colliders[k];
             const collides_x = ca._left < cb._right && cb._left < ca._right;
             const collides_y = ca._bottom <= cb._top && cb._bottom <= ca._top;
-            const ontop = ca.pos_y < cb.pos_y;
+            const ontop = ca.y < cb.y;
             if (!collides_x || !collides_y || !ontop) {
                 continue;
             }
 
             const model = this.scene_render.cache.models[k];
-            if (model.tags && model.tags.includes("falling")) {
+            if (model && model.tags && model.tags.includes("falling")) {
                 activate(k);
             }
         }
     }
 
-    activateFallingBlock(id: string, shaking: boolean) {
+    activateFallingBlock(id: string, shaketime: number) {
         if (this.falling_blocks[id]) {
             return;
         }
 
         this.falling_blocks[id] = {
-            elapsed: 0,
-            shaking
+            elapsed: 1 - shaketime,
+            shaking: true
         }
     }
     
@@ -263,41 +265,45 @@ export default class SceneGame {
 
             const collider = this.scene_collisions.colliders[k];
             const body = this.scene_collisions.bodies[k];
-            if (b.elapsed == 0) {
-                this.findFallingBlockAround(k);
-            } else if (b.elapsed < 1) {
+            if (b.elapsed < 1) {
+                if (!b.shaking) {
+                    continue;
+                }
+
                 // a. 1 sec shaking, 
                 const obj = this.scene_render.cache.objects[k];
                 if (!obj || !collider) {
                     continue;
                 }
-                const refx = collider.pos_x;
-                const refy = collider.pos_y;
+                const refx = collider.x;
+                const refy = collider.y;
                 const x = refx + (Math.random() - 0.5) * 0.1;
                 const y = refy + (Math.random() - 0.5) * 0.1;
 
                 obj.position.x = x;
                 obj.position.y = y;
             } else if (!this.scene_collisions.bodies[k]) {
-                // b. falling
+                // b.1 falling
                 this.scene_collisions.addBoxBody(k, collider);
+                // b.2 make fall surrounding blocks
+                this.findFallingBlockAround(k, 0.1);
             } else if (body) {
                 // c. deactivating
                 for(let i = 0; i < body.contacts; i++) {
                     const c = body.contacts_list[i];
-                    if (c && c.normal_y < 0 && c.time <= 0) {
+                    if (c && c.normal_y < 0 && c.time <= 0 && !this.scene_collisions.bodies[c.id ?? ""]) {
                         delete this.falling_blocks[k];
                         this.scene_collisions.removeBody(k, false);
                         
                         const obj = this.scene_render.cache.objects[k];
                         const collider = this.scene_collisions.colliders[k];
                         if (obj) {
-                            obj.position.x  = collider.pos_x;
-                            obj.position.y  = collider.pos_y;
+                            obj.position.x  = collider.x;
+                            obj.position.y  = collider.y;
                         }
                     }
                 }
-            }
+            } 
 
             b.elapsed += dt;
         }
