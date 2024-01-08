@@ -408,7 +408,6 @@ class AssetsView {
     }
 
     propagateTagsFiltered(tags: Array<string>) {
-        console.log(tags);
         if (!tags.length) {
             this.propagate();
             return;
@@ -424,7 +423,6 @@ class AssetsView {
         const regexpbase = `(\\b(?:${regexquery})\\b)+`
         
         const regex = new RegExp(regexpbase);
-        console.log(regex);
 
         this.propagate(this.list_container, {tags: regex});
     }

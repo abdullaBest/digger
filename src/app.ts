@@ -90,6 +90,7 @@ class App {
 
         this.scene_game.step(dtscaled, deltaref);
         this.scene_render.step(dtscaled, deltaref);
+        this.scene_mediator.step();
 
         requestAnimationFrame( this.loop.bind(this) );
     }

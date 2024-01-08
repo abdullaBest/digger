@@ -21,6 +21,7 @@ export default class SceneGame {
         this.autostep = true;
         this._listeners = [];
         this.falling_blocks = {};
+        this.requested_map_switch = null;
     }
     
     async init(): Promise<SceneGame> {
@@ -34,6 +35,7 @@ export default class SceneGame {
     async run(elements: { [id: string] : SceneElement; }) {
         this.stop();
 
+        this.requested_map_switch = null;
         this.active = true;
         this.elements = elements;
 
@@ -76,6 +78,7 @@ export default class SceneGame {
 
     stop() {
         this.active = false;
+        this.requested_map_switch = null;
         removeEventListeners(this._listeners);
         
         if(this.player_character) {
@@ -125,6 +128,43 @@ export default class SceneGame {
         if(this.player_character.performed_actions.find((e) => e.tag == "hit")) { 
             this._actionHit();
         }
+
+        this._stepCharacterInteractions(this.player_character);
+    }
+
+    private _stepCharacterInteractions(cha: Character) {
+        let interacts = false;
+
+        const proceedMapExitInteraction = (el: SceneElement) => {
+            if(this.player_character.performed_actions.find((e) => e.tag == "look_up")) {
+                const props = el?.components.trigger?.properties;
+                const signal = props.signal;
+                if (signal) {
+                    this.requestMapSwitch(signal);
+                }
+            }
+        }
+
+        for(const k in cha.body.contacts_list) {
+            const cid = cha.body.contacts_list[k].id;
+            if (!cid) {
+                continue;
+            }
+            const el = this.elements[cid];
+            const props = el?.components.trigger?.properties;
+            if (props && props.type == "mapexit") {
+                interacts = true;
+                proceedMapExitInteraction(el);
+                break;
+            }
+        }
+
+        this.player_character_render.drawUiInteractSprite(interacts);
+    }
+
+    requestMapSwitch(id: string) {
+        // it gonna be handled in SceneMediator step
+        this.requested_map_switch = id;
     }
 
     private _actionHitCollisionTest(cha: Character): string | null {
@@ -363,4 +403,6 @@ export default class SceneGame {
     private active: boolean;
     autostep: boolean;
     elements: { [id: string] : SceneElement; }
+
+    requested_map_switch: string | null;
 }

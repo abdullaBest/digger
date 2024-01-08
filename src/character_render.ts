@@ -16,11 +16,12 @@ export default class CharacterRender {
     animations_actions_cache: {[id: string] : THREE.AnimationAction};
     character_x_rot: number;
 
+    ui_interact_sprite: THREE.Sprite | null;
+
     init(scene_render: SceneRender, colliders: SceneCollisions) {
         this.scene_render = scene_render;
         this.colliders = colliders;
         this.animation_time_scale = 1;
-        
     }
 
     async run(character: Character) {
@@ -54,6 +55,23 @@ export default class CharacterRender {
         }
     }
 
+    drawUiInteractSprite(show: boolean) {
+        if (!show && !this.ui_interact_sprite) {
+            return;
+        }
+
+        if (!show && this.ui_interact_sprite) {
+            this.ui_interact_sprite.removeFromParent();
+            this.ui_interact_sprite = null;
+        }
+
+        if (show && !this.ui_interact_sprite) {
+            this.ui_interact_sprite = this.scene_render.makeSprite("DPAD_up");
+            (this.ui_interact_sprite as any).position.y = 2.5;
+            this.character_gltf.scene.add(this.ui_interact_sprite);
+        }
+    }
+
     updateCharacterAnimations() {
         if(this.character.performed_actions.find((e) => e.tag == "jump")) {
             this.playAnimation("Jump", { once: true, weight: 0.9, speed: 1.5 });
@@ -73,7 +91,9 @@ export default class CharacterRender {
         // set object positions
         // { tmp. will be moved into object render class
         if (!cha.steplerpinfo) {
-            cha.steplerpinfo = {step_number: this.colliders.step_number, prev_x: 0, prev_y: 0, next_x: 0, next_y: 0};
+            cha.steplerpinfo = {
+                step_number: this.colliders.step_number, prev_x: body.collider.x, prev_y: body.collider.y, next_x: body.collider.x, next_y: body.collider.y
+            };
         }
         if (this.colliders.step_number != cha.steplerpinfo.step_number) {
             cha.steplerpinfo.prev_x = cha.steplerpinfo.next_x;

@@ -94,14 +94,15 @@ function uploadFiles(req, res) {
   for(const k in req.files) {
     const f = req.files[k];
     const id = f.filename;
+    const extension = f.originalname.split('.').pop();
     assets.register({
       id: id, 
       filename: f.filename, 
       name: f.originalname, 
       type: f.mimetype, 
       size: f.size,
-      extension: f.originalname.split('.').pop(),
-      tags: ""
+      extension: extension,
+      tags: extension
     })
     ids.push(id);
   }

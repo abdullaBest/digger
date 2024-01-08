@@ -231,9 +231,11 @@ class Character {
                 apply_code = CharacterActionApplyCode.PERFORMED;
                 break;
             case "look_up":
+                apply_code = CharacterActionApplyCode.PERFORMED;
                 this.look_direction_y = code == CharacterActionCode.START ? 1 : 0;
                 break;
             case "look_down":
+                apply_code = CharacterActionApplyCode.PERFORMED;
                 this.look_direction_y = code == CharacterActionCode.START ? -1 : 0;
                 break;
             default:

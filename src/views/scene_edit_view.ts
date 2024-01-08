@@ -31,13 +31,16 @@ export default class SceneEditView {
         this.list_container = list_container;
         this.props_container = props_container;
 
+        addEventListener({name: "scene_open", callback: async (ev) => {
+            this.propagate();
+        }, node: this.scene_mediator.events}, this._listeners)
+
         // select scene to edit
         addEventListener({name: "click", callback: async (ev) => {
             const id = (ev.target as HTMLElement).id;
             if(id) {
                 try {
                     await this.scene_mediator.sceneSwitch(id);
-                    this.propagate();
                 } catch(err) {
                     console.error("SceneEditView: scene select error:", err)
                 }
@@ -99,6 +102,11 @@ export default class SceneEditView {
 
         listenClick("#add_scene_mapentry_btn",  async (ev) => {
             const el = await this.scene_edit.addElement({trigger: { type: "mapentry", signal: "unset", width: 1, height: 1 }});
+            this.draw(el.id);
+        }, this._listeners)
+
+        listenClick("#add_scene_mapexit_btn",  async (ev) => {
+            const el = await this.scene_edit.addElement({trigger: { type: "mapexit", signal: "unset", width: 1, height: 1 }});
             this.draw(el.id);
         }, this._listeners)
 

@@ -8,6 +8,8 @@ import SceneMath from './scene_math';
 import { SceneCollisions, BoxColliderC, ColliderType } from './scene_collisions';
 import { lerp, distlerp } from './math';
 
+const SPRITE_DEFAULT_PATH = "./res/icons/";
+
 class SceneCache {
     constructor() {
         this.vec2_0 = new THREE.Vector2();
@@ -401,13 +403,13 @@ class SceneRender {
     async addTriggerElement(id: string, properties: any) {
         const type = properties.type;
         const spritenames = {
-            "mapentry": "./res/icons/character_place.png",
-            "mapexit": "./res/icons/character_lift.png",
-            "unknown": "./res/icons/hexagon_question.png",
+            "mapentry": "character_place",
+            "mapexit": "character_lift",
+            "unknown": "hexagon_question",
         }
         let spritename = spritenames[type] || spritenames.unknown;
 
-        const sprite = new THREE.Sprite( this.getMaterial("sprite", spritename, true) as THREE.SpriteMaterial);
+        const sprite = this.makeSprite(spritename);
 
         sprite.name = id;
         this.scene.add(sprite);
@@ -425,6 +427,11 @@ class SceneRender {
         if (this._drawDebug2dAabb) {
             this.drawColliderDebug(id, collider);
         }
+    }
+
+    makeSprite(name: string): THREE.Sprite {
+        const spritepath = SPRITE_DEFAULT_PATH + name + ".png";
+        return new THREE.Sprite( this.getMaterial("sprite", spritepath, true) as THREE.SpriteMaterial);
     }
 
     // tmp. only gonna work for gltf.scenes with one mesh

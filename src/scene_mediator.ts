@@ -6,6 +6,7 @@ class SceneMediator {
     scene_edit: SceneEdit;
     scene_render: SceneRender;
     scene_game: SceneGame;
+    events: HTMLElement;
 
     active_scene: string | null;
 
@@ -14,6 +15,18 @@ class SceneMediator {
         this.scene_game = scene_game;
         this.scene_render = scene_render;
         this.active_scene = null;
+        this.events = document.createElement("event");
+    }
+
+    step() {
+        if (this.scene_game.requested_map_switch) {
+            this.sceneSwitch(this.scene_game.requested_map_switch)
+            .then(() => this.play())
+            .catch((err) => {
+                this.sceneClose();
+                console.error("Scene requested switch error: ", err);
+            });
+        }
     }
 
     async sceneOpen(id: string) {
@@ -23,10 +36,12 @@ class SceneMediator {
 
         this.active_scene = id;
         await this.scene_edit.load(id);
+        this.events.dispatchEvent(new CustomEvent("scene_open", { detail : {id}}));
     }
 
     sceneClose() {
         this.active_scene = null;
+        this.scene_game.stop();
         this.scene_render.clearModels();
         this.scene_render.clearTilesets();
         this.scene_render.clearTiggers();
