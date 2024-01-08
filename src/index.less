@@ -94,6 +94,10 @@ db {
   width: 100vw;
   height: 100vh;
 
+  &.paused #rootcanvas {
+    filter: blur(2px);
+  }
+
   #header, .footer {
     height: 2em;
     display: flex;
