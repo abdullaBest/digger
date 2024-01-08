@@ -7,15 +7,19 @@ import { listenFormSubmit, sendFiles } from "./assets";
 import { reattach, listenClick, popupListSelect, switchPage, querySelector, addEventListener, popupListSelectMultiple, EventListenerDetails } from "./document";
 import { importGltfSequence } from "./importer";
 import SceneGame from "./scene_game";
+import SceneMediator from "./scene_mediator";
+import SceneCollisions from "./scene_collisions";
 
 class App {
     constructor() {
         this.assets = new Assets();
         this.scene_edit = new SceneEdit(this.assets);
-        this.scene_game = new SceneGame();
-        this.scene_render = new SceneRender(this.scene_edit, this.scene_game.scene_collisions);
-        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render);
+        this.scene_collisions = new SceneCollisions();
+        this.scene_render = new SceneRender(this.scene_edit, this.scene_collisions);
+        this.scene_game = new SceneGame(this.scene_collisions, this.scene_render);
         this.assets_view = new AssetsView(this.assets, this.scene_render);
+        this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_render, this.scene_game);
+        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_mediator);
 
         this.active = false;
         this.timestamp = 0;
@@ -30,7 +34,7 @@ class App {
         }
 
         this.scene_render.init(canvas as HTMLCanvasElement);
-        this.scene_game.init(this.scene_render);
+        this.scene_game.init();
 
         return this;
     }
@@ -102,7 +106,7 @@ class App {
             const id = target?.id;
             switch (id) {
                 case "play_scene_btn":
-                    this.scene_game.run(this.scene_edit.elements);
+                    this.scene_mediator.play()
                     break;
                 case "physics_toggle_autostep":
                     this.scene_game.autostep = target.classList.toggle("highlighted");
@@ -217,9 +221,13 @@ class App {
     }
 
     private active: Boolean;
+
     private scene_render: SceneRender;
     private scene_edit: SceneEdit;
     private scene_edit_view: SceneEditView;
+    private scene_mediator: SceneMediator;
+    private scene_collisions: SceneCollisions;
+
     private assets: Assets;
     private assets_view: AssetsView;
     private scene_game: SceneGame;

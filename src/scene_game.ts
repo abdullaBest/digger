@@ -13,17 +13,18 @@ interface FallingBlockData {
 }
 
 export default class SceneGame {
-    constructor() {
-        this.scene_collisions = new SceneCollisions();
+    constructor(scene_collisions: SceneCollisions, scene_render: SceneRender) {
+        this.scene_collisions = scene_collisions;
+        this.scene_render = scene_render;
+
         this.player_character_render = new CharacterRender();
         this.autostep = true;
         this._listeners = [];
         this.falling_blocks = {};
     }
     
-    async init(scene_render: SceneRender): Promise<SceneGame> {
-        this.scene_render = scene_render;
-        this.player_character_render.init(scene_render, this.scene_collisions);
+    async init(): Promise<SceneGame> {
+        this.player_character_render.init(this.scene_render, this.scene_collisions);
         this.attach_camera_to_player = false;
         await this.scene_collisions.init();
 
@@ -67,7 +68,6 @@ export default class SceneGame {
         addEventListener({callback: this._keydown.bind(this), name: "keydown", node: document.body}, this._listeners)
         addEventListener({callback: this._keyup.bind(this), name: "keyup", node: document.body}, this._listeners)
         addEventListener({callback: ()=> {
-            console.log("blur");
             this.player_character.actionRequest("move_left", CharacterActionCode.END);
             this.player_character.actionRequest("move_right", CharacterActionCode.END)
         }, name: "blur", node: window as any}, this._listeners)
@@ -138,7 +138,6 @@ export default class SceneGame {
 
         // shift ray towards look x direction.
         // Y look direction in priority
-        console.log(cha.look_direction_x, cha.look_direction_y);
         if (!cha.look_direction_y) {
             test_l = cha.body.collider.x + cha.body.collider.width * 0.5 * cha.look_direction_x + ray_size * cha.look_direction_x;
             test_r = cha.body.collider.x + cha.body.collider.width * 0.5 * cha.look_direction_x + ray_size * cha.look_direction_x;

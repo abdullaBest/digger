@@ -2,17 +2,20 @@ import { querySelector, EventListenerDetails, addEventListener, removeEventListe
 import SceneEdit from "../scene_edit";
 import { AssetsView, AssetPropertyEdit } from "./assets_view";
 import SceneRender from "../scene_render";
+import SceneMediator from "../scene_mediator";
 
 export default class SceneEditView {
     list_container: HTMLElement;
     props_container: HTMLElement;
     scene_edit: SceneEdit;
     scene_render: SceneRender;
+    scene_mediator: SceneMediator;
     private _listeners: Array<EventListenerDetails>;
 
-    constructor(scene_edit: SceneEdit, scene_render: SceneRender){
+    constructor(scene_edit: SceneEdit, scene_render: SceneRender, scene_mediator: SceneMediator){
         this.scene_edit = scene_edit;
         this.scene_render = scene_render;
+        this.scene_mediator = scene_mediator;
     }
 
     /**
@@ -33,7 +36,7 @@ export default class SceneEditView {
             const id = (ev.target as HTMLElement).id;
             if(id) {
                 try {
-                    await this.scene_edit.load(id);
+                    await this.scene_mediator.sceneSwitch(id);
                     this.propagate();
                 } catch(err) {
                     console.error("SceneEditView: scene select error:", err)
@@ -225,8 +228,6 @@ export default class SceneEditView {
      */
     propagate(container: HTMLElement = this.props_container) {
         container.innerHTML = '';
-        this.scene_render.clearModels();
-        this.scene_render.clearTilesets();
 
         for(const id in this.scene_edit.elements) {
             const element = this.scene_edit.elements[id];
