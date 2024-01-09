@@ -143,12 +143,18 @@ db {
   }
 }
 
-#asset_preview_container #scene_edit_tools #scene_game_controls {
-  display: none;
+#asset_preview_container #scene_edit_tools {
+  #scene_game_controls, #scene_game_details {
+    display: none;
+  }
 }
 
 #scene_view_canvas_container #scene_edit_tools #asset_view_controls {
   display: none;
+}
+
+#scene_game_details {
+  color: var(--color-c);
 }
 
 page#assets_view, page#scene_view {
@@ -175,7 +181,7 @@ container#scene_tools_palette, page#details_model_edit, page#details_tileset_edi
   &:extend(.frame_background);
 }
 
-#asset_details, #asset_create, #asset_details_model_template, #scene_edit_elements {
+#asset_details, #asset_create, #asset_details_model_template, #scene_edit_elements, #scene_game_details {
   // asset properties form
   form {
     display: flex;
@@ -433,12 +439,12 @@ container.flex-row {
 }
 
 .img-translate {
-  background-image: url("res/icons-stylesheets/translate.png");
+  background-image: url("res/icons-stylesheets/arrow_cross.png");
   &:extend(.img-background);
 }
 
 .img-rotate {
-  background-image: url("res/icons-stylesheets/fightJoy_22.png");
+  background-image: url("res/icons-stylesheets/arrow_clockwise.png");
   &:extend(.img-background);
 }
 
@@ -462,8 +468,8 @@ container.flex-row {
   &:extend(.img-background);
 }
 
-.img-zoom-eq {
-  background-image: url("res/icons-stylesheets/zoomDefault.png");
+.img-attach_camera {
+  background-image: url("res/icons-stylesheets/cards_seek_top.png");
   &:extend(.img-background);
 }
 
@@ -479,6 +485,11 @@ container.flex-row {
 
 .img-home {
   background-image: url("res/icons-stylesheets/home.png");
+  &:extend(.img-background);
+}
+
+.img-physdebug {
+  background-image: url("res/icons-stylesheets/card_tap_outline.png");
   &:extend(.img-background);
 }
 

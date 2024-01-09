@@ -34,6 +34,10 @@ export default class CharacterRender {
         this.animations_actions_cache = {};
         this.current_animation_name = null;
         this.character_x_rot = 0;
+
+        this.ui_interact_sprite = await this.scene_render.makeSprite("DPAD_up");
+        (this.ui_interact_sprite as any).position.y = 2.5;
+        this.character_gltf.scene.add(this.ui_interact_sprite);
     }
 
     stop() {
@@ -56,19 +60,8 @@ export default class CharacterRender {
     }
 
     async drawUiInteractSprite(show: boolean) {
-        if (!show && !this.ui_interact_sprite) {
-            return;
-        }
-
-        if (!show && this.ui_interact_sprite) {
-            this.ui_interact_sprite.removeFromParent();
-            this.ui_interact_sprite = null;
-        }
-
-        if (show && !this.ui_interact_sprite) {
-            this.ui_interact_sprite = await this.scene_render.makeSprite("DPAD_up");
-            (this.ui_interact_sprite as any).position.y = 2.5;
-            this.character_gltf.scene.add(this.ui_interact_sprite);
+        if (this.ui_interact_sprite) {
+            this.ui_interact_sprite.visible = show;
         }
     }
 

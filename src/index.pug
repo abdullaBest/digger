@@ -48,11 +48,14 @@ body
 					container#scene_game_controls.frame_background.flex-row
 						btn#play_scene_btn.icon.img-play(tooltip="play")
 						btn#physics_toggle_autostep.highlighted.icon.img-play-next(tooltip="physics autostep")
-						btn#physics_toggle_camera_attach.icon.img-zoom-eq(tooltip="attach camera")
-						btn#physics_toggle_collision_debug.icon.img-information(tooltip="debug physics")
+						btn#physics_toggle_camera_attach.icon.img-attach_camera(tooltip="attach camera")
+						btn#physics_toggle_collision_debug.icon.img-physdebug(tooltip="debug physics")
 						btn#game_center_camera.icon.img-home(tooltip="center camera")
 					container#asset_view_controls.frame_background.flex-row
 						btn#asset_make_thumbnail.icon.img-screenshoot(tooltip="make thumbnail")
+					container#scene_game_details.frame_background
+						splitter character
+						container#character_properties_details
 				canvas#rootcanvas
 			.footer
 				o scene viewer

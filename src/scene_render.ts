@@ -672,7 +672,7 @@ class SceneRender {
                 obj.position.x  = x;
                 obj.position.y  = y;
             }
-            if(this._drawDebug2dAabb) {
+            if(this._drawDebug2dAabb && body.collider) {
                 this.drawColliderDebug(k, body.collider);
                 //this.drawColliderDebug(k + "_predict", body.collider, 0xff0000, this.colliders.getBodyNextShift(body, this.cache.vec2_0));
             }

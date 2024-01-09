@@ -6,6 +6,7 @@ import CharacterRender from "./character_render";
 import SceneRender from "./scene_render";
 import { lerp } from "./math";
 import { SceneElement } from "./scene_edit";
+import SceneDebug from "./scene_debug";
 
 interface FallingBlockData {
     elapsed: number;
@@ -28,6 +29,7 @@ export default class SceneGame {
         this.player_character_render.init(this.scene_render, this.scene_collisions);
         this.attach_camera_to_player = false;
         await this.scene_collisions.init();
+        this.scene_debug = new SceneDebug();
 
         return this;
     }
@@ -74,6 +76,8 @@ export default class SceneGame {
             this.player_character.actionRequest("move_right", CharacterActionCode.END)
         }, name: "blur", node: window as any}, this._listeners)
         //addEventListener({callback: ()=> {console.log("focus")}, name: "focus", node: window as any}, this._listeners)
+
+        this.scene_debug.run(this.player_character);
     }
 
     stop() {
@@ -102,6 +106,7 @@ export default class SceneGame {
             this.scene_collisions.step(dt);
         }
         this.player_character_render.step(dt, dr);
+        this.scene_debug.step();
 
         this.stepFallingBlocks(dt);
 
@@ -386,10 +391,11 @@ export default class SceneGame {
         }
     }
 
-    private player_character: Character;
+    player_character: Character;
     private player_character_render: CharacterRender;
     private scene_render: SceneRender;
     scene_collisions: SceneCollisions;
+    scene_debug: SceneDebug;
 
     attach_camera_to_player: boolean;
 

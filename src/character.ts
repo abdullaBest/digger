@@ -22,16 +22,17 @@ interface CharacterAction {
 class Character {
     body: DynamicBody;
 
+    movement_speed: number;
+    jump_force: number;
+    jump_threshold: number;
+
     movement_x: number;
     moving_left: boolean;
     moving_right: boolean;
-    movement_speed: number;
 
     jumping_up: boolean;
     jumping_left: boolean;
     jumping_right: boolean;
-    jump_force: number;
-    jump_threshold: number;
     jump_elapsed: number;
     scene_collisions: SceneCollisions;
     look_direction_x: number;

@@ -21,6 +21,7 @@ class App {
         this.assets_view = new AssetsView(this.assets, this.scene_render, this.scene_mediator);
         this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_mediator);
 
+
         this.active = false;
         this.timestamp = 0;
         this.REF_DELTATIME = 10;
@@ -107,7 +108,7 @@ class App {
             const id = target?.id;
             switch (id) {
                 case "play_scene_btn":
-                    this.scene_mediator.play()
+                    this.scene_mediator.play();
                     break;
                 case "physics_toggle_autostep":
                     this.scene_game.autostep = target.classList.toggle("highlighted");
@@ -239,6 +240,7 @@ class App {
     private timestamp: number;
     private frame_threshold: number;
     private _listeners: Array<EventListenerDetails>;
+
     
     private REF_DELTATIME: number;
 }
