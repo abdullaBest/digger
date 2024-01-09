@@ -198,7 +198,7 @@ export default class SceneEditView {
                 this.scene_render.removeModel(id);
                 this.scene_render.addModel(id, element.components.model.properties);
             };
-            redraw();
+            //redraw();
             AssetsView.drawModelPropertyFields(props_container, this.scene_edit.assets, element.components.model.properties, redraw)
         }
 
@@ -207,7 +207,7 @@ export default class SceneEditView {
                 this.scene_render.removeTileset(id);
                 this.scene_render.addTileset(id, element.components.tileset.properties);
             };
-            redraw();
+            //redraw();
             AssetsView.drawTilesetPropertyFilelds(props_container, this.scene_edit.assets, element.components.tileset.properties, redraw)
         }
 
@@ -216,7 +216,7 @@ export default class SceneEditView {
                 this.scene_render.removeElement(element.id);
                 this.scene_render.addTriggerElement(element.id, element.components.trigger.properties);
             };
-            redraw();
+            //redraw();
             AssetsView.drawTriggerPropertyFields(props_container, this.scene_edit.assets, element.components.trigger.properties, redraw)
         }
 

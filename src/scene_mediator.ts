@@ -36,7 +36,33 @@ class SceneMediator {
 
         this.active_scene = id;
         await this.scene_edit.load(id);
+        await this.propagate();
         this.events.dispatchEvent(new CustomEvent("scene_open", { detail : {id}}));
+    }
+
+    async propagate() {
+        const p: Array<Promise<any>> = [];
+
+        for(const id in this.scene_edit.elements) {
+            const element = this.scene_edit.elements[id];
+
+            if(element.components.model) {
+                this.scene_render.removeModel(id);
+                p.push(this.scene_render.addModel(id, element.components.model.properties));
+            }
+    
+            if (element.components.tileset) {
+                this.scene_render.removeTileset(id);
+                p.push(this.scene_render.addTileset(id, element.components.tileset.properties));
+            }
+    
+            if (element.components.trigger) {
+                this.scene_render.removeElement(element.id);
+                p.push(this.scene_render.addTriggerElement(element.id, element.components.trigger.properties));
+            }
+        }
+
+        return Promise.all(p);
     }
 
     sceneClose() {

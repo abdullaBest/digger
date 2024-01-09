@@ -1,8 +1,9 @@
-import { Assets, listenFormSubmit, sendFiles } from "../assets";
+import { Asset, Assets, listenFormSubmit, sendFiles } from "../assets";
 import SceneRender from "../scene_render";
 import { sprintf } from "../lib/sprintf.js";
-import { listenClick, reattach, switchPage, querySelector, popupListSelect } from "../document";
+import { listenClick, reattach, switchPage, querySelector, popupListSelect, EventListenerDetails } from "../document";
 import { SceneEditUtils } from "../scene_edit";
+import SceneMediator from "../scene_mediator";
 
 /**
  * v1: draws property edit with select option
@@ -84,9 +85,12 @@ class AssetPropertyEdit {
 }
 
 class AssetsView {
-    constructor(assets: Assets, scene: SceneRender){
+    constructor(assets: Assets, scene_render: SceneRender, scene_mediator: SceneMediator){
         this.assets = assets;
-        this.scene_render = scene;
+        this.scene_render = scene_render;
+        this.scene_mediator = scene_mediator;
+        this.asset = null;
+        this._listeners = [];
     }
 
     /**
@@ -126,9 +130,43 @@ class AssetsView {
                 tags_arr.push(tags[i].id);
             }
             this.propagateTagsFiltered(tags_arr);
-        });
+        }, this._listeners);
+
+        listenClick("#asset_make_thumbnail", (ev) => {
+            this.uploadThumbnail();
+        }, this._listeners);
 
         return this;
+    }
+
+    private async redrawDetals() {
+        if (!this.asset) {
+            return;
+        }
+        const id = this.asset.info.id;
+        // should get rid of this loadAsset after each update
+        await this.assets.loadAsset(id);
+        this.draw(id);
+        this.drawDetails(id);
+    }
+
+    private uploadThumbnail() {
+        const asset = this.asset;
+        if (!asset) {
+            return;
+        }
+
+        this.scene_render.render();
+        this.scene_render.canvas.toBlob((blob) => {
+            if (!blob || !asset) {
+                return;
+            }
+            const file = new File([blob], `tumb_${asset.info.id}`, {
+                type: "image/jpeg",
+            });
+
+            sendFiles("/assets/upload/thumbnail/" + asset.info.id, [file], () => this.redrawDetals());
+        });
     }
 
     private async drawDetails(id: string) {
@@ -136,6 +174,7 @@ class AssetsView {
         if(!asset) {
             return;
         }
+        this.asset = asset;
         console.log("Preview asset:", asset);
         const info = asset.info;
 
@@ -150,24 +189,7 @@ class AssetsView {
         asset_preview.classList.remove("hidden");
         
         const redraw = async () => {
-            // should get rid of this loadAsset after each update
-            await this.assets.loadAsset(id);
-            this.draw(id);
-            this.drawDetails(id);
-        }
-
-        const uploadThumbnail = () => {
-            this.scene_render.render();
-            this.scene_render.canvas.toBlob((blob) => {
-                if (!blob) {
-                    return;
-                }
-                const file = new File([blob], `v${info.revision}_${info.name}`, {
-                    type: "image/jpeg",
-                });
-
-                sendFiles("/assets/upload/thumbnail/" + asset.info.id, [file], redraw);
-            });
+            this.redrawDetals();
         }
 
         // draw previews
@@ -179,23 +201,16 @@ class AssetsView {
             if (info.extension == 'model') {
                // ...
             } else if (info.extension == 'scene') {
-                await this.scene_render.scene_edit.load(id);
-                const p: Array<Promise<any>> = [];
-                for(const _id in this.scene_render.scene_edit.elements) {
-                    const element = this.scene_render.scene_edit.elements[_id];
-        
-                    if(element.components.model) {
-                        p.push(this.scene_render.addModel(_id, element.components.model.properties));
-                    }
-                }
-
-                await Promise.all(p);
+                await this.scene_mediator.sceneSwitch(id);
                 this.scene_render.focusCameraOn(this.scene_render.scene);
+                if (!asset.thumbnail) {
+                    this.uploadThumbnail();
+                }
             } 
             else {
                 this.scene_render.viewGLTF(info.url).then(() => {
                     if (!asset.thumbnail) {
-                        uploadThumbnail();
+                        this.uploadThumbnail();
                     }
                 });
             }
@@ -226,7 +241,7 @@ class AssetsView {
             asset_json = await (await fetch(info.url)).json();
             this.scene_render.viewModel(id, asset_json).then(() => {
                 if (!asset.thumbnail) {
-                    uploadThumbnail();
+                    this.uploadThumbnail();
                 }
             });
             const container = switchPage("#details_model_edit");
@@ -469,7 +484,10 @@ class AssetsView {
     list_container: HTMLElement;
     props_container: HTMLElement;
     assets: Assets;
+    asset: Asset | null;
     scene_render: SceneRender;
+    scene_mediator: SceneMediator;
+    private _listeners: Array<EventListenerDetails>;
 }
 
 export default AssetsView;
