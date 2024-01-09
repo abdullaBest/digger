@@ -109,11 +109,11 @@ db {
   #scene_view, #assets_view, #dev_view {
     flex-grow: 1;
     display: grid;
-    grid-template-columns: 20vw auto auto 10vw;
+    grid-template-columns: 20vw 80vw  ;
     grid-template-rows: minmax(0, 1fr) 2em;
     grid-template-areas: 
-      "sidebar_l main main main"
-      "sidebar_l footer footer footer";
+      "sidebar_l main"
+      "sidebar_l footer";
 
       
     .sidebar_l {
