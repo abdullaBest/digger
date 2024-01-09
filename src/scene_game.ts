@@ -83,6 +83,7 @@ export default class SceneGame {
     stop() {
         this.active = false;
         this.requested_map_switch = null;
+        this.scene_debug.stop();
         removeEventListeners(this._listeners);
         
         if(this.player_character) {

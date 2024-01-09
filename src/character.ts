@@ -29,6 +29,7 @@ class Character {
     movement_x: number;
     moving_left: boolean;
     moving_right: boolean;
+    sliding_wall: boolean;
 
     jumping_up: boolean;
     jumping_left: boolean;
@@ -63,6 +64,7 @@ class Character {
         this.jumping_left = false;
         this.jumping_right = false;
         this.jumping_up = false;
+        this.sliding_wall = false;
         this.requested_actions = [];
         this.performed_actions = [];
         this.scene_collisions = scene_collisions;
@@ -153,7 +155,9 @@ class Character {
         this.jump_elapsed += dt;
 
         // wall glide
-        if (perform_physics_actions && !this.collided_bottom && this.body.velocity_y <= 0 && (this.collided_left || this.collided_right)) {
+
+        this.sliding_wall = !this.collided_bottom && this.body.velocity_y <= 0 && (this.collided_left || this.collided_right);
+        if (perform_physics_actions && this.sliding_wall) {
             this.body.velocity_y = lerp(this.body.velocity_y, -3, 0.3 );
         }
     }

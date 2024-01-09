@@ -9,10 +9,14 @@ export default class CharacterPropertyDraw {
         this.core = new PropertyDraw(container);
     }
 
-    init(character: Character) {
+    init(character: Character) : CharacterPropertyDraw {
         this.character = character;
         this.core.init(character);
 
+        return this;
+    }
+
+    drawState() {
         this.core.add("movement_x");
         this.core.add("moving_left");
         this.core.add("moving_right");
@@ -25,6 +29,13 @@ export default class CharacterPropertyDraw {
         this.core.add("collided_right");
         this.core.add("collided_top");
         this.core.add("collided_bottom");
+        this.core.add("sliding_wall");
+    }
+
+    drawConfig() {
+        this.core.addWrite("movement_speed");
+        this.core.addWrite("jump_force");
+        this.core.addWrite("jump_threshold");
     }
 
     dispose() {

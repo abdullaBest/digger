@@ -153,10 +153,6 @@ db {
   display: none;
 }
 
-#scene_game_details {
-  color: var(--color-c);
-}
-
 page#assets_view, page#scene_view {
   page.sidebar_l {
     display: flex;
@@ -200,6 +196,9 @@ container#scene_tools_palette, page#details_model_edit, page#details_tileset_edi
       input[type="text"] {
           width: 60%;
       }
+      input {
+        text-align: end;
+      }
   }
 
   // asset image container
@@ -218,6 +217,29 @@ container#scene_tools_palette, page#details_model_edit, page#details_tileset_edi
 
     display: flex;
     flex-grow: 1;
+  }
+}
+
+#scene_game_details {
+  color: var(--color-c);
+  text-shadow: 1px 1px #000a;
+
+  label input {
+    background: none;
+    color: var(--color-c);
+    border: none;
+    text-decoration: underline;
+    &.error {
+      color: red;
+    }
+    &[type="number"] {
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      -moz-appearance: textfield;
+    }
   }
 }
 
