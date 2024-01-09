@@ -17,5 +17,8 @@
     "multer": "^1.4.5-lts.1",
     "parcel-resolver-ignore": "^2.2.0",
     "ws": "^8.15.1"
-  }
+  },
+  "parcelIgnore": [
+    "res/.+"
+  ]
 }

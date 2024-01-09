@@ -367,7 +367,8 @@ class AssetsView {
         const el = (container.querySelector('#' + id) || document.createElement('a')) as HTMLLinkElement;
         el.id = asset.info.id;
         el.dataset["name"] = asset.info.name; 
-        el.dataset["tags"] = asset.info.tags; 
+        el.dataset["tags"] = asset.info.tags;
+        el.style.cssText = `--thumbnail-url: url(${asset.thumbnail})`;
         if(link) {
             el.href = link;
         }

@@ -25,13 +25,13 @@ db {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
 
   #header {
-    border-bottom: 1px solid #000;
+    border-bottom: 1px solid var(--color-c);
   }
   .footer {
-    border-top: 1px solid #000;
+    border-top: 1px solid var(--color-c);
   }
   .sidebar_l {
-    border-right: 1px solid #000;
+    border-right: 1px solid var(--color-c);
   }
   & > a {
     margin: auto 2px;
@@ -99,7 +99,7 @@ db {
   }
 
   #header, .footer {
-    height: 2em;
+    padding: 4px;
     display: flex;
     flex-direction: row;
     gap: 2px;
@@ -136,12 +136,11 @@ db {
   padding: 4px;
 }
 
-#scene_edit_tools, .scene_edit_tools, .scene_element_controls{
+.scene_edit_tools, .scene_element_controls{
   btn {
     min-width: 64px;
     margin: 2px;
   }
-
 }
 
 page#assets_view, page#scene_view {
@@ -166,10 +165,6 @@ container#scene_tools_palette, page#details_model_edit, page#details_tileset_edi
   font-size: 0.7em;
   display: flex;
   &:extend(.frame_background);
-
-  btn {
-    margin: 0 4px;
-  }
 }
 
 #asset_details, #asset_create, #asset_details_model_template, #scene_edit_elements {
@@ -263,6 +258,15 @@ canvas#rootcanvas {
   }
 }
 
+#assets_view tilegrid#assets_list {
+  a, entry {
+    background-image: var(--thumbnail-url);
+    background-size: contain;
+    background-position: right;
+    background-repeat: no-repeat;
+  }
+}
+
 #scene_edit_elements entry {
   &.collapse {
     & > * {
@@ -302,9 +306,9 @@ canvas#rootcanvas {
 }
 
 .btn-highlightable-style {
-  border-color: #00998b;
-  box-shadow: inset 0 -1px #309900a8;
-  margin: 0px 4px;
+  --bc: #00998b;
+  border-color: var(--bc);
+  box-shadow: inset 4px 0px var(--bc);
 }
 
 btn, .btn {
@@ -314,7 +318,6 @@ btn, .btn {
   &.highlighted {
     &:extend(.btn-highlightable-style);
   }
-
 }
 
 
@@ -364,5 +367,122 @@ input {
   }
   &[type=submit] {
     &:extend(btn);
+  }
+}
+
+// d240109
+
+container.flex-row {
+  display: flex;
+  flex-direction: row;
+  padding: 4px;
+  gap: 4px;
+}
+
+.btn.icon, btn.icon {
+  width: 2em;
+  height: 2em;
+
+  &[tooltip] {
+    position: relative;
+    &::after {
+      transition: all 0.3s;
+      opacity: 0;
+      transform: translate(-50%, 100%);
+      bottom: 0;
+      left: 50%;
+      content: attr(tooltip);
+      position: absolute;
+      background-color: #000a;
+      color: white;
+      padding: 2px 4px;
+      border-radius: 2px;
+      z-index: 1;
+      pointer-events: none;
+    }
+  }
+
+  &[tooltip]:hover {
+    &::after {
+      opacity: 1;
+      bottom: -.5em;
+    }
+  }
+}
+
+.img-background {
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.img-save {
+  background-image: url("res/icons-stylesheets/save.png");
+  &:extend(.img-background);
+}
+
+.img-close {
+  background-image: url("res/icons-stylesheets/door.png");
+  &:extend(.img-background);
+}
+
+.img-translate {
+  background-image: url("res/icons-stylesheets/translate.png");
+  &:extend(.img-background);
+}
+
+.img-rotate {
+  background-image: url("res/icons-stylesheets/fightJoy_22.png");
+  &:extend(.img-background);
+}
+
+.img-scale {
+  background-image: url("res/icons-stylesheets/larger.png");
+  &:extend(.img-background);
+}
+
+.img-target {
+  background-image: url("res/icons-stylesheets/target.png");
+  &:extend(.img-background);
+}
+
+.img-play {
+  background-image: url("res/icons-stylesheets/forward.png");
+  &:extend(.img-background);
+}
+
+.img-play-next {
+  background-image: url("res/icons-stylesheets/next.png");
+  &:extend(.img-background);
+}
+
+.img-zoom-eq {
+  background-image: url("res/icons-stylesheets/zoomDefault.png");
+  &:extend(.img-background);
+}
+
+.img-information {
+  background-image: url("res/icons-stylesheets/information.png");
+  &:extend(.img-background);
+}
+
+btn#controls_mode_transform_toggle_snap {
+  background-image: url("res/icons-stylesheets/unlocked.png");
+  &:extend(.img-background);
+  &.highlighted {
+    background-image: url("res/icons-stylesheets/locked.png");
+  }
+}
+
+// animation (stash)
+
+btn.icon {
+  background-size: 100%;
+  background-position: center;
+  transition: 0.1s;
+  &:hover {
+    background-size: 110%;
+  }
+  &:active {
+    background-size: 90%;
   }
 }

@@ -138,7 +138,7 @@ export default class SceneEditView {
             const mode_local = (ev.target as HTMLElement)?.classList.toggle("highlighted")
             const mode_text = mode_local ? 'local'  : 'world'
             tcontrols.setSpace( mode_text );
-            (ev.target as HTMLElement).innerHTML = "t: " + mode_text;
+            //(ev.target as HTMLElement).innerHTML = "t: " + mode_text;
         }, this._listeners)
 
         return this;
