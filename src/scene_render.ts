@@ -14,17 +14,20 @@ class SceneCache {
     constructor() {
         this.vec2_0 = new THREE.Vector2();
         this.vec3_0 = new THREE.Vector3();
+        this.vec3_1 = new THREE.Vector3();
         this.gltfs = {};
         this.models = {};
         this.triggers = {};
         this.tilesets = {};
         this.materials = {};
+        this.textures = {};
         this.debug_colliders = {};
         this.guids = 0;
     }
     
     vec2_0: THREE.Vector2;
     vec3_0: THREE.Vector3;
+    vec3_1: THREE.Vector3;
 
     // used for gltfs cache
     gltfs: { [id: string] : any; };
@@ -36,18 +39,19 @@ class SceneCache {
     triggers: { [id: string] : any; };
     tilesets: { [id: string] : Array<string>; };
     materials: { [id: string] : THREE.Material; };
+    textures: { [id: string] : THREE.Texture; };
     debug_colliders: { [id: string] : THREE.Mesh; };
     guids: number;
 }
 
 class SceneRender {
-    
-    private canvas: HTMLCanvasElement;
+    canvas: HTMLCanvasElement;
     private refSizeEl: HTMLElement | null | undefined;
 
     private cube: THREE.Mesh;
     private renderer: THREE.WebGLRenderer;
-    private scene: THREE.Scene;
+    private rootscene: THREE.Scene;
+    scene: THREE.Group;
     camera: THREE.PerspectiveCamera;
     private controls: OrbitControls;
     transform_controls: TransformControls;
@@ -76,7 +80,9 @@ class SceneRender {
         this._drawDebug2dAabb = false;
     }
     init(canvas: HTMLCanvasElement) : SceneRender {
-        const scene = new THREE.Scene();
+        const rootscene = new THREE.Scene();
+        const scene = new THREE.Group();
+        rootscene.add(scene);
         const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
         const renderer = new THREE.WebGLRenderer({ canvas , alpha: true });
         this.refSizeEl = canvas.parentElement;
@@ -93,11 +99,11 @@ class SceneRender {
         const light2 = new THREE.DirectionalLight(0xffffff, 2.3);
 		(light2 as any).position.set(0.5, 0, 0.866); // ~60º
 		light2.name = 'main_light';
-		scene.add(light2);
+		rootscene.add(light2);
         
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0xdddddd, 1.2);
         hemiLight.name = 'hemi_light';
-        scene.add(hemiLight);
+        rootscene.add(hemiLight);
 
         this.controls = new OrbitControls(camera, renderer.domElement);
 		this.controls.screenSpacePanning = true;
@@ -146,7 +152,7 @@ class SceneRender {
         this.transform_controls.addEventListener( 'mouseUp',  ( event ) => {
             this.controls.enabled = true;
         } );
-        scene.add(this.transform_controls);
+        rootscene.add(this.transform_controls);
 
         let localMouse = {x: 0, y: 0}
         canvas.addEventListener('mousedown', (ev: MouseEvent) => {
@@ -166,6 +172,7 @@ class SceneRender {
         this.cube = cube;
         this.renderer = renderer;
         this.scene = scene;
+        this.rootscene = rootscene;
         this.camera = camera;
 
         this.updateSize();
@@ -336,7 +343,7 @@ class SceneRender {
                 )
         }
         
-        const afterload = (scene: THREE.Object3D) => {
+        const afterload = async (scene: THREE.Object3D) => {
             this.cache.models[id] = model;
             this.cache.objects[id] = scene;
             scene.name = id;
@@ -345,7 +352,7 @@ class SceneRender {
             if (model.matrix?.length) {
                 (scene as THREE.Object3D).applyMatrix4(new THREE.Matrix4().fromArray(model.matrix))
             }
-            const material = this.getMaterial(model.material, textureurl);
+            const material = await this.getMaterial(model.material, textureurl);
             scene.traverse((o) => {
                 if (!o.isMesh) {
                     return;
@@ -364,7 +371,7 @@ class SceneRender {
         let gltf = this.cache.gltfs[model.gltf];
         if(gltf) {
             const newscene = gltf.scene.clone(true);
-            afterload(newscene);
+            await afterload(newscene);
             return newscene;
         }
 
@@ -388,10 +395,10 @@ class SceneRender {
 
         const load = () => {
             return new Promise((resolve, reject) => {
-                loader.load( gltfurl,  ( gltf ) => {
+                loader.load( gltfurl, async ( gltf ) => {
                     this.cache.gltfs[model.gltf] = gltf;
                     const scene = gltf.scene.clone();
-                    afterload(scene);
+                    await afterload(scene);
                     resolve(scene);
                 }, undefined,  reject );
             })
@@ -409,7 +416,7 @@ class SceneRender {
         }
         let spritename = spritenames[type] || spritenames.unknown;
 
-        const sprite = this.makeSprite(spritename);
+        const sprite = await this.makeSprite(spritename);
 
         sprite.name = id;
         this.scene.add(sprite);
@@ -429,9 +436,9 @@ class SceneRender {
         }
     }
 
-    makeSprite(name: string): THREE.Sprite {
+    async makeSprite(name: string): Promise<THREE.Sprite> {
         const spritepath = SPRITE_DEFAULT_PATH + name + ".png";
-        return new THREE.Sprite( this.getMaterial("sprite", spritepath, true) as THREE.SpriteMaterial);
+        return new THREE.Sprite( await this.getMaterial("sprite", spritepath, true) as THREE.SpriteMaterial);
     }
 
     // tmp. only gonna work for gltf.scenes with one mesh
@@ -541,9 +548,10 @@ class SceneRender {
         this.cache.gltfs = {};
         this.cache.objects = {};
     }
-    viewModel(id: string, model: any) {
+    async viewModel(id: string, model: any) {
         this.clearModels();
-        this.addModel(id, model);
+        const scene = await this.addModel(id, model);
+        this.focusCameraOn(scene);
     }
 
     addGLTF(url: string, name?: string) : Promise<any> {
@@ -588,7 +596,18 @@ class SceneRender {
      */
     async viewGLTF(url: string) : Promise<THREE.Object3D> {
         this.clearModels();
-        return await this.addGLTF(url);
+        const gltf = await this.addGLTF(url);
+        this.focusCameraOn(gltf.scene)
+        return gltf;
+    }
+
+    focusCameraOn(object: THREE.Object3D) {
+        const box = new THREE.Box3().setFromObject( object );
+        const center = box.getCenter(new THREE.Vector3())
+        const sphere = box.getBoundingSphere(new THREE.Sphere(center));
+
+        const pos = new THREE.Vector3(1, 1, 1).multiplyScalar(sphere.radius + Math.log(sphere.radius * 1.3));
+        this.setCameraPos(pos, center);
     }
 
     /**
@@ -596,7 +615,7 @@ class SceneRender {
      * @param name material name
      * @param texture_url path to lexture
      */
-    getMaterial(name: string, texture_url: string, flipY: boolean = false) : THREE.Material {
+    async getMaterial(name: string, texture_url: string, flipY: boolean = false) : Promise<THREE.Material> {
         const materialTypes = { standart: THREE.MeshStandardMaterial, toon: THREE.MeshToonMaterial, sprite: THREE.SpriteMaterial }
 
         if(!name || !materialTypes[name]) {
@@ -609,7 +628,9 @@ class SceneRender {
             return this.cache.materials[id];
         }
 
-        const texture = new THREE.TextureLoader().load( texture_url );
+        const texture = this.cache.textures[texture_url] ?? await new Promise((resolve, reject) => {
+            new THREE.TextureLoader().load( texture_url, resolve, reject );
+        });
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.flipY = flipY;
 
@@ -642,22 +663,26 @@ class SceneRender {
 
         this.cube.rotateX(0.01);
         this.cube.rotateY(0.01);
-            for(const k in this.colliders.bodies) {
-                const body = this.colliders.bodies[k];
-                const obj = this.cache.objects[k];
-                if (obj && this.cache.models[k]) {
-                    const x = distlerp(obj.position.x, body.collider.x, 0.3 * dr);
-                    const y = distlerp(obj.position.y, body.collider.y, 0.3 * dr);
-                    obj.position.x  = x;
-                    obj.position.y  = y;
-                }
-                if(this._drawDebug2dAabb) {
-                    this.drawColliderDebug(k, body.collider);
-                    //this.drawColliderDebug(k + "_predict", body.collider, 0xff0000, this.colliders.getBodyNextShift(body, this.cache.vec2_0));
-                }
+        for(const k in this.colliders.bodies) {
+            const body = this.colliders.bodies[k];
+            const obj = this.cache.objects[k];
+            if (obj && this.cache.models[k]) {
+                const x = distlerp(obj.position.x, body.collider.x, 0.3 * dr);
+                const y = distlerp(obj.position.y, body.collider.y, 0.3 * dr);
+                obj.position.x  = x;
+                obj.position.y  = y;
             }
+            if(this._drawDebug2dAabb) {
+                this.drawColliderDebug(k, body.collider);
+                //this.drawColliderDebug(k + "_predict", body.collider, 0xff0000, this.colliders.getBodyNextShift(body, this.cache.vec2_0));
+            }
+        }
     
-        this.renderer.render( this.scene, this.camera );
+        this.render();
+    }
+
+    render() {
+        this.renderer.render( this.rootscene, this.camera );
     }
 
     /**
@@ -685,6 +710,7 @@ class SceneRender {
             ) {
                 this.renderer.setSize(offsetWidth, offsetHeight);
                 this.camera.aspect = offsetWidth / offsetHeight;
+                this.camera.fov = 90 * Math.min(1, offsetHeight / offsetWidth);
                 this.camera.updateProjectionMatrix();
             }
     }
@@ -741,6 +767,11 @@ class SceneRender {
         }
     }
 
+    setCameraPos(pos: THREE.Vector3, target: THREE.Vector3) {
+        this.setPos(this.camera, pos);
+        this.camera.lookAt(target.x, target.y, target.z);
+        this.controls.target.copy(target);
+    }
 
     // --- tests
 

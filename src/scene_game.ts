@@ -118,11 +118,8 @@ export default class SceneGame {
 
             //pos.y = lerp(pos.y, pos.y - this.player_character.look_direction_y * 2, 0.1);
 
-            this.scene_render.setPos(this.scene_render.camera, pos);
-
-            pos.z -= 7;
-
-            this.scene_render.camera.lookAt(pos.x, targ_y - shift_y, pos.z);
+            const targ = this.scene_render.cache.vec3_1.set(pos.x, targ_y - shift_y, pos.z - 7)
+            this.scene_render.setCameraPos(pos, targ);
         }
 
         if(this.player_character.performed_actions.find((e) => e.tag == "hit")) { 

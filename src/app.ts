@@ -117,6 +117,10 @@ class App {
                     break;
                 case "physics_toggle_collision_debug":
                     this.scene_render._drawDebug2dAabb = target.classList.toggle("highlighted");
+                    break;
+                case "game_center_camera":
+                    this.scene_render.focusCameraOn(this.scene_render.scene);
+                    break;
             }
         });
 

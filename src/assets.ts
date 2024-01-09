@@ -109,6 +109,7 @@ interface AssetInfo {
     type: string;
     extension: string;
     revision: number;
+    thumbnail: string | null;
 }
 
 class Asset {
@@ -128,7 +129,9 @@ class Asset {
         }
 
         let url = ""
-        if (this.info.type.includes("image")) {
+        if (this.info.thumbnail) {
+            url = this.info.thumbnail;
+        } else if (this.info.type.includes("image")) {
             url = this.info.url;
         }
 
@@ -206,7 +209,8 @@ class Assets {
             type: data.type,
             extension: data.extension,
             revision: data.revision,
-            tags: data.tags ?? ""
+            tags: data.tags ?? "",
+            thumbnail: data.thumbnail
         });
         this.list[id] = asset;
         if(onprogress) {

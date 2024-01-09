@@ -192,8 +192,7 @@ container#scene_tools_palette, page#details_model_edit, page#details_tileset_edi
   container#asset_preview_container {
     #img_asset_preview, #canvas_asset_preview {
       width: 100%;
-      height: 100%;
-      min-height: 256px;
+      height: 256px;
       display: flex;
       position: relative;
     }
@@ -380,8 +379,8 @@ container.flex-row {
 }
 
 .btn.icon, btn.icon {
-  width: 2em;
-  height: 2em;
+  width: 1.5em;
+  height: 1.5em;
 
   &[tooltip] {
     position: relative;
@@ -462,6 +461,16 @@ container.flex-row {
 
 .img-information {
   background-image: url("res/icons-stylesheets/information.png");
+  &:extend(.img-background);
+}
+
+.img-screenshoot {
+  background-image: url("res/icons-stylesheets/video.png");
+  &:extend(.img-background);
+}
+
+.img-home {
+  background-image: url("res/icons-stylesheets/home.png");
   &:extend(.img-background);
 }
 

@@ -55,7 +55,7 @@ export default class CharacterRender {
         }
     }
 
-    drawUiInteractSprite(show: boolean) {
+    async drawUiInteractSprite(show: boolean) {
         if (!show && !this.ui_interact_sprite) {
             return;
         }
@@ -66,7 +66,7 @@ export default class CharacterRender {
         }
 
         if (show && !this.ui_interact_sprite) {
-            this.ui_interact_sprite = this.scene_render.makeSprite("DPAD_up");
+            this.ui_interact_sprite = await this.scene_render.makeSprite("DPAD_up");
             (this.ui_interact_sprite as any).position.y = 2.5;
             this.character_gltf.scene.add(this.ui_interact_sprite);
         }

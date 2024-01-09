@@ -1,4 +1,4 @@
-import { Assets, listenFormSubmit } from "../assets";
+import { Assets, listenFormSubmit, sendFiles } from "../assets";
 import SceneRender from "../scene_render";
 import { sprintf } from "../lib/sprintf.js";
 import { listenClick, reattach, switchPage, querySelector, popupListSelect } from "../document";
@@ -148,6 +148,27 @@ class AssetsView {
         this.props_container.querySelector("label#assets_upload_files_label")?.classList[info.extension.includes("model") ? "add" : "remove"]('hidden');
         const asset_preview = querySelector("container#asset_preview_container");
         asset_preview.classList.remove("hidden");
+        
+        const redraw = async () => {
+            // should get rid of this loadAsset after each update
+            await this.assets.loadAsset(id);
+            this.draw(id);
+            this.drawDetails(id);
+        }
+
+        const uploadThumbnail = () => {
+            this.scene_render.render();
+            this.scene_render.canvas.toBlob((blob) => {
+                if (!blob) {
+                    return;
+                }
+                const file = new File([blob], `v${info.revision}_${info.name}`, {
+                    type: "image/jpeg",
+                });
+
+                sendFiles("/assets/upload/thumbnail/" + asset.info.id, [file], redraw);
+            });
+        }
 
         // draw previews
         if (info.extension == "gltf" || info.extension == "glb" || info.extension == 'model' || info.extension == "scene") {
@@ -159,16 +180,24 @@ class AssetsView {
                // ...
             } else if (info.extension == 'scene') {
                 await this.scene_render.scene_edit.load(id);
+                const p: Array<Promise<any>> = [];
                 for(const _id in this.scene_render.scene_edit.elements) {
                     const element = this.scene_render.scene_edit.elements[_id];
         
                     if(element.components.model) {
-                        this.scene_render.addModel(_id, element.components.model.properties);
+                        p.push(this.scene_render.addModel(_id, element.components.model.properties));
                     }
                 }
+
+                await Promise.all(p);
+                this.scene_render.focusCameraOn(this.scene_render.scene);
             } 
             else {
-                this.scene_render.viewGLTF(info.url);
+                this.scene_render.viewGLTF(info.url).then(() => {
+                    if (!asset.thumbnail) {
+                        uploadThumbnail();
+                    }
+                });
             }
         } else if (info.type.includes("image")) {
 			const container = switchPage("#img_asset_preview");
@@ -189,11 +218,17 @@ class AssetsView {
             return file;
         }
 
+
+
         // draw settings fiels
         if (info.extension == "model") {
             //const model = await (await fetch(this.assets.get(id).info.url)).json();
             asset_json = await (await fetch(info.url)).json();
-            this.scene_render.viewModel(id, asset_json);
+            this.scene_render.viewModel(id, asset_json).then(() => {
+                if (!asset.thumbnail) {
+                    uploadThumbnail();
+                }
+            });
             const container = switchPage("#details_model_edit");
             container.innerHTML = "";
             this._drawModelPropertyFields(container, asset_json, () =>  { json_data_changed = true });
@@ -220,10 +255,7 @@ class AssetsView {
             files: ["files"],
             custom: {"files": makeJSONFile}
         }, async (s, res) => {
-            // should get rid of this loadAsset after each update
-            await this.assets.loadAsset(id);
-            this.draw(id);
-            this.drawDetails(id);
+            redraw();
         });
     }
 
@@ -368,7 +400,9 @@ class AssetsView {
         el.id = asset.info.id;
         el.dataset["name"] = asset.info.name; 
         el.dataset["tags"] = asset.info.tags;
-        el.style.cssText = `--thumbnail-url: url(${asset.thumbnail})`;
+        if (asset.thumbnail) {
+            el.style.cssText = `--thumbnail-url: url(${asset.thumbnail})`;
+        }
         if(link) {
             el.href = link;
         }

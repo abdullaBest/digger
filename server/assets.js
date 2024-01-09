@@ -8,6 +8,7 @@ export default class Assets {
             data: {},
             guids: 0
         }
+        this._instance = null;
         this.data = {};
         this.filename = "assets.json"
         this.directory = ""
@@ -90,5 +91,13 @@ export default class Assets {
         if (existsSync(filepath)) {
             await this.load(filepath);
         }
+    }
+
+    static instance() {
+        if (!this._instance) {
+            this._instance = new Assets();
+        }
+        
+        return this._instance;
     }
 }

@@ -1,42 +1,14 @@
 import Builder from './builder.js';
 import express from 'express';
 import { WebSocketServer } from 'ws';
-import multer from 'multer';
 import Assets from './assets.js';
-import { existsSync, rmSync, mkdirSync } from 'node:fs';
-import path from 'path';
-import { rejects } from 'assert';
+import { upload, upload_thumbnail, path_uploads, path_uploads_thumbnails } from './upload.js';
+import { existsSync } from 'node:fs';
 
 const port = 3000
-const path_uploads = "uploads/";
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    if (!existsSync(path_uploads)){
-      mkdirSync(path_uploads, { recursive: true });
-    }
-    cb(null, path_uploads)
-  },
-  filename: function (req, file, cb) {
-    const id = req.params.id ?? assets.genId();
-    let revision = 0;
-    if (req.params.id && assets.get(req.params.id)) {
-      const asset = assets.get(req.params.id);
-      revision = asset.revision
-    }
-
-    let name = id;
-    if (revision) {
-      name = `${id}-${revision}`;
-    }
-    
-    cb(null, name);
-  }
-})
-
-const upload = multer({ dest: path_uploads, storage: storage });
 const app = express()
-const assets = new Assets();
+const assets = Assets.instance();
 
 // application directory serve
 app.use('/editor', express.static('./dist'));
@@ -58,7 +30,21 @@ const server = app.listen(port, async() => {
 
 // files upload
 app.post("/assets/upload/:id", upload.single("files"), updateFiles);
+app.post("/assets/upload/thumbnail/:id", upload_thumbnail.single("files"), updateThumbnail);
 app.post("/assets/upload", upload.array("files"), uploadFiles);
+
+function updateThumbnail(req, res) {
+  const id = req.params.id;
+  const asset = assets.get(id);
+  if (!asset) {
+    res.statusCode = 500;
+    res.send(`Asset ${id} wasn't found. Cant update`);
+  }
+
+  assets.save();
+
+  res.send();
+}
 
 function updateFiles(req, res) {
   const id = req.params.id;
@@ -118,8 +104,9 @@ app.get('/assets/get/:id', async (req, res) => {
   const id = req.params.id;
   const asset = assets.get(id);
   const revision = asset.revision;
+  const thumbnail = existsSync(path_uploads + path_uploads_thumbnails + id) ? "/assets/load/thumbnail/" + id : null
   const info = Object.assign(
-    { url: `/assets/load/${id}/${revision}` }, 
+    { url: `/assets/load/${id}/${revision}`, thumbnail }, 
     asset);
   res.json(info);
 })
@@ -160,6 +147,17 @@ app.get('/assets/load', async (req, res, next) => {
     res.send("No file matching query found.");
   })
 })
+
+app.get('/assets/load/thumbnail/:id', async (req, res, next) => {
+  const id = req.params.id;
+  const filename = path_uploads_thumbnails + id; 
+  sendFile(filename, "image/jpeg", res).catch((err)=>{
+    if (err.status !== 404) return next(err); // non-404 error
+      // file for download not found
+      res.statusCode = 404;
+      res.send(`File ${id}  rev ${revision} not found`);
+  })
+});
 
 app.get('/assets/load/:id/:revision', async (req, res, next) => {
   const id = req.params.id;
