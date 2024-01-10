@@ -29,7 +29,8 @@ class Character {
     wallslide_speed: number;
     air_control_factor: number;
     run_movement_scale: number;
-    run_jump_scale: number;
+    run_vertical_jump_scale: number;
+    run_horisontal_jump_scale: number;
     prerun_threshold: number;
 
     movement_x: number;
@@ -67,7 +68,8 @@ class Character {
         this.wallslide_affection = 0.4;
         this.wallslide_speed = -1;
         this.air_control_factor = 0.4;
-        this.run_jump_scale = 1.3;
+        this.run_vertical_jump_scale = 1.3;
+        this.run_horisontal_jump_scale = 2;
         this.run_movement_scale = 1.5;
         this.prerun_threshold = 0.25;
 
@@ -148,13 +150,18 @@ class Character {
 
         this.running = this.run_elapsed >= this.prerun_threshold;
         const movement_scale = this.running ? this.run_movement_scale : 1;
-        const jump_scale = this.running ? this.run_jump_scale : 1;
+        const vjump_scale = this.running ? this.run_vertical_jump_scale : 1;
+        const hjump_scale = this.running ? this.run_horisontal_jump_scale : 1;
 
         // movement values calculate
         if (perform_physics_actions) {
             const m = movement * movement_scale
+            // a. base lerp scales. Speed up/down
             let t = movement ? 0.8 : 0.95;
+            // b. Air control scale
             t *= this.collided_bottom ? 1 : this.air_control_factor;
+            // c. Run control scale
+            t *= this.running ? 0.5 : 1;
             this.movement_x = lerp(this.movement_x, m, t);
         }
         if (Math.abs(this.movement_x) < 1e-4) {
@@ -175,20 +182,22 @@ class Character {
 
         // jump
         if (perform_physics_actions && this.jump_elapsed > this.jump_threshold) {
-            const jf = this.jump_force * jump_scale;
+            const jf = this.jump_force * vjump_scale;
             if (this.jumping_left || this.jumping_right || this.jumping_up) {
                 this.jump_elapsed = 0;
             }
             //this.body.velocity_x = this.jumping_left ? this.jump_force : this.body.velocity_x;
             //this.body.velocity_x = this.jumping_right ? this.jump_force : this.body.velocity_x;
+
             if (this.jumping_up) {
                 this.body.velocity_y = Math.min(jf * 1.5, this.body.velocity_y * 0.1 + jf);
             }
+            /*
             if (this.jumping_left) {
-                this.body.velocity_x = -jf * 0.15;
+                this.body.velocity_x = -jf * 0.15 * hjump_scale;
             } else if (this.jumping_right) {
-                this.body.velocity_x = jf * 0.15;
-            }
+                this.body.velocity_x = jf * 0.15 * hjump_scale;
+            }*/
             //this.body.velocity_y = this.jumping_up ? Math.max(this.body.velocity_y, this.jump_force) : this.body.velocity_y;
         }
         this.jump_elapsed += dt;
