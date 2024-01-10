@@ -23,6 +23,7 @@ export default class SceneGame {
         this._listeners = [];
         this.falling_blocks = {};
         this.requested_map_switch = null;
+        this.requested_map_entrance = null;
     }
     
     async init(): Promise<SceneGame> {
@@ -34,22 +35,39 @@ export default class SceneGame {
         return this;
     }
 
-    async run(elements: { [id: string] : SceneElement; }) {
+    async run(elements: { [id: string] : SceneElement; }, entrance_id?: string | null) {
         this.stop();
 
         this.requested_map_switch = null;
+        this.requested_map_entrance = null;
         this.active = true;
         this.elements = elements;
 
         // find start pos
         const startpos = new Vector2(0.1, 4);
-        for(const k in elements) {
-            const el = elements[k];
-            const props = el.components.trigger?.properties;
-            if (props && props.type == "mapentry") {
-                startpos.x = props.pos_x ?? 0;
-                startpos.y = props.pos_y ?? 0;
-            } 
+        {
+            let entrance_found = false;
+            for(const k in elements) {
+                const el = elements[k];
+                const props = el.components.trigger?.properties;
+                if (!entrance_id && props && props.type == "mapentry") {
+                    startpos.x = props.pos_x ?? 0;
+                    startpos.y = props.pos_y ?? 0;
+                    entrance_found = true;
+                } else if (entrance_id && el.id === entrance_id) {
+                    startpos.x = props.pos_x ?? 0;
+                    startpos.y = props.pos_y ?? 0;
+                    entrance_found = true;
+                }
+
+                if (entrance_found) {
+                    break;
+                }
+            }
+
+            if (entrance_id && !entrance_found) {
+                console.warn(`SceneGame::run warn - entrance id set (${entrance_id}) but such element wasnt found`);
+            }
         }
 
         // init player
@@ -83,6 +101,7 @@ export default class SceneGame {
     stop() {
         this.active = false;
         this.requested_map_switch = null;
+        this.requested_map_entrance = null;
         this.scene_debug.stop();
         removeEventListeners(this._listeners);
         
@@ -165,9 +184,13 @@ export default class SceneGame {
         this.player_character_render.drawUiInteractSprite(interacts);
     }
 
-    requestMapSwitch(id: string) {
+    requestMapSwitch(signal: string) {
         // it gonna be handled in SceneMediator step
+        const args = signal.split(",");
+        const id = args[0];
+        const entrance_id = args[1] ?? null;
         this.requested_map_switch = id;
+        this.requested_map_entrance = entrance_id;
     }
 
     private _actionHitCollisionTest(cha: Character): string | null {
@@ -409,4 +432,5 @@ export default class SceneGame {
     elements: { [id: string] : SceneElement; }
 
     requested_map_switch: string | null;
+    requested_map_entrance: string | null;
 }

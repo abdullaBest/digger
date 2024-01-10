@@ -20,8 +20,10 @@ class SceneMediator {
 
     step() {
         if (this.scene_game.requested_map_switch) {
-            this.sceneSwitch(this.scene_game.requested_map_switch)
-            .then(() => this.play())
+            const scene_id = this.scene_game.requested_map_switch;
+            const entrance_id = this.scene_game.requested_map_entrance;
+            this.sceneSwitch(scene_id)
+            .then(() => this.play(entrance_id))
             .catch((err) => {
                 this.sceneClose();
                 console.error("Scene requested switch error: ", err);
@@ -78,8 +80,8 @@ class SceneMediator {
         await this.sceneOpen(id);
     }
 
-    play() {
-        this.scene_game.run(this.scene_edit.elements);
+    play(entrance_id: string | null) {
+        this.scene_game.run(this.scene_edit.elements, entrance_id);
     }
 }
 
