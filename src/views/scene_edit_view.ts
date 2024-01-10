@@ -175,9 +175,10 @@ export default class SceneEditView {
      * draws element in html and render
      * 
      * @param id element id
+     * @param inrender redraws model in 3d view
      * @param container html element to put data to
      */
-    draw(id: string, container: HTMLElement = this.props_container) {
+    draw(id: string, inrender: boolean = true, container: HTMLElement = this.props_container) {
         const element = this.scene_edit.elements[id];
 
         const el = (container.querySelector('#' + id) || document.createElement('entry')) as HTMLLinkElement;
@@ -198,7 +199,9 @@ export default class SceneEditView {
                 this.scene_render.removeModel(id);
                 this.scene_render.addModel(id, element.components.model.properties);
             };
-            //redraw();
+            if (inrender) {
+                redraw();
+            }
             AssetsView.drawModelPropertyFields(props_container, this.scene_edit.assets, element.components.model.properties, redraw)
         }
 
@@ -207,7 +210,9 @@ export default class SceneEditView {
                 this.scene_render.removeTileset(id);
                 this.scene_render.addTileset(id, element.components.tileset.properties);
             };
-            //redraw();
+            if (inrender) {
+                redraw();
+            }
             AssetsView.drawTilesetPropertyFilelds(props_container, this.scene_edit.assets, element.components.tileset.properties, redraw)
         }
 
@@ -216,7 +221,9 @@ export default class SceneEditView {
                 this.scene_render.removeElement(element.id);
                 this.scene_render.addTriggerElement(element.id, element.components.trigger.properties);
             };
-            //redraw();
+            if (inrender) {
+                redraw();
+            }
             AssetsView.drawTriggerPropertyFields(props_container, this.scene_edit.assets, element.components.trigger.properties, redraw)
         }
 
@@ -239,7 +246,7 @@ export default class SceneEditView {
 
         for(const id in this.scene_edit.elements) {
             const element = this.scene_edit.elements[id];
-            this.draw(id);
+            this.draw(id, false);
         }
     }
 }
