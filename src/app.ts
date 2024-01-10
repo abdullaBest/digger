@@ -44,7 +44,8 @@ class App {
         this.app_debug_draw.addWrite("REF_DELTATIME");
         this.app_debug_draw.addWrite("frame_threshold");
         this.app_debug_draw.addRead("average_frametime");
-        this.app_debug_draw.addRead("dt scale", () => this.average_frametime / this.REF_DELTATIME);
+        this.app_debug_draw.addRead("[dt scale]", () => this.average_frametime / this.REF_DELTATIME);
+        this.app_debug_draw.addRead("[fps]", () => 1000 / this.average_frametime);
 
         return this;
     }

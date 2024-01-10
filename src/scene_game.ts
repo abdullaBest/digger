@@ -382,9 +382,12 @@ export default class SceneGame {
         if (event.repeat) return;
 
         const key = event.code;
+        console.log(key);
         if (key === 'Space') {
             this.player_character.actionRequest("jump", CharacterActionCode.START);
-        } 
+        } else if (key === "ShiftLeft") {
+            this.player_character.actionRequest("run", CharacterActionCode.START);
+        }
         else if (key === 'ArrowLeft') {
             this.player_character.actionRequest("move_left", CharacterActionCode.START);
         } else if (key === 'ArrowRight') {
@@ -393,7 +396,7 @@ export default class SceneGame {
             this.player_character.actionRequest("look_up", CharacterActionCode.START);
         } else if (key === 'ArrowDown') {
             this.player_character.actionRequest("look_down", CharacterActionCode.START);
-        } 
+        }
         else if (key === 'KeyS') {
             this.scene_collisions.step(100);
         } else if (key === 'KeyA') {
@@ -412,6 +415,8 @@ export default class SceneGame {
             this.player_character.actionRequest("look_up", CharacterActionCode.END);
         } else if (key === 'ArrowDown') {
             this.player_character.actionRequest("look_down", CharacterActionCode.END);
+        } else if (key === "ShiftLeft") {
+            this.player_character.actionRequest("run", CharacterActionCode.END);
         }
     }
 

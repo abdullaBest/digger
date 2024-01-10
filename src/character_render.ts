@@ -102,8 +102,8 @@ export default class CharacterRender {
         //x += body.velocity_x * this.colliders.step_threshold * 0.5;
         //y += body.velocity_y * this.colliders.step_threshold * 0.5;
 
-        const lx = distlerp(cha.position.x, x, 1, 5);
-        const ly = distlerp(cha.position.y, y, 1, 5);
+        const lx = distlerp(cha.position.x, x, 0.9, 5);
+        const ly = distlerp(cha.position.y, y, 0.9, 5);
         this.scene_render.setPos(cha, this.scene_render.cache.vec3_0.set(lx, ly, 0));
 
         this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.2) ;

@@ -80,7 +80,7 @@ class SceneMediator {
         await this.sceneOpen(id);
     }
 
-    play(entrance_id: string | null) {
+    play(entrance_id?: string | null) {
         this.scene_game.run(this.scene_edit.elements, entrance_id);
     }
 }

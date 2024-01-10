@@ -25,6 +25,12 @@ class Character {
     movement_speed: number;
     jump_force: number;
     jump_threshold: number;
+    wallslide_affection: number;
+    wallslide_speed: number;
+    air_control_factor: number;
+    run_movement_scale: number;
+    run_jump_scale: number;
+    prerun_threshold: number;
 
     movement_x: number;
     moving_left: boolean;
@@ -34,7 +40,10 @@ class Character {
     jumping_up: boolean;
     jumping_left: boolean;
     jumping_right: boolean;
+    prerunning: boolean;
+    running: boolean;
     jump_elapsed: number;
+    run_elapsed: number;
     scene_collisions: SceneCollisions;
     look_direction_x: number;
     look_direction_y: number;
@@ -52,18 +61,28 @@ class Character {
     performed_actions: Array<CharacterAction>;
 
     constructor(scene_collisions: SceneCollisions) {
-        this.look_direction_x = 0;
-        this.look_direction_y = 0;
-        this.movement_x = 0;
         this.movement_speed = 2.7;
         this.jump_force = 5;
         this.jump_threshold = 0.1;
+        this.wallslide_affection = 0.4;
+        this.wallslide_speed = -1;
+        this.air_control_factor = 0.4;
+        this.run_jump_scale = 1.3;
+        this.run_movement_scale = 1.5;
+        this.prerun_threshold = 0.25;
+
+        this.look_direction_x = 0;
+        this.look_direction_y = 0;
+        this.movement_x = 0;
         this.jump_elapsed = 0;
+        this.run_elapsed = 0;
         this.moving_right = false;
         this.moving_left = false;
         this.jumping_left = false;
         this.jumping_right = false;
         this.jumping_up = false;
+        this.running = false;
+        this.prerunning = false;
         this.sliding_wall = false;
         this.requested_actions = [];
         this.performed_actions = [];
@@ -114,43 +133,61 @@ class Character {
         }
         this.requested_actions = actions_buff;
 
-        // movement
+        // movement direction & speed
         movement -= this.moving_left && !this.collided_left ? this.movement_speed : 0;
         movement += this.moving_right && !this.collided_right ? this.movement_speed : 0;
-        if (perform_physics_actions) {
-            this.movement_x = lerp(this.movement_x, movement, movement ? 0.8 : 0.95);
+
+        // run state
+        const discard_runstate_case0 = !this.prerunning || !movement || this.performed_actions.find((e) => e.tag == "move_left" || e.tag == "move_right");
+        const discard_runstate_case1 = this.run_elapsed < this.prerun_threshold && !this.collided_bottom;
+        if (discard_runstate_case0 || discard_runstate_case1) {
+            this.run_elapsed = 0;
+        } else {
+            this.run_elapsed += dt;
         }
 
+        this.running = this.run_elapsed >= this.prerun_threshold;
+        const movement_scale = this.running ? this.run_movement_scale : 1;
+        const jump_scale = this.running ? this.run_jump_scale : 1;
+
+        // movement values calculate
+        if (perform_physics_actions) {
+            const m = movement * movement_scale
+            let t = movement ? 0.8 : 0.95;
+            t *= this.collided_bottom ? 1 : this.air_control_factor;
+            this.movement_x = lerp(this.movement_x, m, t);
+        }
         if (Math.abs(this.movement_x) < 1e-4) {
             this.movement_x = 0;
         }
-
         if(movement) {
             this.look_direction_x = Math.sign(movement);
         }
 
+
+        // body velocity apply
         if (perform_physics_actions && this.jump_elapsed > this.jump_threshold) {
             this.body.velocity_x = lerp(this.body.velocity_x, this.movement_x, 0.7);
             if (Math.abs(this.body.velocity_x) < 1e-4) {
                 this.body.velocity_x = 0;
             }
         }
-       
 
         // jump
         if (perform_physics_actions && this.jump_elapsed > this.jump_threshold) {
+            const jf = this.jump_force * jump_scale;
             if (this.jumping_left || this.jumping_right || this.jumping_up) {
                 this.jump_elapsed = 0;
             }
             //this.body.velocity_x = this.jumping_left ? this.jump_force : this.body.velocity_x;
             //this.body.velocity_x = this.jumping_right ? this.jump_force : this.body.velocity_x;
             if (this.jumping_up) {
-                this.body.velocity_y = Math.min(this.jump_force * 1.5, this.body.velocity_y * 0.1 + this.jump_force);
+                this.body.velocity_y = Math.min(jf * 1.5, this.body.velocity_y * 0.1 + jf);
             }
             if (this.jumping_left) {
-                this.body.velocity_x = -this.jump_force * 0.15;
+                this.body.velocity_x = -jf * 0.15;
             } else if (this.jumping_right) {
-                this.body.velocity_x = this.jump_force * 0.15;
+                this.body.velocity_x = jf * 0.15;
             }
             //this.body.velocity_y = this.jumping_up ? Math.max(this.body.velocity_y, this.jump_force) : this.body.velocity_y;
         }
@@ -158,9 +195,9 @@ class Character {
 
         // wall glide
 
-        this.sliding_wall = !this.collided_bottom && this.body.velocity_y <= 0 && (this.collided_left || this.collided_right);
+        this.sliding_wall = !this.collided_bottom && this.body.velocity_y <= 0 && ((this.collided_left && this.moving_left) || (this.collided_right && this.moving_right));
         if (perform_physics_actions && this.sliding_wall) {
-            this.body.velocity_y = lerp(this.body.velocity_y, -3, 0.3 );
+            this.body.velocity_y = lerp(this.body.velocity_y, this.wallslide_speed, this.wallslide_affection);
         }
     }
 
@@ -212,7 +249,7 @@ class Character {
         const tag = action.tag;
         const code = action.code;
 
-        const physics_actions = ["jump", "move_left", "move_right"];
+        const physics_actions = ["jump", "move_left", "move_right", "run"];
 
         if (physics_actions.includes(tag) && !perform_physics_actions) {
             return CharacterActionApplyCode.IGNORED;
@@ -225,6 +262,10 @@ class Character {
                 } else {
                     apply_code = CharacterActionApplyCode.DISCARED;
                 }
+                break;
+            case "run":
+                apply_code = CharacterActionApplyCode.PERFORMED;
+                this.prerunning = code == CharacterActionCode.START;
                 break;
             case "hit":
                 apply_code = CharacterActionApplyCode.PERFORMED;
