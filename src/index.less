@@ -193,6 +193,14 @@ container#scene_tools_palette, page#details_model_edit, page#details_tileset_edi
       align-items: center;
       display: flex;
       justify-content: space-between;
+
+      .limit-len {
+        text-overflow: ellipsis;
+        max-width: 10ch;
+        overflow: hidden;
+        display: block;
+      }
+
       input[type="text"] {
           width: 60%;
       }

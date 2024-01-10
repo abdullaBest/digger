@@ -9,6 +9,8 @@ import { importGltfSequence } from "./importer";
 import SceneGame from "./scene_game";
 import SceneMediator from "./scene_mediator";
 import SceneCollisions from "./scene_collisions";
+import PropertyDraw from "./views/property_draw";
+import { lerp } from "./math";
 
 class App {
     constructor() {
@@ -27,6 +29,7 @@ class App {
         this.REF_DELTATIME = 10;
 
         this.frame_threshold = 16;
+        this.average_frametime = 0;
     }
     init() : App {
         const canvas = document.querySelector("canvas#rootcanvas");
@@ -34,8 +37,14 @@ class App {
             throw new Error("can't find canvas to render");
         }
 
+        this.app_debug_draw = new PropertyDraw(querySelector("#app_state_details")).init(this);
         this.scene_render.init(canvas as HTMLCanvasElement);
         this.scene_game.init();
+        
+        this.app_debug_draw.addWrite("REF_DELTATIME");
+        this.app_debug_draw.addWrite("frame_threshold");
+        this.app_debug_draw.addRead("average_frametime");
+        this.app_debug_draw.addRead("dt scale", () => this.average_frametime / this.REF_DELTATIME);
 
         return this;
     }
@@ -57,6 +66,7 @@ class App {
         this.scene_render.run();
         this.active = true;
 
+        this.average_frametime = this.frame_threshold;
         this.timestamp = performance.now();
         this.loop();
 
@@ -87,11 +97,14 @@ class App {
 
         const dtscaled = dt / 1000;
         this.timestamp = now;
-        const deltaref = Math.min(dt / this.REF_DELTATIME, 2);
+        const deltaref = dt / this.REF_DELTATIME;
+        this.average_frametime = lerp(this.average_frametime, dt, 0.01);
 
         this.scene_game.step(dtscaled, deltaref);
         this.scene_render.step(dtscaled, deltaref);
         this.scene_mediator.step();
+
+        this.app_debug_draw.step();
 
         requestAnimationFrame( this.loop.bind(this) );
     }
@@ -239,8 +252,12 @@ class App {
     private scene_game: SceneGame;
     private timestamp: number;
     private frame_threshold: number;
+
+    private average_frametime: number;
+
     private _listeners: Array<EventListenerDetails>;
 
+    private app_debug_draw: PropertyDraw;
     
     private REF_DELTATIME: number;
 }

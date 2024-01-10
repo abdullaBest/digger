@@ -13,9 +13,11 @@ export default class PropertyDraw {
         this.container = container;
     }
 
-    init(object: any) {
+    init(object: any) : PropertyDraw {
         this.dispose();
         this.object = object;
+
+        return this;
     }
 
     dispose() {
@@ -67,6 +69,7 @@ export default class PropertyDraw {
             el.appendChild(l1);
 
             label = document.createElement("label");
+            label.classList.add("limit-len");
             l1.appendChild(label);
             this.container.appendChild(el);
 
@@ -74,7 +77,11 @@ export default class PropertyDraw {
             this.labels_read[key] = label;
         }
         
-        label.innerHTML = this.values_read[key] = value;
+        let v = value;
+        if (typeof value === "number" && value % 1) {
+            v = value.toFixed(2);
+        }
+        label.innerHTML = this.values_read[key] = v;
     }
 
     drawWrite(key: string) {
