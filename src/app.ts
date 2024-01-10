@@ -98,7 +98,7 @@ class App {
         const dtscaled = dt / 1000;
         this.timestamp = now;
         const deltaref = dt / this.REF_DELTATIME;
-        this.average_frametime = lerp(this.average_frametime, dt, 0.01);
+        this.average_frametime = lerp(this.average_frametime, dt, 0.07);
 
         this.scene_game.step(dtscaled, deltaref);
         this.scene_render.step(dtscaled, deltaref);

@@ -115,9 +115,11 @@ class Character {
         this.requested_actions = actions_buff;
 
         // movement
-        movement -= this.moving_left ? this.movement_speed : 0;
-        movement += this.moving_right ? this.movement_speed : 0;
-        this.movement_x = lerp(this.movement_x, movement, Math.min(1, 0.8 * dr));
+        movement -= this.moving_left && !this.collided_left ? this.movement_speed : 0;
+        movement += this.moving_right && !this.collided_right ? this.movement_speed : 0;
+        if (perform_physics_actions) {
+            this.movement_x = lerp(this.movement_x, movement, movement ? 0.8 : 0.95);
+        }
 
         if (Math.abs(this.movement_x) < 1e-4) {
             this.movement_x = 0;

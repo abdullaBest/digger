@@ -99,14 +99,14 @@ export default class CharacterRender {
 
         let x = lerp(cha.steplerpinfo.prev_x, cha.steplerpinfo.next_x, this.colliders.step_elapsed / this.colliders.step_threshold);
         let y = lerp(cha.steplerpinfo.prev_y - body.collider.height/2, cha.steplerpinfo.next_y - body.collider.height/2, this.colliders.step_elapsed / this.colliders.step_threshold);
-        //x += body.velocity_x * this.colliders.step_threshold;
-        //y += body.velocity_y * this.colliders.step_threshold;
+        //x += body.velocity_x * this.colliders.step_threshold * 0.5;
+        //y += body.velocity_y * this.colliders.step_threshold * 0.5;
 
-        const lx = distlerp(cha.position.x, x, 0.3 * dr);
-        const ly = distlerp(cha.position.y, y, 0.3 * dr);
+        const lx = distlerp(cha.position.x, x, 1, 5);
+        const ly = distlerp(cha.position.y, y, 1, 5);
         this.scene_render.setPos(cha, this.scene_render.cache.vec3_0.set(lx, ly, 0));
 
-        this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.2 * dr) ;
+        this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.2) ;
         cha.lookAt(this.scene_render.cache.vec3_0.set(lx + this.character_x_rot, ly + this.character.look_direction_y * 0.3,  1 - Math.abs(this.character_x_rot)));
     }
 
