@@ -8,8 +8,17 @@ export function lerp(a: number, b: number, t: number): number {
 	return a + t * (b - a);
 }
 
-export function distlerp(a: number, b: number, t: number, s: number = 1.0) : number { 
-    const tt = s / (Math.abs(b - a) + 0.01);
-    return a + (b - a) * Math.min(1.0, t * tt); 
+export function map(x: number, a: number, b: number, toa: number, tob: number) : number {
+    return (x - a) / (b - a) * (tob - toa) + toa;
+}
+
+export function clamp(x: number, min: number, max: number) : number {
+    return Math.max(min, Math.min(max, x));
+}
+
+export function distlerp(a: number, b: number, min: number, max: number) : number { 
+    const m = map(Math.abs(a - b), min, max, 0, 1);
+    const c = clamp(m, 0, 1);
+    return lerp(a, b, c);
 }
 

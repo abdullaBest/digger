@@ -4,7 +4,7 @@ import { Box2, Vector2 } from "./lib/three.module";
 import { addEventListener, removeEventListeners, EventListenerDetails } from "./document";
 import CharacterRender from "./character_render";
 import SceneRender from "./scene_render";
-import { lerp } from "./math";
+import { distlerp, lerp } from "./math";
 import { SceneElement } from "./scene_edit";
 import SceneDebug from "./scene_debug";
 
@@ -117,14 +117,15 @@ export default class SceneGame {
      * @param dr 
      * @returns 
      */
-    step(dt: number, dr: number) {
+    step(dt: number, dr: number, forced: boolean = false) {
         if (!this.active) {
             return;
         }
-        this.player_character.step(dt, dr);
-        if (this.autostep) {
-            this.scene_collisions.step(dt);
+        if (!this.autostep && !forced) {
+            return
         }
+        this.player_character.step(dt, dr);
+        this.scene_collisions.step(dt);
         this.player_character_render.step(dt, dr);
         this.scene_debug.step();
 
@@ -138,8 +139,8 @@ export default class SceneGame {
             const lposy = (this.scene_render.camera as any).position.y;
             const shift_y = 1;
             const targ_y = pos.y + shift_y;
-            pos.x = lerp(lposx, pos.x, Math.min(1, Math.pow(Math.abs(lposx - pos.x), 2) * 0.05 * dr));
-            pos.y = lerp(lposy, targ_y, Math.min(1, Math.pow(Math.abs(lposy - targ_y), 2) * 0.05 * dr));
+            pos.x = distlerp(lposx, pos.x, 0.4, 3);
+            pos.y = distlerp(lposy, targ_y, 0.4, 3);
 
             //pos.y = lerp(pos.y, pos.y - this.player_character.look_direction_y * 2, 0.1);
 
@@ -382,7 +383,6 @@ export default class SceneGame {
         if (event.repeat) return;
 
         const key = event.code;
-        console.log(key);
         if (key === 'Space') {
             this.player_character.actionRequest("jump", CharacterActionCode.START);
         } else if (key === "ShiftLeft") {
@@ -396,12 +396,12 @@ export default class SceneGame {
             this.player_character.actionRequest("look_up", CharacterActionCode.START);
         } else if (key === 'ArrowDown') {
             this.player_character.actionRequest("look_down", CharacterActionCode.START);
-        }
-        else if (key === 'KeyS') {
-            this.scene_collisions.step(100);
         } else if (key === 'KeyA') {
             this.player_character.actionRequest("hit", CharacterActionCode.START);
         }
+        else if (key === 'KeyS') {
+            this.step(0.016, 1, true);
+        } 
     }
     _keyup(event: KeyboardEvent) {
         if (event.repeat) return;

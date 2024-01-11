@@ -105,7 +105,6 @@ class Character {
     step(dt: number, dr: number) {
         // zero-out step variables
         this.performed_actions.length = 0;
-        let movement = 0;
         this.jumping_left = this.jumping_right = this.jumping_up = false;
 
         this.updateCollideDirections();
@@ -135,6 +134,13 @@ class Character {
         }
         this.requested_actions = actions_buff;
 
+        this._applyMovementForces(dt, dr, perform_physics_actions);
+
+    }
+
+    _applyMovementForces(dt: number, dr: number, physics_step: boolean) {
+        let movement = 0;
+
         // movement direction & speed
         movement -= this.moving_left && !this.collided_left ? this.movement_speed : 0;
         movement += this.moving_right && !this.collided_right ? this.movement_speed : 0;
@@ -154,12 +160,12 @@ class Character {
         const hjump_scale = this.running ? this.run_horisontal_jump_scale : 1;
 
         // movement values calculate
-        if (perform_physics_actions) {
+        if (physics_step) {
             const m = movement * movement_scale
             // a. base lerp scales. Speed up/down
-            let t = movement ? 0.8 : 0.95;
-            // b. Air control scale
-            t *= this.collided_bottom ? 1 : this.air_control_factor;
+            const tacc = this.collided_bottom ? 0.8 : this.air_control_factor;
+            const tdump = this.collided_bottom || this.collided_right || this.collided_left ? 0.95 : 0;
+            let t = movement ? tacc : tdump;
             // c. Run control scale
             t *= this.running ? 0.5 : 1;
             this.movement_x = lerp(this.movement_x, m, t);
@@ -173,7 +179,7 @@ class Character {
 
 
         // body velocity apply
-        if (perform_physics_actions && this.jump_elapsed > this.jump_threshold) {
+        if (physics_step && this.jump_elapsed > this.jump_threshold) {
             this.body.velocity_x = lerp(this.body.velocity_x, this.movement_x, 0.7);
             if (Math.abs(this.body.velocity_x) < 1e-4) {
                 this.body.velocity_x = 0;
@@ -181,7 +187,7 @@ class Character {
         }
 
         // jump
-        if (perform_physics_actions && this.jump_elapsed > this.jump_threshold) {
+        if (physics_step && this.jump_elapsed > this.jump_threshold) {
             const jf = this.jump_force * vjump_scale;
             if (this.jumping_left || this.jumping_right || this.jumping_up) {
                 this.jump_elapsed = 0;
@@ -205,7 +211,7 @@ class Character {
         // wall glide
 
         this.sliding_wall = !this.collided_bottom && this.body.velocity_y <= 0 && ((this.collided_left && this.moving_left) || (this.collided_right && this.moving_right));
-        if (perform_physics_actions && this.sliding_wall) {
+        if (physics_step && this.sliding_wall) {
             this.body.velocity_y = lerp(this.body.velocity_y, this.wallslide_speed, this.wallslide_affection);
         }
     }

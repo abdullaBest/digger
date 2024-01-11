@@ -667,8 +667,8 @@ class SceneRender {
             const body = this.colliders.bodies[k];
             const obj = this.cache.objects[k];
             if (obj && this.cache.models[k]) {
-                const x = distlerp(obj.position.x, body.collider.x, 0.3 * dr);
-                const y = distlerp(obj.position.y, body.collider.y, 0.3 * dr);
+                const x = distlerp(obj.position.x, body.collider.x, 0.01, 3);
+                const y = distlerp(obj.position.y, body.collider.y, 0.01, 3);
                 obj.position.x  = x;
                 obj.position.y  = y;
             }

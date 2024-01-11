@@ -148,6 +148,7 @@ class SceneCollisions {
     cache: CollidersCache;
     step_threshold: number;
     step_elapsed: number;
+    last_step_elapsed: number;
     step_number: number;
     forces_scale: number;
 
@@ -164,6 +165,7 @@ class SceneCollisions {
 
         this.step_threshold = 0.05;
         this.step_elapsed = 0;
+        this.last_step_elapsed = 0;
         this.step_number = 0;
     }
 
@@ -198,8 +200,10 @@ class SceneCollisions {
             return;
         }
 
+        this.last_step_elapsed = Math.min(this.step_threshold * 2, this.step_elapsed)
+
         for(const k in this.bodies) {
-            this.stepBody(this.bodies[k], Math.min(this.step_threshold, this.step_elapsed));
+            this.stepBody(this.bodies[k], this.last_step_elapsed);
         }
 
         this.step_number += 1;

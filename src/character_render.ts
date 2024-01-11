@@ -16,12 +16,22 @@ export default class CharacterRender {
     animations_actions_cache: {[id: string] : THREE.AnimationAction};
     character_x_rot: number;
 
+    debug_bodypos_path: Array<THREE.Mesh>;
+    debug_bodypos1: THREE.Mesh | null;
+    debug_bodypos2: THREE.Mesh | null;
+
+    draw_character_mesh: boolean;
+    draw_bodypos_path: boolean;
+
     ui_interact_sprite: THREE.Sprite | null;
 
     init(scene_render: SceneRender, colliders: SceneCollisions) {
         this.scene_render = scene_render;
         this.colliders = colliders;
         this.animation_time_scale = 1;
+        this.debug_bodypos_path = [];
+        this.draw_character_mesh = true;
+        this.draw_bodypos_path = false;
     }
 
     async run(character: Character) {
@@ -38,10 +48,35 @@ export default class CharacterRender {
         this.ui_interact_sprite = await this.scene_render.makeSprite("DPAD_up");
         (this.ui_interact_sprite as any).position.y = 2.5;
         this.character_gltf.scene.add(this.ui_interact_sprite);
+        this.character_gltf.scene.visible = this.draw_character_mesh;
+
+        if (this.draw_bodypos_path) {
+            const body = this.character.body;
+            for(let i = 0; i < 10; i++) {
+                const sphere = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.01);
+                this.debug_bodypos_path.push(sphere);
+            }
+            this.debug_bodypos1 = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.03, 0xff0000);
+            this.debug_bodypos2 = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.05, 0x0000ff);
+        }
     }
 
     stop() {
         this.scene_render.removeModel("player_character");
+        while(this.debug_bodypos_path.length) {
+            const m = this.debug_bodypos_path.pop();
+            if (m) {
+                m.removeFromParent();
+            }
+        }
+        if (this.debug_bodypos1) {
+            this.debug_bodypos1.removeFromParent();
+            this.debug_bodypos1 = null;
+        }
+        if (this.debug_bodypos2) {
+            this.debug_bodypos2.removeFromParent();
+            this.debug_bodypos2 = null;
+        }
     }
 
     step(dt: number, dr: number) {
@@ -66,6 +101,10 @@ export default class CharacterRender {
     }
 
     updateCharacterAnimations() {
+        if (!this.draw_character_mesh) {
+            return;
+        }
+
         if(this.character.performed_actions.find((e) => e.tag == "jump")) {
             this.playAnimation("Jump", { once: true, weight: 0.9, speed: 1.5 });
         } else if(this.character.performed_actions.find((e) => e.tag == "hit")) {
@@ -85,7 +124,7 @@ export default class CharacterRender {
         // { tmp. will be moved into object render class
         if (!cha.steplerpinfo) {
             cha.steplerpinfo = {
-                step_number: this.colliders.step_number, prev_x: body.collider.x, prev_y: body.collider.y, next_x: body.collider.x, next_y: body.collider.y
+                pos_x: 0, pos_y: 0, elapsed: 0, step_number: this.colliders.step_number, prev_x: body.collider.x, prev_y: body.collider.y, next_x: body.collider.x, next_y: body.collider.y
             };
         }
         if (this.colliders.step_number != cha.steplerpinfo.step_number) {
@@ -94,20 +133,38 @@ export default class CharacterRender {
             cha.steplerpinfo.next_x = body.collider.x;
             cha.steplerpinfo.next_y = body.collider.y;
             cha.steplerpinfo.step_number = this.colliders.step_number;
+            cha.steplerpinfo.elapsed = 0;
+            
+            const dbg_point = this.debug_bodypos_path.shift();
+            if (dbg_point) {
+                this.debug_bodypos_path.push(dbg_point);
+                this.scene_render.setPos(dbg_point, this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0))
+            }
         }
         // tmp }
 
-        let x = lerp(cha.steplerpinfo.prev_x, cha.steplerpinfo.next_x, this.colliders.step_elapsed / this.colliders.step_threshold);
-        let y = lerp(cha.steplerpinfo.prev_y - body.collider.height/2, cha.steplerpinfo.next_y - body.collider.height/2, this.colliders.step_elapsed / this.colliders.step_threshold);
+        let x = lerp(cha.steplerpinfo.prev_x, cha.steplerpinfo.next_x, cha.steplerpinfo.elapsed / (this.colliders.last_step_elapsed));
+        let y = lerp(cha.steplerpinfo.prev_y, cha.steplerpinfo.next_y, cha.steplerpinfo.elapsed / (this.colliders.last_step_elapsed));
+        cha.steplerpinfo.elapsed += dt;
         //x += body.velocity_x * this.colliders.step_threshold * 0.5;
         //y += body.velocity_y * this.colliders.step_threshold * 0.5;
+    
+        let lx = distlerp(cha.steplerpinfo.pos_x, x, 1e-4, 1e-1);
+        let ly = distlerp(cha.steplerpinfo.pos_y, y, 1e-4, 1e-1);
+        //let lx = lerp(cha.steplerpinfo.pos_x, x, Math.max(0, 0.1 - Math.abs(cha.steplerpinfo.pos_x - x)));
+        //let ly = lerp(cha.steplerpinfo.pos_y, y, 0.1);
+        cha.steplerpinfo.pos_x = lx;
+        cha.steplerpinfo.pos_y = ly;
 
-        const lx = distlerp(cha.position.x, x, 0.9, 5);
-        const ly = distlerp(cha.position.y, y, 0.9, 5);
-        this.scene_render.setPos(cha, this.scene_render.cache.vec3_0.set(lx, ly, 0));
+        if (this.debug_bodypos1 && this.debug_bodypos2) {
+            this.scene_render.setPos(this.debug_bodypos1, this.scene_render.cache.vec3_0.set(x, y, 0));
+            this.scene_render.setPos(this.debug_bodypos2, this.scene_render.cache.vec3_0.set(lx, ly, 0));
+        }
+
+        this.scene_render.setPos(cha, this.scene_render.cache.vec3_0.set(lx, ly - body.collider.height/2, 0));
 
         this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.2) ;
-        cha.lookAt(this.scene_render.cache.vec3_0.set(lx + this.character_x_rot, ly + this.character.look_direction_y * 0.3,  1 - Math.abs(this.character_x_rot)));
+        cha.lookAt(this.scene_render.cache.vec3_0.set(lx + this.character_x_rot, ly  - body.collider.height/2 + this.character.look_direction_y * 0.3,  1 - Math.abs(this.character_x_rot)));
     }
 
     getAnimation(name: string | null, gltf = this.character_gltf) : THREE.AnimationAction | null {
