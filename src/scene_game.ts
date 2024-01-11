@@ -232,7 +232,8 @@ export default class SceneGame {
             return;
         }
 
-        const hit_damage = 2;
+        const hit_damage = 1;
+        const hit_strength = 1;
 
         const durability = this.breakable_objects[hit_result] ?? this.scene_render.cache.models[hit_result]?.durability;
         if (!durability) {
@@ -246,11 +247,11 @@ export default class SceneGame {
             resistance = durability & 0x00FF;
         }
 
-        if (hit_damage <= resistance) {
+        if (hit_strength <= resistance) {
             return;
         }
 
-        endurance -= hit_damage - resistance;
+        endurance -= hit_damage;
         if (endurance <= 0) {
             // falling block activate
             this.findFallingBlockAround(hit_result);
