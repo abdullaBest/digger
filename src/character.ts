@@ -154,10 +154,10 @@ class Character {
         this._tweakGravityFactors();
 
         if (this.gadget_grappling_hook.grapped && perform_physics_actions) {
-            const dx = clamp(this.gadget_grappling_hook.pos_x - this.body.collider.x, -1, 1) * this.hook_drag_force; 
-            const dy = clamp(this.gadget_grappling_hook.pos_y - this.body.collider.y, -1, 1) * this.hook_drag_force; 
-            this.body.velocity_x = lerp(this.body.velocity_x, dx, 0.5);
-            this.body.velocity_y = lerp(this.body.velocity_y, dy, 0.5);
+            const dx = clamp(this.gadget_grappling_hook.pos_x - this.body.collider.x, -1, 1); 
+            const dy = clamp(this.gadget_grappling_hook.pos_y - this.body.collider.y, -1, 1); 
+            this.body.velocity_x = lerp(this.body.velocity_x, dx * this.hook_drag_force, 1 - Math.abs(dx) * 0.5);
+            this.body.velocity_y = lerp(this.body.velocity_y, dy * this.hook_drag_force, 1 - Math.abs(dy) * 0.5);
         }
     }
 

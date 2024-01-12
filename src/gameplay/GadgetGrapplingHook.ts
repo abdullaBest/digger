@@ -55,8 +55,8 @@ export default class GadgetGrapplingHook {
         this.length = length;
         this.throw_speed = speed;
 
-        const rsx = this.body.collider.x + this.body.collider.width * 0.5 * this.dir_x;
-        const rsy = this.body.collider.y + this.body.collider.height * 0.5 * this.dir_y;
+        const rsx = this.body.collider.x;
+        const rsy = this.body.collider.y;
         this.summon_x = rsx;
         this.summon_y = rsy;
         this.target_x = this.summon_x + this.length * this.dir_x;
@@ -93,8 +93,8 @@ export default class GadgetGrapplingHook {
         const ray_size = Math.min(this.length, this.elapsed * this.throw_speed);
         const fraction = (ray_size / this.length);
 
-        const rsx = this.body.collider.x + this.body.collider.width * 0.5 * this.dir_x;
-        const rsy = this.body.collider.y + this.body.collider.height * 0.5 * this.dir_y;
+        const rsx = this.body.collider.x;
+        const rsy = this.body.collider.y;
         const rex = rsx + (this.target_x - rsx) * fraction;
         const rey = rsy + (this.target_y - rsy) * fraction;
 
