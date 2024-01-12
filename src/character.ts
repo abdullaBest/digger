@@ -1,5 +1,6 @@
 import { DynamicBody, SceneCollisions } from "./scene_collisions";
-import { lerp } from "./math";
+import { lerp, clamp } from "./math";
+import GadgetGrapplingHook from "./gameplay/GadgetGrapplingHook";
 
 enum CharacterActionCode {
     DEFAULT = 0,
@@ -56,12 +57,20 @@ class Character {
 
     phys_tick_elapsed: number;
 
+    hook_speed: number;
+    hook_length: number;
+    hook_drag_force: number;
+
+    gadget_grappling_hook: GadgetGrapplingHook;
+
     // actions that should be executed next step
     requested_actions: Array<CharacterAction>;
     // actions that was executed previous step
     performed_actions: Array<CharacterAction>;
 
     constructor(scene_collisions: SceneCollisions) {
+        this.scene_collisions = scene_collisions;
+
         this.movement_speed = 2.7;
         this.jump_force = 5;
         this.jump_threshold = 0.1;
@@ -88,16 +97,22 @@ class Character {
         this.sliding_wall = false;
         this.requested_actions = [];
         this.performed_actions = [];
-        this.scene_collisions = scene_collisions;
         this.collided_bottom = false;
         this.collided_left = false;
         this.collided_right = false;
         this.collided_top = false;
         this.phys_tick_elapsed = 0;
+
+        this.hook_length = 5;
+        this.hook_speed = 50;
+        this.hook_drag_force = 10;
+
+        this.gadget_grappling_hook = new GadgetGrapplingHook(this.scene_collisions);
     }
 
     init(body: DynamicBody) : Character {
         this.body = body;
+        this.gadget_grappling_hook.init(body);
 
         return this;
     }
@@ -133,12 +148,34 @@ class Character {
             } 
         }
         this.requested_actions = actions_buff;
-
+        
+        this.gadget_grappling_hook.step(dt);
         this._applyMovementForces(dt, dr, perform_physics_actions);
+        this._tweakGravityFactors();
 
+        if (this.gadget_grappling_hook.grapped && perform_physics_actions) {
+            const dx = clamp(this.gadget_grappling_hook.pos_x - this.body.collider.x, -1, 1) * this.hook_drag_force; 
+            const dy = clamp(this.gadget_grappling_hook.pos_y - this.body.collider.y, -1, 1) * this.hook_drag_force; 
+            this.body.velocity_x = lerp(this.body.velocity_x, dx, 0.5);
+            this.body.velocity_y = lerp(this.body.velocity_y, dy, 0.5);
+        }
+    }
+
+    _tweakGravityFactors() {
+        const disable = this.gadget_grappling_hook.grapped;
+        this.body.gravity_scale_x = disable ? 0 : 1;
+        this.body.gravity_scale_y = disable ? 0 : 1;
+    }
+
+    _movementActionsAllowed() {
+        return !this.gadget_grappling_hook.grapped;
     }
 
     _applyMovementForces(dt: number, dr: number, physics_step: boolean) {
+        if (!this._movementActionsAllowed()) {
+            return;
+        }
+        
         let movement = 0;
 
         // movement direction & speed
@@ -300,6 +337,15 @@ class Character {
             case "look_down":
                 apply_code = CharacterActionApplyCode.PERFORMED;
                 this.look_direction_y = code == CharacterActionCode.START ? -1 : 0;
+                break;
+            case "hook":
+                apply_code = CharacterActionApplyCode.PERFORMED;
+                if (code == CharacterActionCode.START) {
+                    const r = this.gadget_grappling_hook.shot(this.look_direction_y ? 0 : this.look_direction_x, this.look_direction_y, this.hook_length, this.hook_speed);
+                    apply_code = r ? CharacterActionApplyCode.PERFORMED : CharacterActionApplyCode.DISCARED;
+                } else {
+                    this.gadget_grappling_hook.retract();
+                }
                 break;
             default:
                 console.warn(`no action ${tag} defined`);

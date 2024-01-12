@@ -40,7 +40,6 @@ export default class SceneGame {
 
         this.requested_map_switch = null;
         this.requested_map_entrance = null;
-        this.active = true;
         this.elements = elements;
 
         // find start pos
@@ -96,6 +95,7 @@ export default class SceneGame {
         //addEventListener({callback: ()=> {console.log("focus")}, name: "focus", node: window as any}, this._listeners)
 
         this.scene_debug.run(this.player_character);
+        this.active = true;
     }
 
     stop() {
@@ -399,6 +399,8 @@ export default class SceneGame {
             this.player_character.actionRequest("look_down", CharacterActionCode.START);
         } else if (key === 'KeyA') {
             this.player_character.actionRequest("hit", CharacterActionCode.START);
+        } else if (key === 'KeyW') {
+            this.player_character.actionRequest("hook", CharacterActionCode.START);
         }
         else if (key === 'KeyS') {
             this.step(0.016, 1, true);
@@ -418,6 +420,8 @@ export default class SceneGame {
             this.player_character.actionRequest("look_down", CharacterActionCode.END);
         } else if (key === "ShiftLeft") {
             this.player_character.actionRequest("run", CharacterActionCode.END);
+        } else if (key === 'KeyW') {
+            this.player_character.actionRequest("hook", CharacterActionCode.END);
         }
     }
 

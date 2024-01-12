@@ -97,6 +97,8 @@ class BoxColliderC {
 interface DynamicBody {
     id: string;
     collider: BoxColliderC;
+    gravity_scale_x: number;
+    gravity_scale_y: number;
 
     /**
      * units/second
@@ -108,9 +110,15 @@ interface DynamicBody {
     contacts_list: Array<CollisionResult>;
 }
 
+/**
+ * Not all values always used. Quite a mess here
+ */
 interface CollisionResult {
     normal_x: number;
     normal_y: number;
+    point_x: number;
+    point_y: number;
+    hit: boolean;
     time: number;
     id: string | null;
 }
@@ -123,7 +131,7 @@ class CollidersCache {
     cr_0: CollisionResult;
     contacts: Array<CollisionResult>;
     constructor() {
-        this.cr_0 = { normal_x: 0, normal_y: 0, time: 0, id: null };
+        this.cr_0 = { point_x: 0, point_y: 0, hit: false, normal_x: 0, normal_y: 0, time: 0, id: null };
         this.contacts = CollidersCache.constructContactsArray(8);
         this.vec2_0 = new Vector2();
         this.vec2_1 = new Vector2();
@@ -212,7 +220,7 @@ class SceneCollisions {
 
     stepBody(body: DynamicBody, dt: number) {
         dt *= this.forces_scale;
-        body.velocity_y += this.gravity.y * dt;
+        body.velocity_y += this.gravity.y * dt * body.gravity_scale_y;
 
         if (!body.collider) {
             console.warn(`body ${body.id} without collider. removing it.`)
@@ -292,6 +300,8 @@ class SceneCollisions {
         const body = {
             id,
             collider,
+            gravity_scale_x: 1,
+            gravity_scale_y: 1,
             velocity_x: 0,
             velocity_y: 0,
             contacts: 0,
@@ -327,6 +337,22 @@ class SceneCollisions {
         collider.discache();
     }
 
+    testRay(ox: number, oy: number, tx: number, ty: number) : CollisionResult {
+        const c = this.cache.cr_0;
+        c.hit = false;
+        const rc = this.core.testRay(ox * UNITS_SCALE_MUL, oy * UNITS_SCALE_MUL, tx * UNITS_SCALE_MUL, ty * UNITS_SCALE_MUL);
+
+        if(rc.hit) {
+            c.hit = rc.hit;
+            c.point_x = rc.point.x * UNITS_SCALE_DIV;
+            c.point_y = rc.point.y * UNITS_SCALE_DIV;
+            c.normal_x = rc.normal.x;
+            c.normal_y = rc.normal.y;
+            c.time = rc.fraction;
+        }
+
+        return c;
+    }
 
     detailedAABBCollision(a: BoxColliderC, b: BoxColliderC, ret: CollisionResult): boolean {
         ret.normal_x = 0;

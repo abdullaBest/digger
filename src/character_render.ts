@@ -23,6 +23,8 @@ export default class CharacterRender {
     draw_character_mesh: boolean;
     draw_bodypos_path: boolean;
 
+    hook_draw: THREE.Mesh;
+
     ui_interact_sprite: THREE.Sprite | null;
 
     init(scene_render: SceneRender, colliders: SceneCollisions) {
@@ -50,8 +52,8 @@ export default class CharacterRender {
         this.character_gltf.scene.add(this.ui_interact_sprite);
         this.character_gltf.scene.visible = this.draw_character_mesh;
 
-        if (this.draw_bodypos_path) {
             const body = this.character.body;
+            if (this.draw_bodypos_path) {
             for(let i = 0; i < 10; i++) {
                 const sphere = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.01);
                 this.debug_bodypos_path.push(sphere);
@@ -59,6 +61,8 @@ export default class CharacterRender {
             this.debug_bodypos1 = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.03, 0xff0000);
             this.debug_bodypos2 = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.05, 0x0000ff);
         }
+
+        this.hook_draw = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.05, 0xff0000);
     }
 
     stop() {
@@ -88,6 +92,14 @@ export default class CharacterRender {
        
         this.updateCharacterAnimations();
         this.renderCharacterModel(dt, dr);
+
+        // hook animation
+        if (this.hook_draw) {
+            this.hook_draw.visible = this.character.gadget_grappling_hook.elapsed > 0;
+            if (this.character.gadget_grappling_hook.elapsed > 0) {
+                this.scene_render.setPos(this.hook_draw, this.scene_render.cache.vec3_0.set(this.character.gadget_grappling_hook.pos_x, this.character.gadget_grappling_hook.pos_y, 0))
+            }
+        }
        
         if (this.animation_mixer) {
             this.animation_mixer.update(dt * this.animation_time_scale);
