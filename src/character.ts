@@ -26,8 +26,7 @@ class Character {
     movement_speed: number;
     jump_force: number;
     jump_threshold: number;
-    wallslide_affection: number;
-    wallslide_speed: number;
+    wallslide_friction: number;
     air_control_factor: number;
     run_movement_scale: number;
     run_vertical_jump_scale: number;
@@ -74,8 +73,7 @@ class Character {
         this.movement_speed = 2.7;
         this.jump_force = 5;
         this.jump_threshold = 0.1;
-        this.wallslide_affection = 0.4;
-        this.wallslide_speed = -1;
+        this.wallslide_friction = 1;
         this.air_control_factor = 0.4;
         this.run_vertical_jump_scale = 1.3;
         this.run_horisontal_jump_scale = 2;
@@ -150,40 +148,88 @@ class Character {
         this.requested_actions = actions_buff;
         
         this.gadget_grappling_hook.step(dt);
-        this._applyMovementForces(dt, dr, perform_physics_actions);
-        this._tweakGravityFactors();
-
-        if (this.gadget_grappling_hook.grapped && perform_physics_actions) {
-            const dx = clamp(this.gadget_grappling_hook.pos_x - this.body.collider.x, -1, 1); 
-            const dy = clamp(this.gadget_grappling_hook.pos_y - this.body.collider.y, -1, 1); 
-            this.body.velocity_x = lerp(this.body.velocity_x, dx * this.hook_drag_force, 1 - Math.abs(dx) * 0.5);
-            this.body.velocity_y = lerp(this.body.velocity_y, dy * this.hook_drag_force, 1 - Math.abs(dy) * 0.5);
+        if (perform_physics_actions) {
+            this._applyMovementForces(dt, dr);
         }
+
     }
 
-    _tweakGravityFactors() {
-        const disable = this.gadget_grappling_hook.grapped;
-        this.body.gravity_scale_x = disable ? 0 : 1;
-        this.body.gravity_scale_y = disable ? 0 : 1;
-    }
-
-    _movementActionsAllowed() {
-        return !this.gadget_grappling_hook.grapped;
-    }
-
-    _applyMovementForces(dt: number, dr: number, physics_step: boolean) {
-        if (!this._movementActionsAllowed()) {
-            return;
-        }
-        
+    /**
+     * Call only on physics step
+     * @param dt 
+     * @param dr 
+     * @param physics_step 
+     * @returns 
+     */
+    _applyMovementForces(dt: number, dr: number) {
+        let limit_x = 0;
+        let limit_y = 0;
+        let acc_x = 0;
+        let acc_y = 0;
         let movement = 0;
+
+        // ---
 
         // movement direction & speed
         movement -= this.moving_left && !this.collided_left ? this.movement_speed : 0;
         movement += this.moving_right && !this.collided_right ? this.movement_speed : 0;
 
-        // run state
-        const discard_runstate_case0 = !this.prerunning || !movement || this.performed_actions.find((e) => e.tag == "move_left" || e.tag == "move_right");
+        // ---
+
+        // a. horisontal movement
+        acc_x += movement;
+
+        // b. vertical movement (jump)
+        const jumping = this._updateJumpState(dt);
+        acc_y += jumping ? this.jump_force : 0;
+
+        // c. run
+        const running = this._updateRunState(dt, movement);
+        acc_x *= running ? this.run_movement_scale : 1;
+        acc_x *= running && jumping ? this.run_horisontal_jump_scale : 1;
+        acc_y *= running ? this.run_vertical_jump_scale : 1;
+        
+        // d. wallslide (friction)
+        this.sliding_wall = !this.collided_bottom && ((this.collided_left && this.moving_left) || (this.collided_right && this.moving_right));
+        if (this.sliding_wall) {
+            acc_y -= Math.min(0, this.body.velocity_y * this.wallslide_friction);
+        }
+
+        // e. hook. overrides all previous accelerations and velocity also
+        if (this.gadget_grappling_hook.grapped) {
+            const dx = (this.gadget_grappling_hook.pos_x - this.body.collider.x) * this.hook_drag_force; 
+            const dy = (this.gadget_grappling_hook.pos_y - this.body.collider.y) * this.hook_drag_force; 
+            acc_x = dx;
+            acc_y = dy;
+        }
+
+        // ---
+        const acc_x_mag = Math.abs(acc_x);
+        const acc_y_mag = Math.abs(acc_y);
+
+        // apply frictions/drags
+
+        if (this.gadget_grappling_hook.grapped) {
+            this.body.velocity_x = 0;
+            this.body.velocity_y = 0;
+        }
+
+        // apply forces
+
+        this.body.velocity_x = clamp(this.body.velocity_x + acc_x, -acc_x_mag, acc_x_mag);
+
+        // not clamping min due gravity affection
+        this.body.velocity_y = clamp(this.body.velocity_y + acc_y, -Infinity, this.jump_force * this.run_vertical_jump_scale);
+        
+        // set flag variables
+        this.movement_x = movement;
+        if(movement) {
+            this.look_direction_x = Math.sign(movement);
+        }
+    }
+
+    _updateRunState(dt: number, movemet_x: number): boolean {
+        const discard_runstate_case0 = !this.prerunning || !movemet_x || this.performed_actions.find((e) => e.tag == "move_left" || e.tag == "move_right");
         const discard_runstate_case1 = this.run_elapsed < this.prerun_threshold && !this.collided_bottom;
         if (discard_runstate_case0 || discard_runstate_case1) {
             this.run_elapsed = 0;
@@ -192,65 +238,26 @@ class Character {
         }
 
         this.running = this.run_elapsed >= this.prerun_threshold;
-        const movement_scale = this.running ? this.run_movement_scale : 1;
-        const vjump_scale = this.running ? this.run_vertical_jump_scale : 1;
-        const hjump_scale = this.running ? this.run_horisontal_jump_scale : 1;
 
-        // movement values calculate
-        if (physics_step) {
-            const m = movement * movement_scale
-            // a. base lerp scales. Speed up/down
-            const tacc = this.collided_bottom ? 0.8 : this.air_control_factor;
-            const tdump = this.collided_bottom || this.collided_right || this.collided_left ? 0.95 : 0;
-            let t = movement ? tacc : tdump;
-            // c. Run control scale
-            t *= this.running ? 0.5 : 1;
-            this.movement_x = lerp(this.movement_x, m, t);
-        }
-        if (Math.abs(this.movement_x) < 1e-4) {
-            this.movement_x = 0;
-        }
-        if(movement) {
-            this.look_direction_x = Math.sign(movement);
-        }
+        return this.running;
+    }
 
-
-        // body velocity apply
-        if (physics_step && this.jump_elapsed > this.jump_threshold) {
-            this.body.velocity_x = lerp(this.body.velocity_x, this.movement_x, 0.7);
-            if (Math.abs(this.body.velocity_x) < 1e-4) {
-                this.body.velocity_x = 0;
-            }
-        }
-
-        // jump
-        if (physics_step && this.jump_elapsed > this.jump_threshold) {
-            const jf = this.jump_force * vjump_scale;
-            if (this.jumping_left || this.jumping_right || this.jumping_up) {
-                this.jump_elapsed = 0;
-            }
-            //this.body.velocity_x = this.jumping_left ? this.jump_force : this.body.velocity_x;
-            //this.body.velocity_x = this.jumping_right ? this.jump_force : this.body.velocity_x;
-
-            if (this.jumping_up) {
-                this.body.velocity_y = Math.min(jf * 1.5, this.body.velocity_y * 0.1 + jf);
-            }
-            /*
-            if (this.jumping_left) {
-                this.body.velocity_x = -jf * 0.15 * hjump_scale;
-            } else if (this.jumping_right) {
-                this.body.velocity_x = jf * 0.15 * hjump_scale;
-            }*/
-            //this.body.velocity_y = this.jumping_up ? Math.max(this.body.velocity_y, this.jump_force) : this.body.velocity_y;
-        }
+    _updateJumpState(dt: number) {
         this.jump_elapsed += dt;
 
-        // wall glide
-
-        this.sliding_wall = !this.collided_bottom && this.body.velocity_y <= 0 && ((this.collided_left && this.moving_left) || (this.collided_right && this.moving_right));
-        if (physics_step && this.sliding_wall) {
-            this.body.velocity_y = lerp(this.body.velocity_y, this.wallslide_speed, this.wallslide_affection);
+        if (this.jump_elapsed < this.jump_threshold) {
+            return false;
         }
+
+        if (this.jump_elapsed > this.jump_threshold) {
+            if (this.jumping_left || this.jumping_right || this.jumping_up) {
+                this.jump_elapsed = 0;
+                
+                return true;
+            }
+        }
+
+        return false;
     }
 
     updateCollideDirections() {
