@@ -93,6 +93,13 @@ export default class GadgetGrapplingHook {
         const ray_size = Math.min(this.length, this.elapsed * this.throw_speed);
         const fraction = (ray_size / this.length);
 
+        // autoretract
+        if (fraction == 1) {
+            this.active = false;
+            this.retract();
+            return;
+        }
+
         const rsx = this.body.collider.x;
         const rsy = this.body.collider.y;
         const rex = rsx + (this.target_x - rsx) * fraction;
