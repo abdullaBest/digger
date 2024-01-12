@@ -97,8 +97,6 @@ class BoxColliderC {
 interface DynamicBody {
     id: string;
     collider: BoxColliderC;
-    gravity_scale_x: number;
-    gravity_scale_y: number;
 
     /**
      * units/second
@@ -152,7 +150,6 @@ class SceneCollisions {
     bodies: { [id: string] : DynamicBody; };
     origin: Vector3;
     normal: Vector3;
-    gravity: Vector2;
     cache: CollidersCache;
     step_threshold: number;
     step_elapsed: number;
@@ -166,7 +163,6 @@ class SceneCollisions {
         this.origin = new Vector3();
         this.normal = new Vector3(0, 0, 1);
         
-        this.gravity = new Vector2(0, -9.8);
         this.forces_scale = 1.7;
 
         this.cache = new CollidersCache();
@@ -220,7 +216,6 @@ class SceneCollisions {
 
     stepBody(body: DynamicBody, dt: number) {
         dt *= this.forces_scale;
-        body.velocity_y += this.gravity.y * dt * body.gravity_scale_y;
 
         if (!body.collider) {
             console.warn(`body ${body.id} without collider. removing it.`)
@@ -300,8 +295,6 @@ class SceneCollisions {
         const body = {
             id,
             collider,
-            gravity_scale_x: 1,
-            gravity_scale_y: 1,
             velocity_x: 0,
             velocity_y: 0,
             contacts: 0,

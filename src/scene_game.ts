@@ -14,6 +14,28 @@ interface FallingBlockData {
 }
 
 export default class SceneGame {
+    player_character: Character;
+    private player_character_render: CharacterRender;
+    private scene_render: SceneRender;
+    scene_collisions: SceneCollisions;
+    scene_debug: SceneDebug;
+
+    attach_camera_to_player: boolean;
+
+    breakable_objects: {[id: string]: number}
+    falling_blocks: {[id: string]: FallingBlockData}
+
+    private _listeners: Array<EventListenerDetails>;
+    private active: boolean;
+    autostep: boolean;
+    elements: { [id: string] : SceneElement; }
+
+    requested_map_switch: string | null;
+    requested_map_entrance: string | null;
+
+    gravity_x: number;
+    gravity_y: number;
+
     constructor(scene_collisions: SceneCollisions, scene_render: SceneRender) {
         this.scene_collisions = scene_collisions;
         this.scene_render = scene_render;
@@ -24,6 +46,9 @@ export default class SceneGame {
         this.falling_blocks = {};
         this.requested_map_switch = null;
         this.requested_map_entrance = null;
+
+        this.gravity_x = 0;
+        this.gravity_y = -9.8;
     }
     
     async init(): Promise<SceneGame> {
@@ -124,6 +149,12 @@ export default class SceneGame {
         if (!this.autostep && !forced) {
             return
         }
+
+        for(const k in this.scene_collisions.bodies) {
+            const body = this.scene_collisions.bodies[k];
+            body.velocity_y += this.gravity_y * dt * this.scene_collisions.forces_scale;
+        }
+
         this.player_character.step(dt, dr);
         this.scene_collisions.step(dt);
         this.player_character_render.step(dt, dr);
@@ -424,23 +455,4 @@ export default class SceneGame {
             this.player_character.actionRequest("hook", CharacterActionCode.END);
         }
     }
-
-    player_character: Character;
-    private player_character_render: CharacterRender;
-    private scene_render: SceneRender;
-    scene_collisions: SceneCollisions;
-    scene_debug: SceneDebug;
-
-    attach_camera_to_player: boolean;
-
-    breakable_objects: {[id: string]: number}
-    falling_blocks: {[id: string]: FallingBlockData}
-
-    private _listeners: Array<EventListenerDetails>;
-    private active: boolean;
-    autostep: boolean;
-    elements: { [id: string] : SceneElement; }
-
-    requested_map_switch: string | null;
-    requested_map_entrance: string | null;
 }

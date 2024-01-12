@@ -26,7 +26,7 @@ class Character {
     movement_speed: number;
     jump_force: number;
     jump_threshold: number;
-    wallslide_friction: number;
+    wallslide_speed: number;
     air_control_factor: number;
     run_movement_scale: number;
     run_vertical_jump_scale: number;
@@ -73,7 +73,7 @@ class Character {
         this.movement_speed = 2.7;
         this.jump_force = 5;
         this.jump_threshold = 0.1;
-        this.wallslide_friction = 1;
+        this.wallslide_speed = 1;
         this.air_control_factor = 0.4;
         this.run_vertical_jump_scale = 1.3;
         this.run_horisontal_jump_scale = 2;
@@ -162,8 +162,6 @@ class Character {
      * @returns 
      */
     _applyMovementForces(dt: number, dr: number) {
-        let limit_x = 0;
-        let limit_y = 0;
         let acc_x = 0;
         let acc_y = 0;
         let movement = 0;
@@ -191,11 +189,8 @@ class Character {
         
         // d. wallslide (friction)
         this.sliding_wall = !this.collided_bottom && ((this.collided_left && this.moving_left) || (this.collided_right && this.moving_right));
-        if (this.sliding_wall) {
-            acc_y -= Math.min(0, this.body.velocity_y * this.wallslide_friction);
-        }
 
-        // e. hook. overrides all previous accelerations and velocity also
+        // e. hook. overrides all previous accelerations
         if (this.gadget_grappling_hook.grapped) {
             const dx = (this.gadget_grappling_hook.pos_x - this.body.collider.x) * this.hook_drag_force; 
             const dy = (this.gadget_grappling_hook.pos_y - this.body.collider.y) * this.hook_drag_force; 
@@ -206,20 +201,27 @@ class Character {
         // ---
         const acc_x_mag = Math.abs(acc_x);
         const acc_y_mag = Math.abs(acc_y);
+        const limit_y = this.jump_force * this.run_vertical_jump_scale;
+        const limit_x = acc_x_mag;
 
         // apply frictions/drags
 
+        // a. grapple. completele disable all velocities
         if (this.gadget_grappling_hook.grapped) {
             this.body.velocity_x = 0;
             this.body.velocity_y = 0;
         }
 
+        // b. wallslide. clamps negative y velocity
+        if (this.sliding_wall) {
+            this.body.velocity_y = clamp(this.body.velocity_y, -this.wallslide_speed, Infinity);
+        }
+
         // apply forces
 
-        this.body.velocity_x = clamp(this.body.velocity_x + acc_x, -acc_x_mag, acc_x_mag);
-
+        this.body.velocity_x = clamp(this.body.velocity_x + acc_x, -limit_x, limit_x);
         // not clamping min due gravity affection
-        this.body.velocity_y = clamp(this.body.velocity_y + acc_y, -Infinity, this.jump_force * this.run_vertical_jump_scale);
+        this.body.velocity_y = clamp(this.body.velocity_y + acc_y, -Infinity, limit_y);
         
         // set flag variables
         this.movement_x = movement;
