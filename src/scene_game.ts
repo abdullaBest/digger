@@ -247,7 +247,7 @@ export default class SceneGame {
             resistance = durability & 0x00FF;
         }
 
-        if (hit_strength <= resistance) {
+        if (hit_strength < resistance) {
             return;
         }
 
