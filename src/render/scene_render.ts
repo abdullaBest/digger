@@ -19,6 +19,8 @@ class SceneRender {
     canvas: HTMLCanvasElement;
     private refSizeEl: HTMLElement | null | undefined;
 
+    camera_base_fov: number;
+
     private cube: THREE.Mesh;
     private renderer: THREE.WebGLRenderer;
     private rootscene: THREE.Scene;
@@ -56,12 +58,13 @@ class SceneRender {
         this.loader = new SceneRenderLoader(this.assets, this.cache);
         this.tileset_render = new TilesetRender(this.assets, this.cache, this.loader);
         this.tileset_editor = new TilesetEditor(this.loader);
+        this.camera_base_fov = 45;
     }
     init(canvas: HTMLCanvasElement) : SceneRender {
         const rootscene = new THREE.Scene();
         const scene = new THREE.Group();
         rootscene.add(scene);
-        const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
+        const camera = new THREE.PerspectiveCamera( this.camera_base_fov, window.innerWidth / window.innerHeight, 0.1, 1000 );
         const renderer = new THREE.WebGLRenderer({ canvas , alpha: true });
         this.refSizeEl = canvas.parentElement;
         this.canvas = canvas;
@@ -518,17 +521,21 @@ class SceneRender {
 
     private updateSize() {
         this.renderer.getSize(this.cache.vec2_0);
-        const offsetWidth = this.getRenderWidth();
-        const offsetHeight = this.getRenderHeight();
+        const width = this.getRenderWidth();
+        const height = this.getRenderHeight();
         if (
-            this.cache.vec2_0.width != offsetWidth ||
-            this.cache.vec2_0.height != offsetHeight 
+            this.cache.vec2_0.width != width ||
+            this.cache.vec2_0.height != height 
             ) {
-                this.renderer.setSize(offsetWidth, offsetHeight);
-                this.camera.aspect = offsetWidth / offsetHeight;
-                this.camera.fov = 90 * Math.min(1, offsetHeight / offsetWidth);
-                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(width, height);
+                this.updateCameraAspect(width, height);
             }
+    }
+
+    updateCameraAspect(width = this.getRenderWidth(), height = this.getRenderHeight()) {
+        this.camera.aspect = width / height;
+        this.camera.fov = this.camera_base_fov * Math.min(1, width / height);
+        this.camera.updateProjectionMatrix();
     }
 
     onMouseClick( event ) {

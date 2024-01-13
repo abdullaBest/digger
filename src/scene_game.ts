@@ -21,6 +21,7 @@ export default class SceneGame {
     scene_debug: SceneDebug;
 
     attach_camera_to_player: boolean;
+    camera_config: { attach_camera_z: number, attach_camera_y: number }
 
     breakable_objects: {[id: string]: number}
     falling_blocks: {[id: string]: FallingBlockData}
@@ -49,6 +50,11 @@ export default class SceneGame {
 
         this.gravity_x = 0;
         this.gravity_y = -9.8;
+
+        this.camera_config = {
+            attach_camera_z: 7,
+            attach_camera_y: 1
+        }
     }
     
     async init(): Promise<SceneGame> {
@@ -119,7 +125,12 @@ export default class SceneGame {
         }, name: "blur", node: window as any}, this._listeners)
         //addEventListener({callback: ()=> {console.log("focus")}, name: "focus", node: window as any}, this._listeners)
 
-        this.scene_debug.run(this.player_character);
+        this.scene_debug.run(this.player_character, this.camera_config);
+        this.scene_debug.camera_config_draw.addWrite("camera_fov", 
+            () => this.scene_render.camera_base_fov, 
+            (v) => {this.scene_render.camera_base_fov = v; this.scene_render.updateCameraAspect();}
+            );
+
         this.active = true;
     }
 
@@ -165,17 +176,17 @@ export default class SceneGame {
         if (this.attach_camera_to_player && this.player_character_render.character_gltf) {
             const pos = this.scene_render.cache.vec3_0.copy(this.player_character_render.character_gltf.scene.position);
 
-            pos.z = 7;
+            pos.z = this.camera_config.attach_camera_z;
             const lposx = (this.scene_render.camera as any).position.x;
             const lposy = (this.scene_render.camera as any).position.y;
-            const shift_y = 1;
+            const shift_y = this.camera_config.attach_camera_y;
             const targ_y = pos.y + shift_y;
             pos.x = distlerp(lposx, pos.x, 0.4, 3);
             pos.y = distlerp(lposy, targ_y, 0.4, 3);
 
             //pos.y = lerp(pos.y, pos.y - this.player_character.look_direction_y * 2, 0.1);
 
-            const targ = this.scene_render.cache.vec3_1.set(pos.x, targ_y - shift_y, pos.z - 7)
+            const targ = this.scene_render.cache.vec3_1.set(pos.x, targ_y - shift_y, pos.z - this.camera_config.attach_camera_z)
             this.scene_render.setCameraPos(pos, targ);
         }
 
