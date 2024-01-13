@@ -106,7 +106,7 @@ export default class CharacterRender {
         }
     }
 
-    async drawUiInteractSprite(show: boolean) {
+    drawUiInteractSprite(show: boolean) {
         if (this.ui_interact_sprite) {
             this.ui_interact_sprite.visible = show;
         }
