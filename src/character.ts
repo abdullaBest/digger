@@ -185,16 +185,19 @@ class Character {
             return;
         }
 
-        movement_x = lerp(this.movement_x, movement_x, movement_x ? 0.6 : 0.95);
-        if (Math.abs(movement_x) < 1e-2) {
-            movement_x = 0;
-        }
 
         // ---
 
         // a. horisontal movement
         movement_x *= running ? this.run_movement_scale : 1;
         movement_x *= running && jumping ? this.run_horisontal_jump_scale : 1;
+
+        
+        // smooth 
+        movement_x = lerp(this.movement_x, movement_x, movement_x ? 0.6 : 0.95);
+        if (Math.abs(movement_x) < 1e-2) {
+            movement_x = 0;
+        }
 
         if (movement_x) {
             acc_x += movement_x - this.body.velocity_x;
