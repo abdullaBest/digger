@@ -1,4 +1,4 @@
-import { DynamicBody, SceneCollisions } from "./scene_collisions";
+import { BoxColliderC, DynamicBody, SceneCollisions } from "./scene_collisions";
 import { lerp, clamp } from "./math";
 import GadgetGrapplingHook from "./gameplay/GadgetGrapplingHook";
 
@@ -49,10 +49,10 @@ class Character {
     look_direction_x: number;
     look_direction_y: number;
 
-    collided_left: boolean;
-    collided_right: boolean;
-    collided_top: boolean;
-    collided_bottom: boolean;
+    collided_left: string | null;
+    collided_right: string | null;
+    collided_top: string | null;
+    collided_bottom: string | null;
 
     phys_tick_elapsed: number;
 
@@ -95,10 +95,10 @@ class Character {
         this.sliding_wall = false;
         this.requested_actions = [];
         this.performed_actions = [];
-        this.collided_bottom = false;
-        this.collided_left = false;
-        this.collided_right = false;
-        this.collided_top = false;
+        this.collided_bottom = null;
+        this.collided_left = null;
+        this.collided_right = null;
+        this.collided_top = null;
         this.phys_tick_elapsed = 0;
 
         this.hook_length = 5;
@@ -168,8 +168,8 @@ class Character {
         // ---
 
         // movement direction & speed
-        movement_x -= this.moving_left && !this.collided_left ? this.movement_speed : 0;
-        movement_x += this.moving_right && !this.collided_right ? this.movement_speed : 0;
+        movement_x -= this.moving_left && !this.is_collided_left() ? this.movement_speed : 0;
+        movement_x += this.moving_right && !this.is_collided_right() ? this.movement_speed : 0;
 
         const jumping = this._updateJumpState(dt);
         const running = this._updateRunState(dt, movement_x);
@@ -197,14 +197,51 @@ class Character {
         }
         
         // d. wallslide (friction)
-        this.sliding_wall = !this.collided_bottom && ((this.collided_left && this.moving_left) || (this.collided_right && this.moving_right));
+        this.sliding_wall = !this.is_collided_bottom() && ((this.is_collided_left() && this.moving_left) || (this.is_collided_right() && this.moving_right));
 
         // e. hook. overrides all previous accelerations
         if (this.gadget_grappling_hook.grapped) {
-            const dx = clamp(this.gadget_grappling_hook.pos_x - this.body.collider.x, -1, 1) * this.hook_drag_force; 
-            const dy = clamp(this.gadget_grappling_hook.pos_y - this.body.collider.y, -1, 1) * this.hook_drag_force; 
+            const sdx = clamp(this.gadget_grappling_hook.pos_x - this.body.collider.x - this.body.collider.width / 2 * this.gadget_grappling_hook.dir_x, -1, 1);
+            const sdy = clamp(this.gadget_grappling_hook.pos_y - this.body.collider.y - this.body.collider.height / 2 * this.gadget_grappling_hook.dir_y, -1, 1);
+            const dx = sdx * this.hook_drag_force; 
+            const dy = sdy * this.hook_drag_force;
             acc_x = dx;
             acc_y = dy;
+
+            // fixin obstacle stuck
+            // vertical movement
+            const obstacle_top = dy > 1 && this.collided_top && this.gadget_grappling_hook.dir_y > 0;
+            const obstacle_bottom = dy < -1 && this.collided_bottom && this.gadget_grappling_hook.dir_y < 0;
+            let obstacle_y: null | BoxColliderC = null;
+            if (obstacle_top && this.collided_top) {
+                obstacle_y = this.scene_collisions.colliders[this.collided_top];
+            } else if (obstacle_bottom && this.collided_bottom) {
+                obstacle_y = this.scene_collisions.colliders[this.collided_bottom];
+            }
+
+            if (obstacle_y) {
+                const dx = this.body.collider.x - obstacle_y.x > 0 ?
+                    obstacle_y._right - this.body.collider._left :
+                    obstacle_y._left - this.body.collider._right;
+                acc_x += dx * 10;
+            }
+
+            // horisontal movement
+            const obstacle_right = dx > 1 && this.collided_right && this.gadget_grappling_hook.dir_x > 0;
+            const obstacle_left = dx < -1 && this.collided_left && this.gadget_grappling_hook.dir_x < 0;
+            let obstacle_x: null | BoxColliderC = null;
+            if (obstacle_right && this.collided_right) {
+                obstacle_x = this.scene_collisions.colliders[this.collided_right];
+            } else if (obstacle_left && this.collided_left) {
+                obstacle_x = this.scene_collisions.colliders[this.collided_left];
+            }
+
+            if (obstacle_x) {
+                const dy = this.body.collider.y - obstacle_x.y > 0 ?
+                    obstacle_x._top - this.body.collider._bottom :
+                    obstacle_x._bottom - this.body.collider._top;
+                acc_y += dy * 10;
+            }
         }
 
         // ---
@@ -223,7 +260,7 @@ class Character {
         }
 
         // c. ground friction
-        if (!movement_x && this.collided_bottom) {
+        if (!movement_x && this.is_collided_bottom()) {
             this.body.velocity_x *= 0.3;
         }
 
@@ -242,7 +279,7 @@ class Character {
 
     _updateRunState(dt: number, movemet_x: number): boolean {
         const discard_runstate_case0 = !this.prerunning || !movemet_x || this.performed_actions.find((e) => e.tag == "move_left" || e.tag == "move_right");
-        const discard_runstate_case1 = this.run_elapsed < this.prerun_threshold && !this.collided_bottom;
+        const discard_runstate_case1 = this.run_elapsed < this.prerun_threshold && !this.is_collided_bottom();
         if (discard_runstate_case0 || discard_runstate_case1) {
             this.run_elapsed = 0;
         } else {
@@ -274,10 +311,10 @@ class Character {
 
     updateCollideDirections() {
         // left "collided" untouched if no movemend was happen
-        this.collided_left = false;
-        this.collided_right = false;
-        this.collided_bottom = false;
-        this.collided_top = false;
+        this.collided_left = null;
+        this.collided_right = null;
+        this.collided_bottom = null;
+        this.collided_top = null;
 
         for (let i = 0; i < this.body.contacts; i++) {
             const c = this.body.contacts_list[i];
@@ -285,13 +322,13 @@ class Character {
                 continue;
             }
             if (c.normal_y == -1) {
-                this.collided_bottom = true;
+                this.collided_bottom = c.id;
             } else  if (c.normal_y == 1) {
-                this.collided_top = true;
+                this.collided_top = c.id;
             } else  if (c.normal_x == -1) {
-                this.collided_left = true;
+                this.collided_left = c.id;
             } else  if (c.normal_x == 1) {
-                this.collided_right = true;
+                this.collided_right = c.id;
             }
         }
     }
@@ -304,11 +341,11 @@ class Character {
             this.jumping_up = true;
         } else {
             // floor jump
-            this.jumping_up = this.collided_bottom;
+            this.jumping_up = this.is_collided_bottom();
 
             // wall jump
-            this.jumping_right = !this.jumping_up && this.collided_left;
-            this.jumping_left = !this.jumping_up && this.collided_right;
+            this.jumping_right = !this.jumping_up && this.is_collided_left();
+            this.jumping_left = !this.jumping_up && this.is_collided_right();
             this.jumping_up =  this.jumping_up || this.jumping_left || this.jumping_right;
         }
 
@@ -377,6 +414,22 @@ class Character {
         if (!this.requested_actions.find((a) => { return a.tag == tag && a.code == code })) {
             this.requested_actions.push({tag, code});
         }
+    }
+
+    is_collided_left() {
+        return this.collided_left !== null;
+    }
+
+    is_collided_right() {
+        return this.collided_right !== null;
+    }
+
+    is_collided_bottom() {
+        return this.collided_bottom !== null;
+    }
+
+    is_collided_top() {
+        return this.collided_top !== null;
     }
 }
 
