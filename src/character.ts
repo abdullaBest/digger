@@ -76,7 +76,7 @@ class Character {
         this.wallslide_speed = 1;
         this.air_control_factor = 0.4;
         this.run_vertical_jump_scale = 1.3;
-        this.run_horisontal_jump_scale = 2;
+        this.run_horisontal_jump_scale = 1.2;
         this.run_movement_scale = 1.5;
         this.prerun_threshold = 0.25;
 
