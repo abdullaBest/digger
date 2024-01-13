@@ -119,6 +119,7 @@ export default class SceneRenderLoader {
         const texture = this.cache.textures[texture_url] ?? await new Promise((resolve, reject) => {
             new THREE.TextureLoader().load( texture_url, resolve, reject );
         });
+        this.cache.textures[texture_url] = texture;
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.flipY = flipY;
 
