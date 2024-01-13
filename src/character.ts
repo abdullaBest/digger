@@ -103,7 +103,7 @@ class Character {
 
         this.hook_length = 5;
         this.hook_speed = 50;
-        this.hook_drag_force = 10;
+        this.hook_drag_force = 5;
 
         this.gadget_grappling_hook = new GadgetGrapplingHook(this.scene_collisions);
     }
@@ -148,9 +148,7 @@ class Character {
         this.requested_actions = actions_buff;
         
         this.gadget_grappling_hook.step(dt);
-        if (perform_physics_actions) {
-            this._applyMovementForces(dt, dr);
-        }
+        this._applyMovementForces(dt, dr, perform_physics_actions);
 
     }
 
@@ -161,48 +159,55 @@ class Character {
      * @param physics_step 
      * @returns 
      */
-    _applyMovementForces(dt: number, dr: number) {
+    _applyMovementForces(dt: number, dr: number, physics_step: boolean) {
         let acc_x = 0;
         let acc_y = 0;
-        let movement = 0;
+        let movement_x = 0;
+        let movement_y = 0;
 
         // ---
 
         // movement direction & speed
-        movement -= this.moving_left && !this.collided_left ? this.movement_speed : 0;
-        movement += this.moving_right && !this.collided_right ? this.movement_speed : 0;
+        movement_x -= this.moving_left && !this.collided_left ? this.movement_speed : 0;
+        movement_x += this.moving_right && !this.collided_right ? this.movement_speed : 0;
+
+        const jumping = this._updateJumpState(dt);
+        const running = this._updateRunState(dt, movement_x);
+
+        if (!physics_step) {
+            return;
+        }
 
         // ---
 
         // a. horisontal movement
-        acc_x += movement;
+        movement_x *= running ? this.run_movement_scale : 1;
+        movement_x *= running && jumping ? this.run_horisontal_jump_scale : 1;
+
+        if (movement_x) {
+            acc_x += movement_x - this.body.velocity_x;
+        }
 
         // b. vertical movement (jump)
-        const jumping = this._updateJumpState(dt);
-        acc_y += jumping ? this.jump_force : 0;
+        movement_y += jumping ? this.jump_force : 0;
+        movement_y *= running ? this.run_vertical_jump_scale : 1;
 
-        // c. run
-        const running = this._updateRunState(dt, movement);
-        acc_x *= running ? this.run_movement_scale : 1;
-        acc_x *= running && jumping ? this.run_horisontal_jump_scale : 1;
-        acc_y *= running ? this.run_vertical_jump_scale : 1;
+        if (movement_y) {
+            acc_y += movement_y - Math.max(0, this.body.velocity_y);
+        }
         
         // d. wallslide (friction)
         this.sliding_wall = !this.collided_bottom && ((this.collided_left && this.moving_left) || (this.collided_right && this.moving_right));
 
         // e. hook. overrides all previous accelerations
         if (this.gadget_grappling_hook.grapped) {
-            const dx = (this.gadget_grappling_hook.pos_x - this.body.collider.x) * this.hook_drag_force; 
-            const dy = (this.gadget_grappling_hook.pos_y - this.body.collider.y) * this.hook_drag_force; 
+            const dx = clamp(this.gadget_grappling_hook.pos_x - this.body.collider.x, -1, 1) * this.hook_drag_force; 
+            const dy = clamp(this.gadget_grappling_hook.pos_y - this.body.collider.y, -1, 1) * this.hook_drag_force; 
             acc_x = dx;
             acc_y = dy;
         }
 
         // ---
-        const acc_x_mag = Math.abs(acc_x);
-        const acc_y_mag = Math.abs(acc_y);
-        const limit_y = this.jump_force * this.run_vertical_jump_scale;
-        const limit_x = acc_x_mag;
 
         // apply frictions/drags
 
@@ -217,16 +222,21 @@ class Character {
             this.body.velocity_y = clamp(this.body.velocity_y, -this.wallslide_speed, Infinity);
         }
 
+        // c. ground friction
+        if (!movement_x && this.collided_bottom) {
+            this.body.velocity_x *= 0.3;
+        }
+
         // apply forces
 
-        this.body.velocity_x = clamp(this.body.velocity_x + acc_x, -limit_x, limit_x);
+        this.body.velocity_x = this.body.velocity_x + acc_x;
         // not clamping min due gravity affection
-        this.body.velocity_y = clamp(this.body.velocity_y + acc_y, -Infinity, limit_y);
+        this.body.velocity_y = this.body.velocity_y + acc_y;
         
         // set flag variables
-        this.movement_x = movement;
-        if(movement) {
-            this.look_direction_x = Math.sign(movement);
+        this.movement_x = movement_x;
+        if(movement_x) {
+            this.look_direction_x = Math.sign(movement_x);
         }
     }
 

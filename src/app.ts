@@ -26,7 +26,8 @@ class App {
 
         this.active = false;
         this.timestamp = 0;
-        this.REF_DELTATIME = 10;
+        this.ref_reltatime = 10;
+        this.fixed_timestep = true;
 
         this.frame_threshold = 16;
         this.average_frametime = 0;
@@ -41,10 +42,11 @@ class App {
         this.scene_render.init(canvas as HTMLCanvasElement);
         this.scene_game.init();
         
-        this.app_debug_draw.addWrite("REF_DELTATIME");
+        this.app_debug_draw.addWrite("ref_reltatime");
         this.app_debug_draw.addWrite("frame_threshold");
+        this.app_debug_draw.addWrite("fixed_timestep");
         this.app_debug_draw.addRead("average_frametime");
-        this.app_debug_draw.addRead("[dt scale]", () => this.average_frametime / this.REF_DELTATIME);
+        this.app_debug_draw.addRead("[dt scale]", () => this.average_frametime / this.ref_reltatime);
         this.app_debug_draw.addRead("[fps]", () => 1000 / this.average_frametime);
 
         return this;
@@ -89,16 +91,21 @@ class App {
         }
 
         const now = performance.now();
-        const dt = (now - this.timestamp);
+        let dt = (now - this.timestamp);
 
         if (dt < this.frame_threshold) {
             requestAnimationFrame( this.loop.bind(this) );
             return;
         }
 
-        const dtscaled = dt / 1000;
+        if (this.fixed_timestep) {
+            dt = this.frame_threshold;
+        }
+
+        const dtscaled = dt * 0.001;
+
         this.timestamp = now;
-        const deltaref = dt / this.REF_DELTATIME;
+        const deltaref = dt / this.ref_reltatime;
         this.average_frametime = lerp(this.average_frametime, dt, 0.07);
 
         this.scene_game.step(dtscaled, deltaref);
@@ -240,19 +247,20 @@ class App {
         }
     }
 
-    private active: Boolean;
 
+    private assets: Assets;
     private scene_render: SceneRender;
     private scene_edit: SceneEdit;
     private scene_edit_view: SceneEditView;
     private scene_mediator: SceneMediator;
     private scene_collisions: SceneCollisions;
-
-    private assets: Assets;
     private assets_view: AssetsView;
     private scene_game: SceneGame;
+
+    private active: Boolean;
     private timestamp: number;
     private frame_threshold: number;
+    private fixed_timestep: boolean;
 
     private average_frametime: number;
 
@@ -260,7 +268,7 @@ class App {
 
     private app_debug_draw: PropertyDraw;
     
-    private REF_DELTATIME: number;
+    private ref_reltatime: number;
 }
 
 export default App;

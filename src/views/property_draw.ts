@@ -118,6 +118,12 @@ export default class PropertyDraw {
                                 return;
                             }
                             break;
+                        case "boolean":
+                            value = 
+                                _value == "true" ? true :
+                                _value == "false" ? false :
+                                !!(value);
+                            break; 
                         default:
                             console.warn("No implemetation for input " + type);
                             return;
