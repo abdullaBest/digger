@@ -185,6 +185,7 @@ class SceneRender {
         const group = await this.tileset_render.drawTileset(id, tileset,  (model: any, id: string, obj: THREE.Object3D) => {
             if(model.collider) {
                 this.produceObjectColliders(id, obj);
+                this.cache.objects[id] = obj;
             }
         });
 
@@ -303,7 +304,7 @@ class SceneRender {
             delete this.cache.gltfs[id];
         }
         if(this.cache.objects[id]) {
-            this.scene.remove(this.cache.objects[id]);
+            this.cache.objects[id].removeFromParent();
             delete this.cache.objects[id];
         }
         delete this.cache.models[id];

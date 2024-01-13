@@ -43,7 +43,7 @@ export default class CharacterPropertyDraw {
         this.core.addWrite("wallslide_speed");
         this.core.addWrite("air_control_factor");
         this.core.addWrite("run_vertical_jump_scale");
-        //this.core.addWrite("run_horisontal_jump_scale");
+        this.core.addWrite("run_horisontal_jump_scale");
         this.core.addWrite("run_movement_scale");
         this.core.addWrite("prerun_threshold");
         this.core.addWrite("hook_drag_force");

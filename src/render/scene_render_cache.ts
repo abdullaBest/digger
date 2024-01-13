@@ -1,5 +1,5 @@
 
-import { Vector2, Vector3, Material, Texture, Mesh } from '../lib/three.module.js';
+import { Vector2, Vector3, Material, Texture, Mesh, Object3D } from '../lib/three.module.js';
 
 export default class SceneRenderCache {
     constructor() {
@@ -22,7 +22,7 @@ export default class SceneRenderCache {
     // used for gltfs cache
     gltfs: { [id: string] : any; };
     // used for 3d objects
-    objects: { [id: string] : any; };
+    objects: { [id: string] : Object3D; };
     // stores pointers to models data
     // tynroar note: probably bad and unsafe idea
     models: { [id: string] : any; };
