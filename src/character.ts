@@ -83,7 +83,7 @@ class Character {
         this.run_horisontal_jump_scale = 1.2;
         this.run_movement_scale = 1.5;
         this.prerun_threshold = 0.25;
-        this.airjump_threshold = 0.2;
+        this.airjump_threshold = 0.1;
 
         this.look_direction_x = 0;
         this.look_direction_y = 0;
@@ -183,6 +183,11 @@ class Character {
 
         if (!physics_step) {
             return;
+        }
+
+        movement_x = lerp(this.movement_x, movement_x, movement_x ? 0.6 : 0.95);
+        if (Math.abs(movement_x) < 1e-2) {
+            movement_x = 0;
         }
 
         // ---
