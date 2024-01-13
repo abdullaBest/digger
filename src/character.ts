@@ -103,7 +103,7 @@ class Character {
 
         this.hook_length = 5;
         this.hook_speed = 50;
-        this.hook_drag_force = 5;
+        this.hook_drag_force = 8;
 
         this.gadget_grappling_hook = new GadgetGrapplingHook(this.scene_collisions);
     }
