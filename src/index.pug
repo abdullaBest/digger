@@ -55,11 +55,11 @@ body
 						btn#asset_make_thumbnail.icon.img-screenshoot(tooltip="make thumbnail")
 					container#scene_game_details.frame_background
 						splitter app state
-						container#app_state_details
+						container#app_state_details.flex-table
 						splitter character state
-						container#character_state_details
+						container#character_state_details.flex-table
 						splitter character confing
-						container#character_config_details
+						container#character_config_details.flex-table
 				canvas#rootcanvas
 			.footer
 				o scene viewer
@@ -128,6 +128,8 @@ body
 					li нужно иметь возможность (возможности, блин. Чо тут хотел дописать хз)
 			.footer
 				o dev section
+	db#cache
+		canvas#cache_canvas
 	db#templates
 		template#asset_details_template
 			splitter asset details
@@ -141,7 +143,7 @@ body
 				label#assets_upload_files_label reupload 
 					input#assets_upload_files(type="file" name="files" accept=".%s")
 				splitter asset edit
-				container#asset_details_properties_edit
+				container#asset_details_properties_edit.flex-table
 					page#details_empty_edit
 					page#details_model_edit
 					page#details_tileset_edit
@@ -149,5 +151,5 @@ body
 		template#details_tileset_edit_template
 			container#details_tileset_properties_list
 			splitter aliases
-			container#details_tileset_aliases_list
+			container#details_tileset_aliases_list.flex-table
 			btn#details_tileset_aliases_add add

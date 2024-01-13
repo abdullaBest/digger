@@ -70,7 +70,7 @@ export default class PropertyDraw {
 
             label = document.createElement("label");
             label.classList.add("limit-len");
-            l1.appendChild(label);
+            el.appendChild(label);
             this.container.appendChild(el);
 
             this.elements[key] = el;
@@ -99,7 +99,7 @@ export default class PropertyDraw {
             const type = typeof value;
             input.value = this.getters[key]();
             input.type = typeof value;
-            l1.appendChild(input);
+            el.appendChild(input);
             this.container.appendChild(el);
 
             this.elements[key] = el;

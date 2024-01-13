@@ -188,6 +188,7 @@ export default class SceneEditView {
 
         const props_container = document.createElement("container");
         props_container.classList.add("frame_background");
+        props_container.classList.add("flex-table");
         el.appendChild(props_container);
 
         new AssetPropertyEdit().init(element, "name", () => {
