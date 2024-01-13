@@ -1,7 +1,7 @@
 import { querySelector, EventListenerDetails, addEventListener, removeEventListeners, listenClick, popupListSelectMultiple, popupListSelect } from "../document";
 import SceneEdit from "../scene_edit";
 import { AssetsView, AssetPropertyEdit } from "./assets_view";
-import SceneRender from "../scene_render";
+import SceneRender from "../render/scene_render";
 import SceneMediator from "../scene_mediator";
 
 export default class SceneEditView {

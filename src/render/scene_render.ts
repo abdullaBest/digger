@@ -1,12 +1,12 @@
-import * as THREE from './lib/three.module.js';
-import { GLTFLoader } from './lib/GLTFLoader.js';
-import { OrbitControls } from './lib/OrbitControls.js'
-import { Assets } from './assets'
-import { SceneEdit, SceneElement, SceneEditUtils } from "./scene_edit";
-import { TransformControls } from './lib/TransformControls.js';
-import SceneMath from './scene_math';
-import { SceneCollisions, BoxColliderC, ColliderType } from './scene_collisions';
-import { lerp, distlerp } from './math';
+import * as THREE from '../lib/three.module.js';
+import { GLTFLoader } from '../lib/GLTFLoader.js';
+import { OrbitControls } from '../lib/OrbitControls.js'
+import { Assets } from '../assets.js'
+import { SceneEdit, SceneElement, SceneEditUtils } from "../scene_edit.js";
+import { TransformControls } from '../lib/TransformControls.js';
+import SceneMath from '../scene_math.js';
+import { SceneCollisions, BoxColliderC, ColliderType } from '../scene_collisions.js';
+import { lerp, distlerp } from '../math.js';
 
 const SPRITE_DEFAULT_PATH = "./res/icons/";
 

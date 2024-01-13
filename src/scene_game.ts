@@ -3,7 +3,7 @@ import { SceneCollisions, BoxColliderC } from './scene_collisions';
 import { Box2, Vector2 } from "./lib/three.module";
 import { addEventListener, removeEventListeners, EventListenerDetails } from "./document";
 import CharacterRender from "./character_render";
-import SceneRender from "./scene_render";
+import SceneRender from "./render/scene_render";
 import { distlerp, lerp } from "./math";
 import { SceneElement } from "./scene_edit";
 import SceneDebug from "./scene_debug";

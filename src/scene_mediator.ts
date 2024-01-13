@@ -1,5 +1,5 @@
 import SceneEdit from "./scene_edit";
-import SceneRender from "./scene_render";
+import SceneRender from "./render/scene_render";
 import SceneGame from "./scene_game";
 
 class SceneMediator {

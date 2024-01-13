@@ -1,8 +1,8 @@
-import * as THREE from './lib/three.module.js';
-import Character from "./character";
+import * as THREE from '../lib/three.module.js';
+import Character from "../character.js";
 import SceneRender from "./scene_render";
-import { SceneCollisions } from './scene_collisions.js';
-import { lerp, distlerp } from './math.js';
+import { SceneCollisions } from '../scene_collisions.js';
+import { lerp, distlerp } from '../math.js';
 
 export default class CharacterRender {
     character: Character;

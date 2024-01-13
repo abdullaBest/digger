@@ -1,4 +1,4 @@
-import SceneRender from "./scene_render";
+import SceneRender from "./render/scene_render";
 import Assets from "./assets";
 import {SceneEditUtils, SceneEdit } from "./scene_edit";
 import SceneEditView from "./views/scene_edit_view";
