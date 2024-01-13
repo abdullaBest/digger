@@ -34,6 +34,7 @@ export default class CharacterPropertyDraw {
         this.core.add("prerunning");
         this.core.add("run_elapsed");
         this.core.add("jump_elapsed");
+        this.core.add("airtime_elapsed");
     }
 
     drawConfig() {
@@ -47,6 +48,7 @@ export default class CharacterPropertyDraw {
         this.core.addWrite("run_movement_scale");
         this.core.addWrite("prerun_threshold");
         this.core.addWrite("hook_drag_force");
+        this.core.addWrite("airjump_threshold");
     }
 
     dispose() {

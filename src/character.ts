@@ -27,7 +27,7 @@ class Character {
     jump_force: number;
     jump_threshold: number;
     wallslide_speed: number;
-    air_control_factor: number;
+    air_control_factor: number; // unused
     run_movement_scale: number;
     run_vertical_jump_scale: number;
     run_horisontal_jump_scale: number;
@@ -41,10 +41,14 @@ class Character {
     jumping_up: boolean;
     jumping_left: boolean;
     jumping_right: boolean;
+    jumping_air: boolean;
+
     prerunning: boolean;
     running: boolean;
     jump_elapsed: number;
     run_elapsed: number;
+    airtime_elapsed: number;
+    airjump_threshold: number;
     scene_collisions: SceneCollisions;
     look_direction_x: number;
     look_direction_y: number;
@@ -79,6 +83,7 @@ class Character {
         this.run_horisontal_jump_scale = 1.2;
         this.run_movement_scale = 1.5;
         this.prerun_threshold = 0.25;
+        this.airjump_threshold = 0.2;
 
         this.look_direction_x = 0;
         this.look_direction_y = 0;
@@ -90,6 +95,7 @@ class Character {
         this.jumping_left = false;
         this.jumping_right = false;
         this.jumping_up = false;
+        this.jumping_air = false;
         this.running = false;
         this.prerunning = false;
         this.sliding_wall = false;
@@ -100,6 +106,7 @@ class Character {
         this.collided_right = null;
         this.collided_top = null;
         this.phys_tick_elapsed = 0;
+        this.airtime_elapsed = 0;
 
         this.hook_length = 5;
         this.hook_speed = 50;
@@ -193,7 +200,8 @@ class Character {
         movement_y *= running ? this.run_vertical_jump_scale : 1;
 
         if (movement_y) {
-            acc_y += movement_y - Math.max(0, this.body.velocity_y);
+            const add = this.jumping_air ? this.body.velocity_y : Math.max(0, this.body.velocity_y)
+            acc_y += movement_y - add;
         }
         
         // d. wallslide (friction)
@@ -294,6 +302,12 @@ class Character {
     _updateJumpState(dt: number) {
         this.jump_elapsed += dt;
 
+        if (!this.is_collided_bottom()) {
+            this.airtime_elapsed += dt;
+        } else {
+            this.airtime_elapsed = 0;
+        }
+
         if (this.jump_elapsed < this.jump_threshold) {
             return false;
         }
@@ -341,7 +355,9 @@ class Character {
             this.jumping_up = true;
         } else {
             // floor jump
-            this.jumping_up = this.is_collided_bottom();
+            const airjump_allowed = this.airtime_elapsed < this.airjump_threshold;
+            this.jumping_up = this.is_collided_bottom() || airjump_allowed;
+            this.jumping_air = !this.is_collided_bottom() && airjump_allowed;
 
             // wall jump
             this.jumping_right = !this.jumping_up && this.is_collided_left();
