@@ -116,21 +116,17 @@ class SceneRender {
 
             let mproperties = this.cache.models[id] ?? this.cache.triggers[id];
 
-            // just in case: if scene elements has required element - use pointer from there
-            if (el && el.components.model) {
-                mproperties = el.components.model.properties;
-                if (mproperties) {
-                    mproperties.matrix = object.matrixWorld.toArray()
+            if (mproperties) {
+                mproperties.matrix = object.matrixWorld.toArray()
 
-                    object.traverse((o) => {
-                        if (!o.isMesh) {
-                            return;
-                        }
-                        if(mproperties.collider) {
-                            this.makeObjectAabb2d(id, o, object);
-                        }
-                    });
-                }
+                object.traverse((o) => {
+                    if (!o.isMesh) {
+                        return;
+                    }
+                    if(mproperties.collider) {
+                        this.makeObjectAabb2d(id, o, object);
+                    }
+                });
             } else if (el && el.components.trigger) {
                 mproperties = el.components.trigger.properties;
 
