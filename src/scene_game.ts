@@ -239,9 +239,13 @@ export default class SceneGame {
         if (!cha.look_direction_y) {
             test_l = cha.body.collider.x + cha.body.collider.width * 0.5 * cha.look_direction_x + ray_size * cha.look_direction_x;
             test_r = cha.body.collider.x + cha.body.collider.width * 0.5 * cha.look_direction_x + ray_size * cha.look_direction_x;
+            test_t = cha.body.collider._top;
+            test_b = cha.body.collider._bottom;
         } else {
             test_t = cha.body.collider.y + cha.body.collider.height * 0.5 * cha.look_direction_y + ray_size * cha.look_direction_y;
             test_b = cha.body.collider.y + cha.body.collider.height * 0.5 * cha.look_direction_y + ray_size * cha.look_direction_y;
+            test_l = cha.body.collider._left;
+            test_r = cha.body.collider._right;
         }
         let hit_collider: string | null = null;
         for(const k in this.scene_collisions.colliders) {
