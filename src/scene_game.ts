@@ -142,7 +142,7 @@ export default class SceneGame {
      * @param dr 
      * @returns 
      */
-    step(dt: number, dr: number, forced: boolean = false) {
+    step(dt: number, forced: boolean = false) {
         if (!this.active) {
             return;
         }
@@ -155,9 +155,9 @@ export default class SceneGame {
             body.velocity_y += this.gravity_y * dt * this.scene_collisions.forces_scale;
         }
 
-        this.player_character.step(dt, dr);
+        this.player_character.step(dt);
         this.scene_collisions.step(dt);
-        this.player_character_render.step(dt, dr);
+        this.player_character_render.step(dt);
         this.scene_debug.step();
 
         this.stepFallingBlocks(dt);

@@ -26,7 +26,6 @@ class App {
 
         this.active = false;
         this.timestamp = 0;
-        this.ref_reltatime = 10;
         this.fixed_timestep = true;
 
         this.frame_threshold = 16;
@@ -46,7 +45,6 @@ class App {
         this.app_debug_draw.addWrite("frame_threshold");
         this.app_debug_draw.addWrite("fixed_timestep");
         this.app_debug_draw.addRead("average_frametime");
-        this.app_debug_draw.addRead("[dt scale]", () => this.average_frametime / this.ref_reltatime);
         this.app_debug_draw.addRead("[fps]", () => 1000 / this.average_frametime);
 
         return this;
@@ -105,11 +103,10 @@ class App {
         const dtscaled = dt * 0.001;
 
         this.timestamp = now;
-        const deltaref = dt / this.ref_reltatime;
         this.average_frametime = lerp(this.average_frametime, dt, 0.07);
 
-        this.scene_game.step(dtscaled, deltaref);
-        this.scene_render.step(dtscaled, deltaref);
+        this.scene_game.step(dtscaled);
+        this.scene_render.step(dtscaled);
         this.scene_mediator.step();
 
         this.app_debug_draw.step();
@@ -267,8 +264,6 @@ class App {
     private _listeners: Array<EventListenerDetails>;
 
     private app_debug_draw: PropertyDraw;
-    
-    private ref_reltatime: number;
 }
 
 export default App;

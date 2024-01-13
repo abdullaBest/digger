@@ -654,7 +654,7 @@ class SceneRender {
     stop() {
         this.active = false;
     }
-    step(dt: number, dr: number) {
+    step(dt: number) {
         if (!this.active) {
             return;
         }

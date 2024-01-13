@@ -115,7 +115,7 @@ class Character {
         return this;
     }
 
-    step(dt: number, dr: number) {
+    step(dt: number) {
         // zero-out step variables
         this.performed_actions.length = 0;
         this.jumping_left = this.jumping_right = this.jumping_up = false;
@@ -148,7 +148,7 @@ class Character {
         this.requested_actions = actions_buff;
         
         this.gadget_grappling_hook.step(dt);
-        this._applyMovementForces(dt, dr, perform_physics_actions);
+        this._applyMovementForces(dt, perform_physics_actions);
 
     }
 
@@ -159,7 +159,7 @@ class Character {
      * @param physics_step 
      * @returns 
      */
-    _applyMovementForces(dt: number, dr: number, physics_step: boolean) {
+    _applyMovementForces(dt: number, physics_step: boolean) {
         let acc_x = 0;
         let acc_y = 0;
         let movement_x = 0;

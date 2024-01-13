@@ -83,7 +83,7 @@ export default class CharacterRender {
         }
     }
 
-    step(dt: number, dr: number) {
+    step(dt: number) {
         const gltf = this.character_gltf;
         // character still loads
         if (!gltf) {
@@ -91,7 +91,7 @@ export default class CharacterRender {
         }
        
         this.updateCharacterAnimations();
-        this.renderCharacterModel(dt, dr);
+        this.renderCharacterModel(dt);
 
         // hook animation
         if (this.hook_draw) {
@@ -128,7 +128,7 @@ export default class CharacterRender {
         }
     }
 
-    renderCharacterModel(dt: number, dr: number) {
+    renderCharacterModel(dt: number) {
         const cha = this.character_gltf.scene;
         const body = this.character.body;
 
