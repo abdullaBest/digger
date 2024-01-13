@@ -403,7 +403,7 @@ export default class SceneGame {
                 // b.1 falling
                 this.scene_collisions.addBoxBody(k, collider);
                 // b.2 make fall surrounding blocks
-                this.findFallingBlockAround(k, 0.1);
+                this.findFallingBlockAround(k, 0.01);
             } else if (body) {
                 // c. deactivating
                 for(let i = 0; i < body.contacts; i++) {

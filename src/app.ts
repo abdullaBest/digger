@@ -37,11 +37,10 @@ class App {
             throw new Error("can't find canvas to render");
         }
 
-        this.app_debug_draw = new PropertyDraw(querySelector("#app_state_details")).init(this);
+        this.app_debug_draw = new PropertyDraw(querySelector("#app_state_details"), querySelector("#app_state_details-toggle")).init(this);
         this.scene_render.init(canvas as HTMLCanvasElement);
         this.scene_game.init();
         
-        this.app_debug_draw.addWrite("ref_reltatime");
         this.app_debug_draw.addWrite("frame_threshold");
         this.app_debug_draw.addWrite("fixed_timestep");
         this.app_debug_draw.addRead("average_frametime");

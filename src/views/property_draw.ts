@@ -1,5 +1,8 @@
+import { listenClick, EventListenerDetails, removeEventListeners } from "../document";
+
 export default class PropertyDraw {
     container: HTMLElement;
+    toggle_btn: HTMLElement | null;
     object: any;
     getters: {[id: string]: () => any}
     setters: {[id: string]: (v: any) => void}
@@ -8,14 +11,23 @@ export default class PropertyDraw {
     values_read: { [id: string]: any }
     inputs_write: { [id: string]: HTMLInputElement }
     values_write: { [id: string]: any }
+    private _listeners: Array<EventListenerDetails>;
 
-    constructor(container: HTMLElement) {
+    constructor(container: HTMLElement, toggle_btn?: HTMLElement) {
         this.container = container;
+        this.toggle_btn = toggle_btn ?? null;
+        this._listeners = [];
     }
 
     init(object: any) : PropertyDraw {
         this.dispose();
         this.object = object;
+
+        if (this.toggle_btn) {
+            listenClick(this.toggle_btn,  async (ev) => {
+                this.container.classList.toggle("hidden");
+            }, this._listeners)
+        }
 
         return this;
     }
@@ -34,6 +46,7 @@ export default class PropertyDraw {
         this.values_write = {};
         this.inputs_write = {};
         this.object = null;
+        removeEventListeners(this._listeners);
     }
 
     add(key: string, getter?: () => any) {
@@ -99,6 +112,7 @@ export default class PropertyDraw {
             const type = typeof value;
             input.value = this.getters[key]();
             input.type = typeof value;
+            input.classList.add("limit-len");
             el.appendChild(input);
             this.container.appendChild(el);
 

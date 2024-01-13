@@ -188,7 +188,7 @@ container.flex-table {
       flex-grow: 1;
     }
 
-    label.limit-len {
+    label.limit-len, input.limit-len {
       text-overflow: ellipsis;
       max-width: 15ch;
       overflow: hidden;
@@ -205,7 +205,12 @@ container.flex-table {
     img {
       max-height: 1em;
     }
+  }
 }
+
+.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
 }
 
 #asset_details, #asset_create, #asset_details_model_template, #scene_edit_elements, #scene_game_details {
@@ -242,6 +247,7 @@ container.flex-table {
 #scene_game_details {
   color: #eee;
   text-shadow: 1px 1px #000a;
+  width: 256px;
 
   input {
     background: none;

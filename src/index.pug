@@ -54,14 +54,14 @@ body
 					container#asset_view_controls.frame_background.flex-row
 						btn#asset_make_thumbnail.icon.img-screenshoot(tooltip="make thumbnail")
 					container#scene_game_details.frame_background
-						splitter app state
-						container#app_state_details.flex-table
-						splitter game confing
-						container#game_config_details.flex-table
-						splitter character confing
-						container#character_config_details.flex-table
-						splitter character state
-						container#character_state_details.flex-table
+						splitter#app_state_details-toggle.cursor-pointer app state
+						container#app_state_details.flex-table.hidden
+						splitter#game_config_details-toggle.cursor-pointer game confing
+						container#game_config_details.flex-table.hidden
+						splitter#character_config_details-toggle.cursor-pointer character confing
+						container#character_config_details.flex-table.hidden
+						splitter#character_state_details-toggle.cursor-pointer character state
+						container#character_state_details.flex-table.hidden
 				canvas#rootcanvas
 			.footer
 				o scene viewer

@@ -9,9 +9,9 @@ export default class SceneDebug {
     camera_config_draw: PropertyDraw;
 
     constructor() {
-        this.character_state_draw = new CharacterPropertyDraw(querySelector("#character_state_details"));
-        this.character_config_draw = new CharacterPropertyDraw(querySelector("#character_config_details"));
-        this.camera_config_draw = new PropertyDraw(querySelector("#game_config_details"));
+        this.character_state_draw = new CharacterPropertyDraw(querySelector("#character_state_details"), querySelector("#character_state_details-toggle"));
+        this.character_config_draw = new CharacterPropertyDraw(querySelector("#character_config_details"), querySelector("#character_config_details-toggle"));
+        this.camera_config_draw = new PropertyDraw(querySelector("#game_config_details"), querySelector("#game_config_details-toggle"));
     }
 
     run(player_character: Character, camera_config: { attach_camera_z: number, attach_camera_y: number }) {

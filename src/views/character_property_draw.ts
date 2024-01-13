@@ -5,8 +5,8 @@ export default class CharacterPropertyDraw {
     core: PropertyDraw;
     character: Character;
 
-    constructor(container: HTMLElement) {
-        this.core = new PropertyDraw(container);
+    constructor(container: HTMLElement, toggle_btn?: HTMLElement) {
+        this.core = new PropertyDraw(container, toggle_btn);
     }
 
     init(character: Character) : CharacterPropertyDraw {
