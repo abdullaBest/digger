@@ -1,5 +1,6 @@
 import * as THREE from '../lib/three.module.js';
 import { GLTFLoader } from '../lib/GLTFLoader.js';
+import { FBXLoader } from '../lib/fbx/FBXLoader.js';
 import { OrbitControls } from '../lib/OrbitControls.js'
 import { Assets } from '../assets.js'
 import { SceneEdit, SceneElement, SceneEditUtils } from "../scene_edit.js";
@@ -185,7 +186,7 @@ class SceneRender {
 
     async addTileset(id: string, tileset: any) {
         await this.tileset_render.registerTileset(id, tileset);
-        const group = await this.tileset_render.drawTileset(id, tileset,  (model: any, id: string, obj: THREE.Object3D) => {
+        const group = await this.tileset_render.drawTileset(id, (model: any, id: string, obj: THREE.Object3D) => {
             if(model.collider) {
                 this.produceObjectColliders(id, obj);
                 this.cache.objects[id] = obj;
@@ -196,12 +197,12 @@ class SceneRender {
         this.scene.add( group );
     }
 
-    async addModel(id: string, model: any, opts = { make_collider: true }) : Promise<any> {
-        const object = await this.loader.getModel(id, model);
+    async addModel(id: string, model: any, cache_id: string = id) : Promise<any> {
+        const object = await this.loader.getModel(cache_id, model);
         this.cache.objects[id] = object;
         this.scene.add( object );
 
-        if (opts.make_collider && model.collider) {
+        if (model.collider) {
             this.produceObjectColliders(id, object);
         }
 
@@ -360,7 +361,25 @@ class SceneRender {
         this.focusCameraOn(scene);
     }
 
-    addGLTF(url: string, name?: string) : Promise<any> {
+    async addGLTF(url: string, name?: string) : Promise<any> {
+        const gltf = await this.loadGLTF(url, name);
+        this.scene.add( gltf.scene );
+        const id = gltf.scene.name;
+        this.cache.objects[id] = gltf.scene;
+    }
+
+    loadFBX(url, name?: string): Promise<any> {
+        return new Promise((resolve, reject) => {
+            const fbxLoader = new FBXLoader()
+            fbxLoader.load(
+                url,
+                (object) => {
+                    resolve(object)
+                }, null, reject);
+        });
+    }
+
+    loadGLTF(url: string, name?: string): Promise<any> {
         return new Promise((resolve, reject) => {
             const loading_manager = new THREE.LoadingManager();
             const loader = new GLTFLoader(loading_manager);
@@ -381,12 +400,10 @@ class SceneRender {
             })
 
             loader.load( url,  ( gltf ) => {
-                this.scene.add( gltf.scene );
                 let id = name ??  "g_" + this.cache.guids++
                 gltf.scene.name = id;
                 this.cache.gltfs[id] = gltf;
-                this.cache.objects[id] = gltf.scene;
-                console.log(dumpObject(gltf.scene).join('\n'));
+                //console.log(dumpObject(gltf.scene).join('\n'));
                 resolve(gltf);
             }, undefined,  ( error ) => {
                 console.error( error );
