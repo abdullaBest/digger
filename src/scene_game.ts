@@ -107,7 +107,7 @@ export default class SceneGame {
         await this.player_character_render.run(this.player_character);
 
         // teleport it at start
-        this.player_character_render.character_gltf.scene.position.set(startpos.x, startpos.y, 0);
+        this.player_character_render.character_scene.position.set(startpos.x, startpos.y, 0);
 
         // teleport camera
         if (this.attach_camera_to_player) {
@@ -125,11 +125,13 @@ export default class SceneGame {
         }, name: "blur", node: window as any}, this._listeners)
         //addEventListener({callback: ()=> {console.log("focus")}, name: "focus", node: window as any}, this._listeners)
 
-        this.scene_debug.run(this.player_character, this.camera_config);
+        // debug outputs -- {
+        this.scene_debug.run(this.player_character, this.camera_config, this.scene_render.cache);
         this.scene_debug.camera_config_draw.addWrite("camera_fov", 
             () => this.scene_render.camera_base_fov, 
             (v) => {this.scene_render.camera_base_fov = v; this.scene_render.updateCameraAspect();}
             );
+        // debug outputs -- }
 
         this.active = true;
     }
@@ -173,8 +175,8 @@ export default class SceneGame {
 
         this.stepFallingBlocks(dt);
 
-        if (this.attach_camera_to_player && this.player_character_render.character_gltf) {
-            const pos = this.scene_render.cache.vec3_0.copy(this.player_character_render.character_gltf.scene.position);
+        if (this.attach_camera_to_player && this.player_character_render.character_scene) {
+            const pos = this.scene_render.cache.vec3_0.copy(this.player_character_render.character_scene.position);
 
             pos.z = this.camera_config.attach_camera_z;
             const lposx = (this.scene_render.camera as any).position.x;
@@ -195,6 +197,16 @@ export default class SceneGame {
         }
 
         this._stepCharacterInteractions(this.player_character);
+        this._stepTilesetsClip();
+    }
+
+    private _stepTilesetsClip() {
+        const pos_x = 0;
+        const pos_y = 0;
+        const width = 10; 
+        const height = 10;
+        
+        
     }
 
     private _stepCharacterInteractions(cha: Character) {

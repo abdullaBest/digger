@@ -8,6 +8,7 @@ export default class CharacterRender {
     character: Character;
     scene_render: SceneRender;
     character_gltf: any;
+    character_scene: THREE.Object3D;
     colliders: SceneCollisions;
     animation_mixer: THREE.AnimationMixer;
     animation_time_scale: number;
@@ -40,17 +41,18 @@ export default class CharacterRender {
         this.character = character;
 
         this.character_gltf = await this.scene_render.addGLTF("res/KayKit_AnimatedCharacter_v1.2.glb", "player_character");
-        //this.character_gltf.scene.children[0].position.y = -0.5;
-        this.character_gltf.scene.scale.set(0.5, 0.5, 0.5);
-        this.animation_mixer = new THREE.AnimationMixer(this.character_gltf.scene);
+        this.character_scene = this.character_gltf.scene;
+        //this.character_scene.children[0].position.y = -0.5;
+        (this.character_scene as any).scale.set(0.5, 0.5, 0.5);
+        this.animation_mixer = new THREE.AnimationMixer(this.character_scene);
         this.animations_actions_cache = {};
         this.current_animation_name = null;
         this.character_x_rot = 0;
 
         this.ui_interact_sprite = await this.scene_render.makeSprite("DPAD_up");
         (this.ui_interact_sprite as any).position.y = 2.5;
-        this.character_gltf.scene.add(this.ui_interact_sprite);
-        this.character_gltf.scene.visible = this.draw_character_mesh;
+        this.character_scene.add(this.ui_interact_sprite);
+        this.character_scene.visible = this.draw_character_mesh;
 
             const body = this.character.body;
             if (this.draw_bodypos_path) {
@@ -129,7 +131,7 @@ export default class CharacterRender {
     }
 
     renderCharacterModel(dt: number) {
-        const cha = this.character_gltf.scene;
+        const cha = this.character_scene as any;
         const body = this.character.body;
 
         // set object positions
