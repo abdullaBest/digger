@@ -8,12 +8,14 @@ export default class CharacterRender {
     character: Character;
     scene_render: SceneRender;
     character_gltf: any;
+    character_scene: THREE.Object3D;
     colliders: SceneCollisions;
     animation_mixer: THREE.AnimationMixer;
     animation_time_scale: number;
 
     current_animation_name: string | null;
     animations_actions_cache: {[id: string] : THREE.AnimationAction};
+    animation_gltfs_cache: {[id: string] : any};
     character_x_rot: number;
 
     debug_bodypos_path: Array<THREE.Mesh>;
@@ -33,24 +35,35 @@ export default class CharacterRender {
         this.animation_time_scale = 1;
         this.debug_bodypos_path = [];
         this.draw_character_mesh = true;
-        this.draw_bodypos_path = false;
+        this.draw_bodypos_path = true;
     }
 
     async run(character: Character) {
         this.character = character;
 
-        this.character_gltf = await this.scene_render.addGLTF("res/KayKit_AnimatedCharacter_v1.2.glb", "player_character");
-        //this.character_gltf.scene.children[0].position.y = -0.5;
-        this.character_gltf.scene.scale.set(0.5, 0.5, 0.5);
-        this.animation_mixer = new THREE.AnimationMixer(this.character_gltf.scene);
+        //this.character_gltf = await this.scene_render.addGLTF("res/KayKit_AnimatedCharacter_v1.2.glb", "player_character");
+        //this.character_scene = this.character_scene;
+
+        this.character_scene = await this.scene_render.loadFBX("res/character/steampunk_android_boy.fbx", "player_character");
+        this.scene_render.scene.add(this.character_scene);
+
+        console.log(this.character_scene);
+        //this.character_scene.children[0].position.y = -0.5;
+        (this.character_scene as any).scale.set(0.5, 0.5, 0.5);
+        this.animation_mixer = new THREE.AnimationMixer(this.character_scene);
         this.animations_actions_cache = {};
         this.current_animation_name = null;
         this.character_x_rot = 0;
 
+        await this._loadAnimationFile("Attack(1h)", "res/character/Standing Melee Attack Downward.fbx")
+        await this._loadAnimationFile("Run", "res/character/Running.fbx")
+        await this._loadAnimationFile("Jump", "res/character/Jump (1).fbx")
+        await this._loadAnimationFile("Jump", "res/character/Jump (2).fbx")
+
         this.ui_interact_sprite = await this.scene_render.makeSprite("DPAD_up");
         (this.ui_interact_sprite as any).position.y = 2.5;
-        this.character_gltf.scene.add(this.ui_interact_sprite);
-        this.character_gltf.scene.visible = this.draw_character_mesh;
+        this.character_scene.add(this.ui_interact_sprite);
+        this.character_scene.visible = this.draw_character_mesh;
 
             const body = this.character.body;
             if (this.draw_bodypos_path) {
@@ -84,9 +97,9 @@ export default class CharacterRender {
     }
 
     step(dt: number) {
-        const gltf = this.character_gltf;
+        const cha = this.character_scene;
         // character still loads
-        if (!gltf) {
+        if (!cha) {
             return;
         }
        
@@ -129,7 +142,7 @@ export default class CharacterRender {
     }
 
     renderCharacterModel(dt: number) {
-        const cha = this.character_gltf.scene;
+        const cha = this.character_scene as any;
         const body = this.character.body;
 
         // set object positions
@@ -179,8 +192,16 @@ export default class CharacterRender {
         cha.lookAt(this.scene_render.cache.vec3_0.set(lx + this.character_x_rot, ly  - body.collider.height/2 + this.character.look_direction_y * 0.3,  1 - Math.abs(this.character_x_rot)));
     }
 
-    getAnimation(name: string | null, gltf = this.character_gltf) : THREE.AnimationAction | null {
-        if (!name) {
+    async _loadAnimationFile(name: string, path: string) {
+        const fbx = await this.scene_render.loadFBX(path);
+        if (fbx.animations[0]) {
+            fbx.animations[0].name = name;
+        }
+        const animation = this.getAnimation(name, fbx);
+    }
+
+    getAnimation(name: string | null, gltf = this.character_scene) : THREE.AnimationAction | null {
+        if (!name || !gltf) {
             return null;
         }
 
@@ -189,6 +210,10 @@ export default class CharacterRender {
         }
 
         let action = this.animations_actions_cache[name] ?? this.animation_mixer.clipAction(THREE.AnimationClip.findByName(gltf, name));
+        if (!action) {
+            console.warn("no action " + name);
+            return null;
+        }
         this.animations_actions_cache[name] = action;
         action.play();
         this.setWeight(action, 0);
