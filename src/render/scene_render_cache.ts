@@ -7,6 +7,7 @@ export default class SceneRenderCache {
         this.vec3_0 = new Vector3();
         this.vec3_1 = new Vector3();
         this.gltfs = {};
+        this.objects = {};
         this.models = {};
         this.triggers = {};
         this.materials = {};

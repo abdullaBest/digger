@@ -52,7 +52,7 @@ export default class PropertyDraw {
     add(key: string, getter?: () => any) {
         this.getters[key] = getter ?? (() => this.object[key]);
         this.values_read[key] = this.getters[key]();
-        this.drawRead(key);
+        this._drawRead(key);
     }
 
     addRead(key: string, getter?: () => any) {
@@ -63,10 +63,10 @@ export default class PropertyDraw {
         this.getters[key] = getter ?? (() => this.object[key]);
         this.setters[key] = setter ?? ((v: any) => this.object[key] = v);
         this.values_write[key] = this.getters[key]();
-        this.drawWrite(key);
+        this._drawWrite(key);
     }
 
-    drawRead(key: string) {
+    _drawRead(key: string) {
         const value =  this.getters[key]();
         if (this.elements[key] && this.values_read[key] === value) {
             return;
@@ -97,7 +97,7 @@ export default class PropertyDraw {
         label.innerHTML = this.values_read[key] = v;
     }
 
-    drawWrite(key: string) {
+    _drawWrite(key: string) {
         let input = this.inputs_write[key];
         if (!input) {
             const el = document.createElement("entry");
@@ -153,7 +153,7 @@ export default class PropertyDraw {
 
     step() {
         for(const k in this.values_read) {
-            this.drawRead(k);
+            this._drawRead(k);
         }
     }
 

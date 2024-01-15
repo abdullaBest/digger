@@ -185,7 +185,7 @@ class SceneRender {
 
     async addTileset(id: string, tileset: any) {
         await this.tileset_render.registerTileset(id, tileset);
-        const group = await this.tileset_render.drawTileset(id, tileset,  (model: any, id: string, obj: THREE.Object3D) => {
+        const group = await this.tileset_render.drawTileset(id, (model: any, id: string, obj: THREE.Object3D) => {
             if(model.collider) {
                 this.produceObjectColliders(id, obj);
                 this.cache.objects[id] = obj;
@@ -366,7 +366,7 @@ class SceneRender {
             const loader = new GLTFLoader(loading_manager);
             loading_manager.setURLModifier((path: string) => {
                 // 0. blobbed data. Leave as it is
-                if (path.includes('data:application/octet-stream') || path.includes('data:image')) {
+                if (path.includes('data:application/octet-stream') || path.includes('data:image') || path.includes('blob')) {
                     return path;
                 }
                 // 1. Loads model itself. Same

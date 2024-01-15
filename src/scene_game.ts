@@ -305,6 +305,7 @@ export default class SceneGame {
             resistance = durability & 0x00FF;
         }
 
+        console.log(endurance, resistance);
         if (hit_strength < resistance) {
             return;
         }

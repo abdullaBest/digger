@@ -5,9 +5,11 @@ import SceneRenderLoader from './scene_render_loader.js';
 import { SceneEditUtils } from "../scene_edit.js";
 
 interface TilesetCacheData {
-    models_bycolor: { [id: number] : any };
-    models: { [id: number] : string };
+    models: { [id: string] : any };
+    models_ids: { [id: number] : string };
     tiles: Array<string>;
+    image: HTMLImageElement;
+    tileset: any;
 }
 
 export default class TilesetRender {
@@ -33,10 +35,22 @@ export default class TilesetRender {
             default_tile_data = await (await fetch(this.assets.get(tileset.default_tile).info.url)).json();
         }
 
+        const loadimg = (url) => {
+            const img = document.createElement("img");
+            return new Promise((resolve, reject) => {
+                img.src = url;
+                img.onload = (ev) => resolve(ev.target);
+                img.onerror = reject;
+            })
+        }
+        const img = await loadimg(this.assets.get(tileset.texture).info.url) as HTMLImageElement;
+
         const list = {
-            models_bycolor: {},
             models: {},
-            tiles: []
+            models_ids: {},
+            tiles: [],
+            image: img,
+            tileset
         }
         this.cache_tilesets[id] = list;
 
@@ -86,14 +100,15 @@ export default class TilesetRender {
 
             const modelid = `${id}-tileref-${i}`;
             const colorid = parseInt(color)
-            list.models_bycolor[colorid] = model;
             list.models[modelid] = model;
+            list.models_ids[colorid] = modelid;
         }
 
         // preload
         const p: Array<Promise<any>> = [];
-        for(const k in list.models) {
-            p.push(this.loader.getModel(k, list.models[k]));
+        for(const k in list.models_ids) {
+            const id = list.models_ids[k];
+            p.push(this.loader.getModel(id, list.models[id]));
         }
 
         await Promise.all(p);
@@ -114,25 +129,24 @@ export default class TilesetRender {
         delete this.cache_tilesets[id];
     }
 
-    async drawTileset(id: string, tileset: any, onmodel: (model: any, id: string, obj: THREE.Object3D) => void) : Promise<THREE.Group> {
+    async drawTileset(id: string, onmodel: (model: any, id: string, obj: THREE.Object3D) => void, clip_x?: number, clip_y?: number, clip_w?: number, clip_h?: number) : Promise<THREE.Group> {
         const group = new THREE.Group()
-        const list = this.cache_tilesets[id];
-        // extract image tileset data
-        const loadimg = (url) => {
-            const img = document.createElement("img");
-            return new Promise((resolve, reject) => {
-                img.src = url;
-                img.onload = (ev) => resolve(ev.target);
-                img.onerror = reject;
-            })
-        }
-        const img = await loadimg(this.assets.get(tileset.texture).info.url) as HTMLImageElement;
+        const cached = this.cache_tilesets[id];
+        const tileset = cached.tileset;
+
+        const img = cached.image;
         const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
+
+        clip_x = clip_x === undefined ? 0 : clip_x;
+        clip_y = clip_y === undefined ? 0 : clip_y;
+        clip_w = clip_w === undefined ? img.width : clip_w;
+        clip_h = clip_h === undefined ? img.height : clip_h;
+
+        canvas.width = clip_w;
+        canvas.height = clip_h;
         const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0);
-        const imgdata = ctx?.getImageData(0, 0, img.width,  img.height).data;
+        ctx?.drawImage(img, clip_x, clip_y, clip_w, clip_h, 0, 0, clip_w, clip_h);
+        const imgdata = ctx?.getImageData(0, 0, clip_w,  clip_h).data;
 
         if (!imgdata) {
             throw new Error("SceneRender::addTileset error - no image data");
@@ -140,7 +154,6 @@ export default class TilesetRender {
 
         // parse image tileset
         const unused_colors: Array<number> = [];
-        let guids = 0;
         for(let i = 0; i < imgdata.length && this.cache_tilesets[id]; i += 4) {
             const r = imgdata[i] & 0xFF;
             const g = imgdata[i + 1] & 0xFF;
@@ -148,7 +161,9 @@ export default class TilesetRender {
             const a = imgdata[i + 3] & 0xFF;
             const color = (r<< 24 >>>0) + (g<<16) + (b<<8) + (a<<0);
 
-            const model = list.models_bycolor[color];
+
+            const cache_id = cached.models_ids[color];
+            const model = cached.models[cache_id];
             if (!model) {
                 if (parseInt(tileset.zero_color) != color && !unused_colors.find((c) => c != color)) {
                     unused_colors.push(color);
@@ -157,20 +172,25 @@ export default class TilesetRender {
             }
 
             // add meshes
-            const pos_x = ((i / 4) % canvas.width) * tileset.tilesize_x;
-            const pos_y = -Math.floor((i / 4) / canvas.width) * tileset.tilesize_y;
-            const modelid = `${id}-tile-${guids++}`;
+            const ox = clip_x;
+            const oy = clip_y;
+            const lx = ((i / 4) % canvas.width) * tileset.tilesize_x;
+            const ly = -Math.floor((i / 4) / canvas.width) * tileset.tilesize_y;
+            const pos_x = ox + lx;
+            const pos_y = oy + ly;
+            const modelid = `${id}-tile-x${pos_x}_y${pos_y}`;
 
+            // unbrumed 240115 todo: modelid/modelid proper share
             const obj = await this.loader.getModel(modelid, model);
             group.add(obj);
 
             // something deleted tileset durning loading
             if (!this.cache_tilesets[id]) {
-                this.loader.unloadModel(modelid);
+                this.loader.unloadModel(cache_id);
                 break;
             }
 
-            list.tiles.push(modelid);
+            cached.tiles.push(modelid);
 
             (obj as any).position.set(pos_x , pos_y, 0)
             onmodel(model, modelid, obj);

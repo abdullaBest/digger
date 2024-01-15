@@ -40,7 +40,7 @@ export default class CharacterRender {
     async run(character: Character) {
         this.character = character;
 
-        this.character_gltf = await this.scene_render.addGLTF("res/KayKit_AnimatedCharacter_v1.2.glb", "player_character");
+        this.character_gltf = await this.scene_render.addGLTF("res/test-cha.glb", "player_character");
         this.character_scene = this.character_gltf.scene;
         //this.character_scene.children[0].position.y = -0.5;
         (this.character_scene as any).scale.set(0.5, 0.5, 0.5);
@@ -120,11 +120,11 @@ export default class CharacterRender {
         }
 
         if(this.character.performed_actions.find((e) => e.tag == "jump")) {
-            this.playAnimation("Jump", { once: true, weight: 0.9, speed: 1.5 });
+            this.playAnimation("jump-1", { once: true, weight: 0.9, speed: 1.5 });
         } else if(this.character.performed_actions.find((e) => e.tag == "hit")) {
-            this.playAnimation("Attack(1h)", { once: true, weight: 0.9, speed: 2 });
-        } else if (this.character.movement_x && this.current_animation_name != "Run") {
-            this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("Run"), 0.1);
+            this.playAnimation("hit", { once: true, weight: 0.9, speed: 2 });
+        } else if (this.character.movement_x && this.current_animation_name != "run") {
+            this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("run"), 0.1);
         } else if (!this.character.movement_x) {
             this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("Idle"), 0.8);
         }
@@ -191,6 +191,9 @@ export default class CharacterRender {
         }
 
         let action = this.animations_actions_cache[name] ?? this.animation_mixer.clipAction(THREE.AnimationClip.findByName(gltf, name));
+        if (!action) {
+            return null;
+        }
         this.animations_actions_cache[name] = action;
         action.play();
         this.setWeight(action, 0);
