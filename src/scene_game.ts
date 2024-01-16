@@ -7,7 +7,7 @@ import SceneRender from "./render/scene_render";
 import { distlerp, lerp } from "./math";
 import { SceneElement } from "./scene_edit";
 import SceneDebug from "./scene_debug";
-import SceneMap from "./scene_map";
+import { SceneMap, MapEntity } from "./scene_map";
 
 interface FallingBlockData {
     elapsed: number;
@@ -215,7 +215,7 @@ export default class SceneGame {
     private _stepCharacterInteractions(cha: Character) {
         let interacts = false;
 
-        const proceedMapExitInteraction = (el: SceneElement) => {
+        const proceedMapExitInteraction = (el: MapEntity) => {
             if(this.player_character.performed_actions.find((e) => e.tag == "look_up")) {
                 const props = el?.components.trigger?.properties;
                 const signal = props.signal;
@@ -230,7 +230,7 @@ export default class SceneGame {
             if (!cid) {
                 continue;
             }
-            const el = this.elements[cid];
+            const el = this.scene_map.entities[cid];
             const props = el?.components.trigger?.properties;
             if (props && props.type == "mapexit") {
                 interacts = true;
@@ -308,7 +308,6 @@ export default class SceneGame {
             resistance = durability & 0x00FF;
         }
 
-        console.log(endurance, resistance);
         if (hit_strength < resistance) {
             return;
         }
@@ -320,7 +319,7 @@ export default class SceneGame {
             
 
             // remove breakable block
-            this.scene_render.removeModel(hit_result);
+            this.scene_map.removeEntity(hit_result);
             delete this.breakable_objects[hit_result];
             
             return;

@@ -155,6 +155,7 @@ class SceneMap {
     updateEntityCollider(id: string) {
         const entity = this.entities[id];
 
+        // should use setpos/setsize here
         this.scene_collisions.removeBody(id);
         this.scene_collisions.removeCollider(id);
 
@@ -178,5 +179,5 @@ class SceneMap {
     }
 }
 
-export { SceneMap, SceneMapCache };
+export { SceneMap, SceneMapCache, MapEntity };
 export default SceneMap;

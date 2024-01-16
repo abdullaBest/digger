@@ -267,11 +267,15 @@ class SceneCollisions {
 
     createBoxColliderByPos(id: string, x: number, y: number, width: number, height: number, type: ColliderType = ColliderType.RIGID) : BoxColliderC {
         //const aabb = this.core.addAABB(id, x, y, w, h);
+        const sx = x * UNITS_SCALE_MUL;
+        const sy = y * UNITS_SCALE_MUL;
+        const sw = width * UNITS_SCALE_MUL;
+        const sh = height * UNITS_SCALE_MUL;
         let aabb;
         if (type == ColliderType.RIGID) {
-            aabb = this.core.addAABB(id, x, y, width, height);
+            aabb = this.core.addAABB(id, sx, sy, sw, sh);
         } else {
-            aabb = this.core.b2AABB_ConstructFromCenterSizeP(x, y, width, height);
+            aabb = this.core.b2AABB_ConstructFromCenterSizeP(sx, sy, sw, sh);
         }
         const boxc = new BoxColliderC(aabb, type);
 
@@ -281,10 +285,10 @@ class SceneCollisions {
     }
 
     createBoxCollider(id: string, box: Box2, type: ColliderType = ColliderType.RIGID) : BoxColliderC {
-        const w = (box.max.x - box.min.x) * UNITS_SCALE_MUL;
-        const h = (box.max.y - box.min.y) * UNITS_SCALE_MUL;
-        const x = box.min.x * UNITS_SCALE_MUL + w / 2;
-        const y = box.min.y * UNITS_SCALE_MUL + h / 2;
+        const w = (box.max.x - box.min.x);
+        const h = (box.max.y - box.min.y);
+        const x = box.min.x + w / 2;
+        const y = box.min.y + h / 2;
         return this.createBoxColliderByPos(id, x, y, w, h, type);
     }
 
