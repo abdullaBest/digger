@@ -7,6 +7,7 @@ import SceneRender from "./render/scene_render";
 import { distlerp, lerp } from "./math";
 import { SceneElement } from "./scene_edit";
 import SceneDebug from "./scene_debug";
+import SceneMap from "./scene_map";
 
 interface FallingBlockData {
     elapsed: number;
@@ -19,6 +20,7 @@ export default class SceneGame {
     private scene_render: SceneRender;
     scene_collisions: SceneCollisions;
     scene_debug: SceneDebug;
+    scene_map: SceneMap;
 
     attach_camera_to_player: boolean;
     camera_config: { attach_camera_z: number, attach_camera_y: number }
@@ -37,9 +39,10 @@ export default class SceneGame {
     gravity_x: number;
     gravity_y: number;
 
-    constructor(scene_collisions: SceneCollisions, scene_render: SceneRender) {
+    constructor(scene_collisions: SceneCollisions, scene_render: SceneRender, scene_map: SceneMap) {
         this.scene_collisions = scene_collisions;
         this.scene_render = scene_render;
+        this.scene_map = scene_map;
 
         this.player_character_render = new CharacterRender();
         this.autostep = true;
@@ -462,7 +465,7 @@ export default class SceneGame {
             this.player_character.actionRequest("hook", CharacterActionCode.START);
         }
         else if (key === 'KeyS') {
-            this.step(0.016, 1, true);
+            this.step(0.016, true);
         } 
     }
     _keyup(event: KeyboardEvent) {

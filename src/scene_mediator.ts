@@ -1,21 +1,21 @@
 import SceneEdit from "./scene_edit";
-import SceneRender from "./render/scene_render";
 import SceneGame from "./scene_game";
+import SceneMap from "./scene_map";
 
 class SceneMediator {
     scene_edit: SceneEdit;
-    scene_render: SceneRender;
     scene_game: SceneGame;
+    scene_map: SceneMap;
     events: HTMLElement;
 
     active_scene: string | null;
 
-    constructor(scene_edit, scene_render, scene_game) {
+    constructor(scene_edit: SceneEdit, scene_game: SceneGame, scene_map: SceneMap) {
         this.scene_edit = scene_edit;
         this.scene_game = scene_game;
-        this.scene_render = scene_render;
         this.active_scene = null;
         this.events = document.createElement("event");
+        this.scene_map = scene_map;
     }
 
     step() {
@@ -38,41 +38,14 @@ class SceneMediator {
 
         this.active_scene = id;
         await this.scene_edit.load(id);
-        await this.propagate();
+        await this.scene_map.run(this.scene_edit.elements);
         this.events.dispatchEvent(new CustomEvent("scene_open", { detail : {id}}));
-    }
-
-    async propagate() {
-        const p: Array<Promise<any>> = [];
-
-        for(const id in this.scene_edit.elements) {
-            const element = this.scene_edit.elements[id];
-
-            if(element.components.model) {
-                this.scene_render.removeModel(id);
-                p.push(this.scene_render.addModel(id, element.components.model.properties));
-            }
-    
-            if (element.components.tileset) {
-                this.scene_render.removeTileset(id);
-                p.push(this.scene_render.addTileset(id, element.components.tileset.properties));
-            }
-    
-            if (element.components.trigger) {
-                this.scene_render.removeElement(element.id);
-                p.push(this.scene_render.addTriggerElement(element.id, element.components.trigger.properties));
-            }
-        }
-
-        return Promise.all(p);
     }
 
     sceneClose() {
         this.active_scene = null;
         this.scene_game.stop();
-        this.scene_render.clearModels();
-        this.scene_render.clearTilesets();
-        this.scene_render.clearTiggers();
+        this.scene_map.stop();
     }
 
     async sceneSwitch(id: string) {

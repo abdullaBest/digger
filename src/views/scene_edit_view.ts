@@ -3,6 +3,7 @@ import SceneEdit from "../scene_edit";
 import { AssetsView, AssetPropertyEdit } from "./assets_view";
 import SceneRender from "../render/scene_render";
 import SceneMediator from "../scene_mediator";
+import SceneMap from "../scene_map";
 
 export default class SceneEditView {
     list_container: HTMLElement;
@@ -10,12 +11,14 @@ export default class SceneEditView {
     scene_edit: SceneEdit;
     scene_render: SceneRender;
     scene_mediator: SceneMediator;
+    scene_map: SceneMap;
     private _listeners: Array<EventListenerDetails>;
 
-    constructor(scene_edit: SceneEdit, scene_render: SceneRender, scene_mediator: SceneMediator){
+    constructor(scene_edit: SceneEdit, scene_render: SceneRender, scene_mediator: SceneMediator, scene_map: SceneMap){
         this.scene_edit = scene_edit;
         this.scene_render = scene_render;
         this.scene_mediator = scene_mediator;
+        this.scene_map = scene_map;
     }
 
     /**
@@ -150,16 +153,14 @@ export default class SceneEditView {
 
     closeScene(save: boolean = false) {
         this.props_container.innerHTML = '';
-        this.scene_render.clearModels();
-        this.scene_render.clearTilesets();
-        this.scene_render.clearTiggers();
+        this.scene_map.stop();
         this.scene_edit.close(save);
         this.scene_render.colliders.clear();
     }
 
     removeElement(id: string) {
         this.scene_edit.removeElement(id);
-        this.scene_render.removeModel(id);
+        this.scene_map.removeEntity(id);
         const htmlelement = this.props_container.querySelector('#' + id);
         if (htmlelement) {
             htmlelement.parentElement?.removeChild(htmlelement);
@@ -195,36 +196,22 @@ export default class SceneEditView {
             el.dataset["name"] = element.name;
         }).drawTextEditOption(el);
 
+        const redraw = () => {
+            this.scene_map.addElement(element);
+        };
+        if (inrender) {
+            redraw();
+        }
+
         if(element.components.model) {
-            const redraw = () => {
-                this.scene_render.removeModel(id);
-                this.scene_render.addModel(id, element.components.model.properties);
-            };
-            if (inrender) {
-                redraw();
-            }
             AssetsView.drawModelPropertyFields(props_container, this.scene_edit.assets, element.components.model.properties, redraw)
         }
 
         if (element.components.tileset) {
-            const redraw = () => {
-                this.scene_render.removeTileset(id);
-                this.scene_render.addTileset(id, element.components.tileset.properties);
-            };
-            if (inrender) {
-                redraw();
-            }
             AssetsView.drawTilesetPropertyFilelds(props_container, this.scene_edit.assets, element.components.tileset.properties, redraw)
         }
 
         if (element.components.trigger) {
-            const redraw = () => {
-                this.scene_render.removeElement(element.id);
-                this.scene_render.addTriggerElement(element.id, element.components.trigger.properties);
-            };
-            if (inrender) {
-                redraw();
-            }
             AssetsView.drawTriggerPropertyFields(props_container, this.scene_edit.assets, element.components.trigger.properties, redraw)
         }
 

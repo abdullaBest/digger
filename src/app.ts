@@ -11,6 +11,7 @@ import SceneMediator from "./scene_mediator";
 import SceneCollisions from "./scene_collisions";
 import PropertyDraw from "./views/property_draw";
 import { lerp } from "./math";
+import SceneMap from "./scene_map";
 
 class App {
     constructor() {
@@ -18,11 +19,11 @@ class App {
         this.scene_edit = new SceneEdit(this.assets);
         this.scene_collisions = new SceneCollisions();
         this.scene_render = new SceneRender(this.scene_edit, this.scene_collisions);
-        this.scene_game = new SceneGame(this.scene_collisions, this.scene_render);
-        this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_render, this.scene_game);
+        this.scene_map = new SceneMap(this.scene_collisions, this.scene_render)
+        this.scene_game = new SceneGame(this.scene_collisions, this.scene_render, this.scene_map);
+        this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_game, this.scene_map);
         this.assets_view = new AssetsView(this.assets, this.scene_render, this.scene_mediator);
-        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_mediator);
-
+        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_mediator, this.scene_map);
 
         this.active = false;
         this.timestamp = 0;
@@ -250,6 +251,7 @@ class App {
     private scene_edit_view: SceneEditView;
     private scene_mediator: SceneMediator;
     private scene_collisions: SceneCollisions;
+    private scene_map: SceneMap;
     private assets_view: AssetsView;
     private scene_game: SceneGame;
 
