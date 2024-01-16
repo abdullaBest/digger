@@ -265,24 +265,27 @@ class SceneCollisions {
         }
     }
 
-    createBoxCollider(id: string, box: Box2, type: ColliderType = ColliderType.RIGID) : BoxColliderC {
-        const w = (box.max.x - box.min.x) * UNITS_SCALE_MUL;
-        const h = (box.max.y - box.min.y) * UNITS_SCALE_MUL;
-        const x = box.min.x * UNITS_SCALE_MUL + w / 2;
-        const y = box.min.y * UNITS_SCALE_MUL + h / 2;
-
+    createBoxColliderByPos(id: string, x: number, y: number, width: number, height: number, type: ColliderType = ColliderType.RIGID) : BoxColliderC {
         //const aabb = this.core.addAABB(id, x, y, w, h);
         let aabb;
         if (type == ColliderType.RIGID) {
-            aabb = this.core.addAABB(id, x, y, w, h);
+            aabb = this.core.addAABB(id, x, y, width, height);
         } else {
-            aabb = this.core.b2AABB_ConstructFromCenterSizeP(x, y, w, h);
+            aabb = this.core.b2AABB_ConstructFromCenterSizeP(x, y, width, height);
         }
         const boxc = new BoxColliderC(aabb, type);
 
         this.colliders[id] = boxc;
 
         return boxc;
+    }
+
+    createBoxCollider(id: string, box: Box2, type: ColliderType = ColliderType.RIGID) : BoxColliderC {
+        const w = (box.max.x - box.min.x) * UNITS_SCALE_MUL;
+        const h = (box.max.y - box.min.y) * UNITS_SCALE_MUL;
+        const x = box.min.x * UNITS_SCALE_MUL + w / 2;
+        const y = box.min.y * UNITS_SCALE_MUL + h / 2;
+        return this.createBoxColliderByPos(id, x, y, w, h, type);
     }
 
     createBoxBody(id, box: Box2) : DynamicBody {
@@ -305,7 +308,7 @@ class SceneCollisions {
         return body;
     }
 
-    removeBody(id: string, with_collider: boolean) {
+    removeBody(id: string, with_collider: boolean = true) {
         if (!this.bodies[id]) {
             return;
         }

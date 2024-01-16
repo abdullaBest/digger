@@ -155,7 +155,6 @@ export default class SceneEditView {
         this.props_container.innerHTML = '';
         this.scene_map.stop();
         this.scene_edit.close(save);
-        this.scene_render.colliders.clear();
     }
 
     removeElement(id: string) {

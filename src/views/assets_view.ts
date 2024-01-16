@@ -290,6 +290,9 @@ class AssetsView {
             let el: null | HTMLElement = null;
             let img = document.createElement('img');
             const redraw = (val) => {
+                if (!val) {
+                    return;
+                } 
                 const asset = assets.get(val);
                 img.src = asset.thumbnail;
             }

@@ -8,7 +8,6 @@ import SceneMath from '../scene_math.js';
 import { SceneCollisions, BoxColliderC, ColliderType } from '../scene_collisions.js';
 import { lerp, distlerp } from '../math.js';
 import TilesetEditor from './tileset_editor.js';
-import TilesetRender from './tileset_render.js';
 import SceneRenderCache from './scene_render_cache.js';
 import SceneRenderLoader from './scene_render_loader.js';
 
@@ -38,14 +37,11 @@ class SceneRender {
     cache: SceneRenderCache;
     loader: SceneRenderLoader;
 
-    colliders: SceneCollisions;
-
     _drawDebug2dAabb: boolean;
 
-    tileset_render: TilesetRender;
     tileset_editor: TilesetEditor;
 
-    constructor(scene_edit: SceneEdit, colliders: SceneCollisions) {
+    constructor(scene_edit: SceneEdit) {
         this.scene_edit = scene_edit;
         this.assets = this.scene_edit.assets;
         this.active = false;
@@ -53,10 +49,8 @@ class SceneRender {
         this.mousepos = new THREE.Vector2();
         this.raycaster = new THREE.Raycaster();
         this.scene_math = new SceneMath();
-        this.colliders = colliders;
         this._drawDebug2dAabb = false;
         this.loader = new SceneRenderLoader(this.assets, this.cache);
-        this.tileset_render = new TilesetRender(this.assets, this.cache, this.loader);
         this.tileset_editor = new TilesetEditor(this.loader);
         this.camera_base_fov = 45;
     }
@@ -99,15 +93,6 @@ class SceneRender {
 
             if (mproperties) {
                 mproperties.matrix = object.matrixWorld.toArray()
-
-                object.traverse((o) => {
-                    if (!o.isMesh) {
-                        return;
-                    }
-                    if(mproperties.collider) {
-                        this.makeObjectAabb2d(id, o, object);
-                    }
-                });
             } else if (el && el.components.trigger) {
                 mproperties = el.components.trigger.properties;
 
@@ -115,12 +100,6 @@ class SceneRender {
                 const pos_y = (object as any).position.y;
                 mproperties.pos_x = pos_x;
                 mproperties.pos_y = pos_y;
-
-                const collider = this.colliders.colliders[id];
-                this.colliders.setColliderPos(collider, pos_x, pos_y);
-                if (this._drawDebug2dAabb) {
-                    this.drawColliderDebug(id, collider);
-                }
             }
         });
         this.transform_controls.addEventListener( 'mouseDown', ( event ) => {
@@ -160,50 +139,10 @@ class SceneRender {
         return this;
     }
 
-    removeTileset(id: string) {
-        const tileset = this.tileset_render.cache_tilesets[id];
-        if (!tileset) {
-            return;
-        }
-
-        // removing colliders etc.
-        for(const i in tileset.tiles) {
-            this.removeModel(tileset.tiles[i]);
-        }
-
-        // removing tile group
-        this.removeModel(id);
-
-        this.tileset_render.disposeTileset(id);
-    }
-
-    clearTilesets() {
-        for(const id in this.tileset_render.cache_tilesets) {
-            this.removeTileset(id);
-        }
-    }
-
-    async addTileset(id: string, tileset: any) {
-        await this.tileset_render.registerTileset(id, tileset);
-        const group = await this.tileset_render.drawTileset(id, (model: any, id: string, obj: THREE.Object3D) => {
-            if(model.collider) {
-                this.produceObjectColliders(id, obj);
-                this.cache.objects[id] = obj;
-            }
-        });
-
-        this.cache.objects[id] = group;
-        this.scene.add( group );
-    }
-
-    async addModel(id: string, model: any, opts = { make_collider: true }) : Promise<any> {
+    async addModel(id: string, model: any) : Promise<THREE.Object3D> {
         const object = await this.loader.getModel(id, model);
         this.cache.objects[id] = object;
         this.scene.add( object );
-
-        if (opts.make_collider && model.collider) {
-            this.produceObjectColliders(id, object);
-        }
 
         return object;
     }
@@ -227,14 +166,6 @@ class SceneRender {
         if (properties.pos_x || properties.pos_y) {
             this.setPos(sprite, this.cache.vec3_0.set(properties.pos_x ?? 0, properties.pos_y ?? 0, 0))
         }
-        
-        const pos_x = (sprite as any).position.x;
-        const pos_y = (sprite as any).position.y;
-        let box = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(pos_x, pos_y), new THREE.Vector2(properties.width, properties.height));
-        const collider = this.colliders.createBoxCollider(id, box, ColliderType.SIGNAL);
-        if (this._drawDebug2dAabb) {
-            this.drawColliderDebug(id, collider);
-        }
     }
 
     async makeSprite(name: string): Promise<THREE.Sprite> {
@@ -242,31 +173,26 @@ class SceneRender {
         return new THREE.Sprite( await this.getMaterial("sprite", spritepath, true) as THREE.SpriteMaterial);
     }
 
-    // tmp. only gonna work for gltf.scenes with one mesh
-    produceObjectColliders(id: string, obj: THREE.Object3D) {
+    produceObjectCollider(id: string, obj: THREE.Object3D, scene_origin: THREE.Vector3, scene_normal: THREE.Vector3) : THREE.Box2 | null {
+        let box: THREE.Box2 | null = null;
         obj.traverse((o) => {
             if (!o.isMesh) {
                 return;
             }
-            this.makeObjectAabb2d(id, o, obj);
-        });
-    }
-
-    makeObjectAabb2d(id: string, mesh: THREE.Mesh, transform_node: THREE.Object3D) {
-        const box = this.scene_math.intersectAABBPlaneTo2dAabb(mesh.geometry, transform_node, this.colliders.origin, this.colliders.normal);
-        if (!box) {
-            if(this.cache.debug_colliders[id]) {
-                this.scene.remove(this.cache.debug_colliders[id]);
-                delete this.cache.debug_colliders[id];
-                this.colliders.removeCollider(id);
+            const _box = this.scene_math.intersectAABBPlaneTo2dAabb(o.geometry, obj, scene_origin, scene_normal);
+            if (!box && _box) {
+                box = _box;
             }
-            return;
-        }
-        this.colliders.removeCollider(id);
-        const collider = this.colliders.createBoxCollider(id, box);
-        if (this._drawDebug2dAabb) {
-            this.drawColliderDebug(id, collider);
-        }
+
+            if (box && _box) {
+                box.min.x = Math.min(box.min.x, _box.min.x)
+                box.min.y = Math.min(box.min.y, _box.min.y)
+                box.max.x = Math.min(box.max.x, _box.max.x)
+                box.max.y = Math.min(box.max.y, _box.max.y)
+            } 
+        });
+
+        return box;
     }
 
     drawColliderDebug(id: string, collider: BoxColliderC, color?: number, shift?: THREE.Vector2) {
@@ -311,8 +237,6 @@ class SceneRender {
             delete this.cache.objects[id];
         }
         delete this.cache.models[id];
-        this.colliders.removeBody(id, true);
-        this.colliders.removeCollider(id);
     }
 
     /**
@@ -321,7 +245,6 @@ class SceneRender {
      */
     removeElement(id: string) {
         this.removeModel(id);
-        this.removeTileset(id);
         delete this.cache.triggers[id];
     }
 
@@ -443,6 +366,7 @@ class SceneRender {
 
         this.cube.rotateX(0.01);
         this.cube.rotateY(0.01);
+        /*
         for(const k in this.colliders.bodies) {
             const body = this.colliders.bodies[k];
             const obj = this.cache.objects[k];
@@ -456,7 +380,7 @@ class SceneRender {
                 this.drawColliderDebug(k, body.collider);
                 //this.drawColliderDebug(k + "_predict", body.collider, 0xff0000, this.colliders.getBodyNextShift(body, this.cache.vec2_0));
             }
-        }
+        }*/
 
         this.tileset_editor.step(dt);
     
@@ -596,116 +520,6 @@ class SceneRender {
         this.controls.target.copy(target);
     }
 
-    // --- tests
-
-    test() {
-        const porigin = new THREE.Vector3(0, 0, 0);
-        const pnormal = new THREE.Vector3(0, 0, 1).normalize();
-		//const onplane = this.intersectLinePlane(line, origin, normal);
-
-        // test plane
-        {
-            const geometry = new THREE.PlaneGeometry( 10, 10 );
-            const material = new THREE.MeshStandardMaterial( { color: 0xff0000, transparent: true, opacity: 0.2 } );
-            const plane = new THREE.Mesh( geometry, material as any );
-            this.scene.add( plane );
-            this.setPos(plane, porigin);
-            plane.lookAt(porigin.x + pnormal.x, porigin.y + pnormal.y, porigin.z + pnormal.z);
-        }
-
-        // test geometry
-        const borigin = new THREE.Vector3(1, 0, 0);
-        const bnormal = new THREE.Vector3(1, 0.4, 1).normalize();
-        const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        const material = new THREE.MeshBasicMaterial( { color: 0xaaaaaa } );
-        const mesh = new THREE.Mesh( geometry, material );
-        this.scene.add( mesh );
-        this.setPos(mesh, borigin);
-        mesh.lookAt(borigin.x + bnormal.x, borigin.y + bnormal.y, borigin.z + bnormal.z);
-
-       const {length, vertices, intersections} = this.scene_math.intersectAABBPlane(mesh.geometry, mesh, porigin, pnormal);
-
-        // debug draw
-        for(let i in vertices) {
-            this.testSphereAdd(vertices[i], 0.02, 0xeeeeee);
-        }
-        /*
-        for(let i = 0; i < length; i++) {
-            this.testSphereAdd(intersections[i], 0.07, 0xffff00);
-        }*/
-        const points_2d = this.scene_math.posOnPlaneArray(intersections, porigin, pnormal);
-        for(let i = 0; i < length; i++) {
-            this.testSphereAdd(new THREE.Vector3(points_2d[i].x, points_2d[i].y, 0), 0.03, 0xffff00);
-        }
-
-        // final test goal
-        const box = this.scene_math.pointsToAabb2d(points_2d, length);
-
-        // aabb plane
-        {
-            const geometry = new THREE.PlaneGeometry( box.max.x - box.min.x, box.max.y - box.min.y );
-            const material = new THREE.MeshStandardMaterial( { color: 0x00ffff, wireframe: true } );
-            const plane = new THREE.Mesh( geometry, material as any );
-            this.scene.add( plane );
-            this.setPos(plane, new THREE.Vector3((box.max.x + box.min.x) / 2, (box.max.y + box.min.y) / 2, 0));
-            const planepos = (plane as any).position;
-            plane.lookAt(planepos.x + pnormal.x, planepos.y + pnormal.y, planepos.z + pnormal.z);
-        }
-
-        //const bbox = new THREE.Box3().setFromObject(box)
-        //box.geometry.computeBoundingBox();
-
-    }
-
-    /**
-     * Testin line-plane intersections
-     */
-    test1() {
-        const pointa = new THREE.Vector3(0, 0, 0);
-        const pointb = new THREE.Vector3(0, 3, 3);
-        const line = new THREE.Line3(pointa, pointb);
-        const origin = new THREE.Vector3(0, 0, 0);
-        const normal = new THREE.Vector3(0, 0, 1).normalize();
-		const onplane = this.scene_math.intersectLinePlane(line, origin, normal);
-
-        this.testSphereAdd(pointa, 0.1, 0xffff00);
-        this.testSphereAdd(pointb, 0.1, 0xffff00);
-        if(onplane) {
-            this.testSphereAdd(onplane, 0.2, 0xff0000);
-        }
-
-        const geometry = new THREE.PlaneGeometry( 10, 10 );
-        const material = new THREE.MeshBasicMaterial( { color: 0xaaaaaa } );
-        const plane = new THREE.Mesh( geometry, material );
-        this.scene.add( plane );
-        this.setPos(plane, origin);
-        plane.lookAt(origin.x + normal.x, origin.y + normal.y, origin.z + normal.z);
-    }
-
-    test2() {
-        if(this._drawDebug2dAabb) {
-            const geometry = new THREE.PlaneGeometry( 10, 10 );
-            const material = new THREE.MeshStandardMaterial( { color: 0xaaaa00, transparent: true, opacity: 0.1 } );
-            const plane = new THREE.Mesh( geometry, material as any );
-            this.scene.add( plane );
-            this.setPos(plane, this.colliders.origin)
-            plane.lookAt(this.colliders.origin.x + this.colliders.normal.x, this.colliders.origin.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
-        }
-
-        {
-            let groundbox = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(0, -1), new THREE.Vector2(1, 1));
-            const groundbody = this.colliders.createBoxCollider("ground", groundbox);
-            this.drawColliderDebug("ground", groundbody);
-        }
-        {
-            let groundbox = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(2, -1), new THREE.Vector2(1, 1));
-            const groundbody = this.colliders.createBoxCollider("ground2", groundbox);
-            this.drawColliderDebug("ground2", groundbody);
-        }
-        let groundbox1 = new THREE.Box2().setFromCenterAndSize(new THREE.Vector2(-1.5, 0.5), new THREE.Vector2(1, 1));
-        const groundbody1 = this.colliders.createBoxCollider("ground1", groundbox1);
-        this.drawColliderDebug("ground1", groundbody1);
-    }
 
     testSphereAdd(pos: THREE.Vector3, size: number = 0.1, color: number = 0xffffff) {
         const geometry = new THREE.SphereGeometry(size);

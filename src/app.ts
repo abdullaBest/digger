@@ -18,7 +18,7 @@ class App {
         this.assets = new Assets();
         this.scene_edit = new SceneEdit(this.assets);
         this.scene_collisions = new SceneCollisions();
-        this.scene_render = new SceneRender(this.scene_edit, this.scene_collisions);
+        this.scene_render = new SceneRender(this.scene_edit);
         this.scene_map = new SceneMap(this.scene_collisions, this.scene_render)
         this.scene_game = new SceneGame(this.scene_collisions, this.scene_render, this.scene_map);
         this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_game, this.scene_map);

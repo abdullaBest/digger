@@ -1,6 +1,7 @@
 import SceneRender from "./render/scene_render";
-import { SceneCollisions } from './scene_collisions';
-import { SceneElement } from "./scene_edit";
+import { SceneCollisions, ColliderType } from './scene_collisions';
+import { SceneElement, OverridedAssetLink } from "./scene_edit";
+import MapTileset from "./map_tileset";
 
 class SceneMapCache {
 
@@ -37,11 +38,13 @@ class SceneMap {
     private scene_render: SceneRender;
     scene_collisions: SceneCollisions;
     entities: { [id: string] : MapEntity; }
+    tilesets: { [id: string] : MapTileset; }
 
     constructor(scene_collisions: SceneCollisions, scene_render: SceneRender) {
         this.scene_collisions = scene_collisions;
         this.scene_render = scene_render;
         this.entities = {};
+        this.tilesets = {};
     }
 
     async run(elements: { [id: string] : SceneElement; }) {
@@ -52,6 +55,8 @@ class SceneMap {
         for(const k in this.entities) {
             this.removeEntity(k);
         }
+
+        this.scene_collisions.clear();
     }
 
     async propagate(elements: { [id: string] : SceneElement; }) {
@@ -79,15 +84,38 @@ class SceneMap {
         this.entities[id] = entity;
 
         if(entity.components.model) {
-            await this.scene_render.addModel(id, entity.components.model.properties);
+            const properties = entity.components.model.properties;
+            const obj = await this.scene_render.addModel(id, properties);
+            if (properties.collider) {
+                const box = this.scene_render.produceObjectCollider(id, obj, this.scene_collisions.origin, this.scene_collisions.normal);
+                if (box) {
+                    this.scene_collisions.createBoxCollider(id, box);
+                }
+            }
         }
 
         if (entity.components.tileset) {
-            await this.scene_render.addTileset(id, entity.components.tileset.properties);
+            const properties = entity.components.tileset.properties;
+            const tileset = new MapTileset(this.scene_render.assets, id, properties);
+            await tileset.init();
+            tileset.propagate((model: any, id: string) => {
+                const element = new SceneElement(id, id);
+                element.components.model = { id, properties: model };
+                this.addElement(element);
+            })
         }
 
         if (entity.components.trigger) {
+            const properties = entity.components.trigger.properties;
             await this.scene_render.addTriggerElement(id, entity.components.trigger.properties);
+            const pos_x = properties.pos_x;
+            const pos_y = properties.pos_y;
+            const collider = this.scene_collisions.createBoxColliderByPos(id, pos_x, pos_y, properties.width, properties.height, ColliderType.SIGNAL);
+            /*
+            if (this._drawDebug2dAabb) {
+                this.drawColliderDebug(id, collider);
+            }
+            */
         }
 
         return entity;
@@ -110,6 +138,9 @@ class SceneMap {
         if (entity.components.trigger) {
             this.scene_render.removeElement(id);
         }
+
+        this.scene_collisions.removeBody(id);
+        this.scene_collisions.removeCollider(id);
     }
 }
 

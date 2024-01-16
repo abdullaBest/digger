@@ -6,7 +6,7 @@ import { Assets, Asset, sendFiles } from "./assets";
 class OverridedAssetLink {
     id: string;
     properties: any;
-    _has_link: boolean;
+    _has_link?: boolean;
 
     constructor(id?, properties = {}, has_link = true) {
         this.id = id;
@@ -232,4 +232,4 @@ class SceneEdit {
 }
 
 export default SceneEdit;
-export { SceneEdit, SceneElement, SceneEditUtils };
+export { SceneEdit, SceneElement, SceneEditUtils, OverridedAssetLink };
