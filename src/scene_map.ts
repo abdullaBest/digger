@@ -90,12 +90,7 @@ class SceneMap {
         if(entity.components.model) {
             const properties = entity.components.model.properties;
             const obj = await this.scene_render.addModel(id, properties);
-            if (properties.collider) {
-                const box = this.scene_render.produceObjectCollider(id, obj, this.scene_collisions.origin, this.scene_collisions.normal);
-                if (box) {
-                    this.scene_collisions.createBoxCollider(id, box);
-                }
-            }
+            this.updateEntityCollider(id);
         }
 
         if (entity.components.tileset) {
@@ -118,9 +113,7 @@ class SceneMap {
         if (entity.components.trigger) {
             const properties = entity.components.trigger.properties;
             await this.scene_render.addTriggerElement(id, entity.components.trigger.properties);
-            const pos_x = properties.pos_x;
-            const pos_y = properties.pos_y;
-            const collider = this.scene_collisions.createBoxColliderByPos(id, pos_x, pos_y, properties.width, properties.height, ColliderType.SIGNAL);
+            this.updateEntityCollider(id);
             /*
             if (this._drawDebug2dAabb) {
                 this.drawColliderDebug(id, collider);
@@ -157,6 +150,31 @@ class SceneMap {
         this.scene_collisions.removeCollider(id);
 
         delete this.entities[id];
+    }
+
+    updateEntityCollider(id: string) {
+        const entity = this.entities[id];
+
+        this.scene_collisions.removeBody(id);
+        this.scene_collisions.removeCollider(id);
+
+        if(entity.components.model) {
+            const properties = entity.components.model.properties;
+            const obj = this.scene_render.cache.objects[id];
+            if (properties.collider) {
+                const box = this.scene_render.produceObjectCollider(id, obj, this.scene_collisions.origin, this.scene_collisions.normal);
+                if (box) {
+                    this.scene_collisions.createBoxCollider(id, box);
+                } 
+            }
+        }
+
+        if (entity.components.trigger) {
+            const properties = entity.components.trigger.properties;
+            const pos_x = properties.pos_x;
+            const pos_y = properties.pos_y;
+            const collider = this.scene_collisions.createBoxColliderByPos(id, pos_x, pos_y, properties.width, properties.height, ColliderType.SIGNAL);
+        }
     }
 }
 

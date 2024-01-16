@@ -144,6 +144,12 @@ export default class SceneEditView {
             //(ev.target as HTMLElement).innerHTML = "t: " + mode_text;
         }, this._listeners)
 
+        tcontrols.addEventListener( 'objectChange', (e) => {
+            const object = e.target.object;
+            const id = object.name;
+            this.scene_map.updateEntityCollider(id);
+        });
+
         return this;
     }
 
