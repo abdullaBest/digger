@@ -97,10 +97,11 @@ class SceneMap {
         if (entity.components.tileset) {
             const properties = entity.components.tileset.properties;
             const tileset = new MapTileset(this.scene_render.assets, id, properties);
+            this.tilesets[id] = tileset;
             await tileset.init();
             tileset.propagate((model: any, id: string) => {
                 const element = new SceneElement(id, id);
-                element.components.model = { id, properties: model };
+                element.components.model = { id, properties: model};
                 this.addElement(element);
             })
         }
@@ -132,7 +133,11 @@ class SceneMap {
         }
 
         if (entity.components.tileset) {
-            this.scene_render.removeTileset(id);
+           // this.scene_render.removeTileset(id);
+           const tiles = this.tilesets[id].tiles;
+           for(const k in tiles) {
+            this.removeEntity(tiles[k]);
+           }
         }
 
         if (entity.components.trigger) {
@@ -141,6 +146,8 @@ class SceneMap {
 
         this.scene_collisions.removeBody(id);
         this.scene_collisions.removeCollider(id);
+
+        delete this.entities[id];
     }
 }
 

@@ -150,7 +150,8 @@ export default class MapTileset {
             const pos_x = ox + lx;
             const pos_y = oy + ly;
             const modelid = `${this.id}-tile-x${pos_x}_y${pos_y}`;
-            const model = Object.setPrototypeOf({pos_x, pos_y}, modelref);
+            const model = Object.setPrototypeOf({ pos_x, pos_y }, modelref);
+            this.tiles.push(modelid);
 
             ontile(model, modelid);
         }

@@ -139,7 +139,7 @@ class SceneRender {
         return this;
     }
 
-    async addModel(id: string, model: any) : Promise<THREE.Object3D> {
+    async addModel(id: string, model: any, cache_id: string = id) : Promise<THREE.Object3D> {
         const object = await this.loader.getModel(id, model);
         this.cache.objects[id] = object;
         this.scene.add( object );

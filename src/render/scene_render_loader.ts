@@ -35,6 +35,10 @@ export default class SceneRenderLoader {
 
             if (model.matrix?.length) {
                 (scene as THREE.Object3D).applyMatrix4(new THREE.Matrix4().fromArray(model.matrix))
+            } 
+            if (typeof model.pos_x !== "undefined" && typeof model.pos_y !== "undefined") {
+                (scene as any).position.x = model.pos_x;
+                (scene as any).position.y = model.pos_y;
             }
             const material = await this.getMaterial(model.material, textureurl);
             scene.traverse((o) => {
