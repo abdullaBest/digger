@@ -20,17 +20,21 @@ class MapComponent {
 
 class MapEntity {
     id: string;
-    name: string;
     components: { [id: string] : MapComponent }
 
-    constructor(element: SceneElement) {
-        this.name = element.name;
+    constructor(id?: string) {
+       this.id = id ?? "";
+       this.components = {};
+    }
+
+    init(element: SceneElement) {
         this.id = element.id;
-        this.components = {};
 
         for(const k in element.components) {
             this.components[k] = new MapComponent(element.components[k].properties)
         }
+
+        return this;
     }
 }
 
@@ -72,7 +76,7 @@ class SceneMap {
     }
 
     async addElement(element: SceneElement) : Promise<MapEntity> {
-        const entity = new MapEntity(element);
+        const entity = new MapEntity().init(element);
 
         return await this.addEntity(entity);
     }
@@ -99,11 +103,16 @@ class SceneMap {
             const tileset = new MapTileset(this.scene_render.assets, id, properties);
             this.tilesets[id] = tileset;
             await tileset.init();
+            const tiles = {};
             tileset.propagate((model: any, id: string) => {
-                const element = new SceneElement(id, id);
-                element.components.model = { id, properties: model};
-                this.addElement(element);
+                tiles[id] = model;
             })
+
+            for(const k in tiles) {
+                const entity = new MapEntity(k);
+                entity.components.model = new MapComponent(tiles[k]);
+                await this.addEntity(entity);
+            }
         }
 
         if (entity.components.trigger) {
