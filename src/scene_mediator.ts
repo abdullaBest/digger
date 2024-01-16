@@ -46,6 +46,7 @@ class SceneMediator {
         this.active_scene = null;
         this.scene_game.stop();
         this.scene_map.stop();
+        this.scene_map.cleanup();
     }
 
     async sceneSwitch(id: string) {

@@ -1,4 +1,5 @@
 import SceneRender from "./render/scene_render";
+import SceneRenderLoader from "./render/scene_render_loader";
 import { SceneCollisions, ColliderType } from './scene_collisions';
 import { SceneElement, OverridedAssetLink } from "./scene_edit";
 import MapTileset from "./map_tileset";
@@ -28,18 +29,27 @@ class MapEntity {
     }
 
     init(element: SceneElement) {
+        this.dispose();
         this.id = element.id;
-
+        
         for(const k in element.components) {
             this.components[k] = new MapComponent(element.components[k].properties)
         }
 
         return this;
     }
+
+    dispose() {
+        for(const k in this.components) {
+            delete this.components[k];
+        }
+    }
 }
 
 class SceneMap {
     private scene_render: SceneRender;
+    private scene_render_loader: SceneRenderLoader;
+
     scene_collisions: SceneCollisions;
     entities: { [id: string] : MapEntity; }
     tilesets: { [id: string] : MapTileset; }
@@ -47,6 +57,7 @@ class SceneMap {
     constructor(scene_collisions: SceneCollisions, scene_render: SceneRender) {
         this.scene_collisions = scene_collisions;
         this.scene_render = scene_render;
+        this.scene_render_loader = scene_render.loader;
         this.entities = {};
         this.tilesets = {};
     }
@@ -63,6 +74,11 @@ class SceneMap {
         this.scene_collisions.clear();
     }
 
+    cleanup() {
+        this.stop();
+        this.scene_render.clearCached();
+    }
+
     async propagate(elements: { [id: string] : SceneElement; }) {
         const p: Array<Promise<any>> = [];
 
@@ -76,7 +92,8 @@ class SceneMap {
     }
 
     async addElement(element: SceneElement) : Promise<MapEntity> {
-        const entity = new MapEntity().init(element);
+        const entity = this.entities[element.id] ?? new MapEntity();
+        entity.init(element)
 
         return await this.addEntity(entity);
     }
@@ -98,16 +115,25 @@ class SceneMap {
             const tileset = new MapTileset(this.scene_render.assets, id, properties);
             this.tilesets[id] = tileset;
             await tileset.init();
-            const tiles = {};
+
+            // preload
+            const p: Array<Promise<any>> = [];
+            for(const k in tileset.models) {
+                p.push(this.scene_render_loader.getModel(k, tileset.models[k]));
+            }
+            await Promise.all(p);
+
+            // add all tiles
             tileset.propagate((model: any, id: string) => {
-                tiles[id] = model;
+                const entity = new MapEntity(id);
+                entity.components.model = new MapComponent(model);
+                this.addEntity(entity);
             })
 
-            for(const k in tiles) {
-                const entity = new MapEntity(k);
-                entity.components.model = new MapComponent(tiles[k]);
-                await this.addEntity(entity);
-            }
+            // add empty to allow transforms
+            const obj = this.scene_render.addEmptyObject(id);
+            (obj as any).position.x = properties.pos_x ?? 0;
+            (obj as any).position.y = properties.pos_y ?? 0;
         }
 
         if (entity.components.trigger) {
@@ -131,20 +157,22 @@ class SceneMap {
         }
 
         if(entity.components.model) {
-            this.scene_render.removeModel(id);
+            this.scene_render.removeObject(id);
+        }
+
+        if (entity.components.trigger) {
+            this.scene_render.removeObject(id);
         }
 
         if (entity.components.tileset) {
            // this.scene_render.removeTileset(id);
            const tiles = this.tilesets[id].tiles;
            for(const k in tiles) {
-            this.removeEntity(tiles[k]);
+                this.removeEntity(tiles[k]);
            }
+           this.scene_render.removeObject(id);
         }
 
-        if (entity.components.trigger) {
-            this.scene_render.removeElement(id);
-        }
 
         this.scene_collisions.removeBody(id);
         this.scene_collisions.removeCollider(id);

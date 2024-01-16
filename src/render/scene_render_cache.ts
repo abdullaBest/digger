@@ -9,7 +9,6 @@ export default class SceneRenderCache {
         this.gltfs = {};
         this.objects = {};
         this.models = {};
-        this.triggers = {};
         this.materials = {};
         this.textures = {};
         this.debug_colliders = {};
@@ -27,7 +26,6 @@ export default class SceneRenderCache {
     // stores pointers to models data
     // tynroar note: probably bad and unsafe idea
     models: { [id: string] : any; };
-    triggers: { [id: string] : any; };
     materials: { [id: string] : Material; };
     textures: { [id: string] : Texture; };
     debug_colliders: { [id: string] : Mesh; };

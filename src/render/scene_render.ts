@@ -84,24 +84,6 @@ class SceneRender {
 		this.controls.screenSpacePanning = true;
 
         this.transform_controls = new TransformControls( camera, renderer.domElement );
-        this.transform_controls.addEventListener( 'objectChange', (e) => {
-            const object = e.target.object as THREE.Object3D;
-            const id = object.name;
-            const el = this.scene_edit.elements && this.scene_edit.elements[id];
-
-            let mproperties = this.cache.models[id] ?? this.cache.triggers[id];
-
-            if (mproperties) {
-                mproperties.matrix = object.matrixWorld.toArray()
-            } else if (el && el.components.trigger) {
-                mproperties = el.components.trigger.properties;
-
-                const pos_x = (object as any).position.x;
-                const pos_y = (object as any).position.y;
-                mproperties.pos_x = pos_x;
-                mproperties.pos_y = pos_y;
-            }
-        });
         this.transform_controls.addEventListener( 'mouseDown', ( event ) => {
             this.controls.enabled = false;
         } );
@@ -139,12 +121,37 @@ class SceneRender {
         return this;
     }
 
-    async addModel(id: string, model: any, cache_id: string = id) : Promise<THREE.Object3D> {
+    async addModel(id: string, model: any) : Promise<THREE.Object3D> {
         const object = await this.loader.getModel(id, model);
+        return this.addObject(id, object);
+    }
+
+    addObject(id: string, object: THREE.Object3D) : THREE.Object3D {
         this.cache.objects[id] = object;
+        object.name = id;
         this.scene.add( object );
 
         return object;
+    }
+
+    removeObject(id: string) {
+        this.transform_controls.detach();
+
+        const object = this.cache.objects[id];
+        if(object) {
+            object.removeFromParent();
+            delete this.cache.objects[id];
+        }
+    }
+    
+    removeModel(id: string) {
+        this.removeObject(id);
+        this.loader.unloadModel(id);
+    }
+
+    addEmptyObject(id: string) : THREE.Object3D {
+        const object = new THREE.Object3D();
+        return this.addObject(id, object);
     }
 
     async addTriggerElement(id: string, properties: any) {
@@ -160,7 +167,6 @@ class SceneRender {
 
         sprite.name = id;
         this.scene.add(sprite);
-        this.cache.triggers[id] = properties;
         this.cache.objects[id] = sprite;
 
         if (properties.pos_x || properties.pos_y) {
@@ -222,61 +228,12 @@ class SceneRender {
         this.cache.debug_colliders[id] = plane;
     }
 
-    removeModel(id: string) {
-        this.transform_controls.detach();
-        
-        if(this.cache.debug_colliders[id]) {
-            this.scene.remove(this.cache.debug_colliders[id]);
-            delete this.cache.debug_colliders[id];
-        }
-        if(this.cache.gltfs[id]) {
-            delete this.cache.gltfs[id];
-        }
-        if(this.cache.objects[id]) {
-            this.cache.objects[id].removeFromParent();
-            delete this.cache.objects[id];
-        }
-        delete this.cache.models[id];
-    }
-
-    /**
-     * removes anything that could be found with required id
-     * @param id 
-     */
-    removeElement(id: string) {
-        this.removeModel(id);
-        delete this.cache.triggers[id];
-    }
-
-    clearTiggers() {
-        for (const k in this.cache.triggers) {
-            this.removeElement(k);
-        }
-    }
-
     clearCached() {
-        this.clearModels();
-        this.clearTiggers();
-    }
-
-    clearModels() {
-        this.transform_controls.detach();
-        for(const k in this.cache.models) {
-            this.removeModel(k)
-        }
-
-        // remove gltfs that wasn't included into models list
-        for(const k in this.cache.gltfs) {
-            delete this.cache.gltfs[k];
-        }
         for(const k in this.cache.objects) {
-            this.scene.remove(this.cache.objects[k]);
-            delete this.cache.objects[k];
+            this.removeObject(k)
         }
-        this.cache.models = {};
-        this.cache.gltfs = {};
-        this.cache.objects = {};
     }
+
     async viewModel(id: string, model: any) {
         this.clearCached();
         const scene = await this.addModel(id, model);
@@ -474,7 +431,7 @@ class SceneRender {
             const intersect = intersects[i];
             let o = intersect.object;
             while(o) {
-                if (this.cache.models[o.name] || this.cache.triggers[o.name]) {
+                if (this.cache.objects[o.name]) {
                     object = o;
                     break;
                 }

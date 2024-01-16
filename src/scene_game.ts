@@ -296,7 +296,8 @@ export default class SceneGame {
         const hit_damage = 1;
         const hit_strength = 1;
 
-        const durability = this.breakable_objects[hit_result] ?? this.scene_render.cache.models[hit_result]?.durability;
+        console.log(this.scene_map.entities[hit_result]?.components.model?.properties);
+        const durability = this.breakable_objects[hit_result] ?? this.scene_map.entities[hit_result]?.components.model?.properties.durability;
         if (!durability) {
             return;
         }
@@ -311,7 +312,7 @@ export default class SceneGame {
         if (hit_strength < resistance) {
             return;
         }
-
+        console.log(endurance, resistance);
         endurance -= hit_damage;
         if (endurance <= 0) {
             // falling block activate

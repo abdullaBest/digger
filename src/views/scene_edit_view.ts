@@ -148,7 +148,40 @@ export default class SceneEditView {
             const object = e.target.object;
             const id = object.name;
             this.scene_map.updateEntityCollider(id);
+            const el = this.scene_edit.elements && this.scene_edit.elements[id];
+
+            // only works with scene edit elements
+            if (!el) {
+                return;
+            }
+
+            let properiesa =  el.components.trigger?.properties || el.components.tileset?.properties;
+            let properiesb = el.components.model?.properties;
+            if (el && properiesa) {
+                const pos_x = (object as any).position.x;
+                const pos_y = (object as any).position.y;
+                properiesa.pos_x = pos_x;
+                properiesa.pos_y = pos_y;
+            } else if (properiesb) {
+                properiesb.matrix = object.matrixWorld.toArray()
+            } 
         });
+
+        tcontrols.addEventListener( 'mouseUp',  ( e ) => {
+            const object = e.target.object;
+            const id = object.name;
+            this.scene_map.updateEntityCollider(id);
+            const el = this.scene_edit.elements && this.scene_edit.elements[id];
+            if (!el) {
+                return;
+            }
+
+            // redraw tileset
+            let properiesa = el.components.tileset?.properties;
+            if (properiesa) {
+                this.scene_map.addElement(el);
+            }
+        } );
 
         return this;
     }

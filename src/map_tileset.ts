@@ -113,6 +113,9 @@ export default class MapTileset {
         clip_w = clip_w === undefined ? this.image.width : clip_w;
         clip_h = clip_h === undefined ? this.image.height : clip_h;
 
+        const origin_x = tileset.pos_x ?? 0;
+        const origin_y = tileset.pos_y ?? 0;
+
         canvas.width = clip_w;
         canvas.height = clip_h;
         const ctx = canvas.getContext("2d");
@@ -147,8 +150,8 @@ export default class MapTileset {
             const oy = clip_y;
             const lx = ((i / 4) % canvas.width) * tileset.tilesize_x;
             const ly = -Math.floor((i / 4) / canvas.width) * tileset.tilesize_y;
-            const pos_x = ox + lx;
-            const pos_y = oy + ly;
+            const pos_x = origin_x + ox + lx;
+            const pos_y = origin_y + oy + ly;
             const modelid = `${this.id}-tile-x${pos_x}_y${pos_y}`;
             const model = Object.setPrototypeOf({ pos_x, pos_y }, modelref);
             this.tiles.push(modelid);

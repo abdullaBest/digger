@@ -197,7 +197,7 @@ class AssetsView {
 			const container = switchPage("#canvas_asset_preview");
             reattach(querySelector("#scene_edit_tools"), container);
             this.scene_render.reattach(container as HTMLElement);
-            this.scene_render.clearModels();
+            this.scene_render.clearCached();
             if (info.extension == 'model') {
                // ...
             } else if (info.extension == 'scene') {
