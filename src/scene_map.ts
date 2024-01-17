@@ -21,6 +21,7 @@ class MapComponent {
 
 class MapEntity {
     id: string;
+    inherits: string | null;
     components: { [id: string] : MapComponent }
 
     constructor(id?: string) {

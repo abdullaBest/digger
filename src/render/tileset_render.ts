@@ -6,8 +6,13 @@ export default class TilesetRender {
     min_y: number;
     max_x: number;
     max_y: number;
+
+    // all tiles that currently on scene
     tiles: Array<MapEntity>
+    // tile add queue
     queue: { [id: string] : MapEntity }
+    // removed tiles that can be reused
+    dump: { [id: string] : Array<MapEntity> }
 
     clip_w: number;
     clip_h: number;
@@ -25,6 +30,7 @@ export default class TilesetRender {
     run() {
         this.queue = {};
         this.tiles = [];
+        this.dump = {};
     }
 
     update(pos_x, pos_y, ignore: {[id: string] : any}) {
@@ -58,6 +64,14 @@ export default class TilesetRender {
             this.tiles[index] = b;
             this.tiles.shift();
             removed += 1;
+
+            if (tile.inherits) {
+                let arr = this.dump[tile.inherits]
+                if (!arr) {
+                    arr = this.dump[tile.inherits] = [];
+                }
+                arr.push(tile);
+            } else {}
         } 
        }
     }
@@ -74,13 +88,23 @@ export default class TilesetRender {
         
         for(const k in this.scene_map.tilesets) {
             const tileset = this.scene_map.tilesets[k]
-            tileset.propagate((modelref: any, id: string, pos_x: number, pos_y: number) => {
+            tileset.propagate((ref_id: any, id: string, pos_x: number, pos_y: number) => {
                 if (this.scene_map.entities[id] || id in ignore || this.queue[id]) {
                     return;
                 }
-                const entity = new MapEntity(id);
-                const model = Object.setPrototypeOf({pos_x, pos_y}, modelref);
-                entity.components.model = new MapComponent(model);
+                let entity = this.dump[ref_id]?.pop();
+                if (!entity) {
+                    entity = new MapEntity(id);
+                    // tynroar todo: make proper inheritance insead of ref_id
+                    entity.inherits = ref_id;
+                    const model = Object.setPrototypeOf({ pos_x, pos_y }, tileset.models[ref_id]);
+                    entity.components.model = new MapComponent(model);
+                } else {
+                    const model = entity.components.model;
+                    model.properties.pos_x = pos_x;
+                    model.properties.pos_y = pos_y;
+                }
+               
                 this.queue[id] = entity;
             }, this.min_x, this.min_y, this.max_x, this.max_y);
         }

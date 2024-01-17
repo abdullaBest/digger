@@ -101,7 +101,7 @@ export default class MapTileset {
         }
     }
 
-    propagate(ontile: (model: any, id: string, pos_x: number, pos_y: number) => void, min_x?: number, min_y?: number, max_x?: number, max_y?: number) {
+    propagate(ontile: (ref_id: string, id: string, pos_x: number, pos_y: number) => void, min_x?: number, min_y?: number, max_x?: number, max_y?: number) {
         if (!this.image || !this.tileset) {
             console.error("MapTileset::propagate error - tileset wasn't initialised");
             return;
@@ -188,7 +188,7 @@ export default class MapTileset {
             const modelid = `${this.id}-tile-x${pos_x}_y${pos_y}`;
             this.tiles.push(modelid);
 
-            ontile(modelref, modelid, origin_x + pos_x, origin_y + pos_y);
+            ontile(cache_id, modelid, origin_x + pos_x, origin_y + pos_y);
         }
 
         for(const i in unused_colors) {
