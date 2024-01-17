@@ -10,6 +10,7 @@ import SceneDebug from "./scene_debug";
 import { SceneMap, MapEntity } from "./scene_map";
 import SystemObjectsBreak from "./gameplay/SystemObjectsBreak";
 import SystemObjectsFall from "./gameplay/SystemObjectsFall";
+import SystemRenderBodiesPos from "./gameplay/SystemRenderBodiesPos";
 
 export default class SceneGame {
     player_character: Character;
@@ -21,6 +22,7 @@ export default class SceneGame {
 
     system_objects_break: SystemObjectsBreak;
     system_objects_fall: SystemObjectsFall;
+    system_render_bodiespos: SystemRenderBodiesPos;
 
     attach_camera_to_player: boolean;
     camera_config: { attach_camera_z: number, attach_camera_y: number }
@@ -44,6 +46,7 @@ export default class SceneGame {
         this.player_character_render = new CharacterRender();
         this.system_objects_break = new SystemObjectsBreak(this.scene_map);
         this.system_objects_fall = new SystemObjectsFall(this.scene_map, this.scene_render);
+        this.system_render_bodiespos = new SystemRenderBodiesPos(this.scene_map, this.scene_render);
 
         this.autostep = true;
         this._listeners = [];
@@ -73,6 +76,7 @@ export default class SceneGame {
 
         this.system_objects_break.run();
         this.system_objects_fall.run();
+        this.system_render_bodiespos.run();
 
         this.requested_map_switch = null;
         this.requested_map_entrance = null;
@@ -176,6 +180,7 @@ export default class SceneGame {
         this.player_character_render.step(dt);
         this.scene_debug.step();
         this.system_objects_fall.step(dt);
+        this.system_render_bodiespos.step(dt);
 
         if (this.attach_camera_to_player && this.player_character_render.character_scene) {
             const pos = this.scene_render.cache.vec3_0.copy((this.player_character_render.character_scene as any).position );

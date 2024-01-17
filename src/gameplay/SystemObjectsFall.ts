@@ -46,7 +46,7 @@ export default class SystemObjectsFall {
 
                 (obj as any).position.x = x;
                 (obj as any).position.y = y;
-            } else if (!this.scene_collisions.bodies[k]) {
+            } else if (!this.scene_collisions.bodies[k] && collider) {
                 // b.1 falling
                 this.scene_collisions.addBoxBody(k, collider);
                 // b.2 make fall surrounding blocks

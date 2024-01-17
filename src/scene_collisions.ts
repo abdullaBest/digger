@@ -299,6 +299,9 @@ class SceneCollisions {
     }
 
     addBoxBody(id: string, collider: BoxColliderC) : DynamicBody {
+        if (!collider) {
+            throw new Error("SceneCollisions::addBoxBody error - no collider provided")
+        }
         const body = {
             id,
             collider,
