@@ -116,21 +116,34 @@ export default class MapTileset {
         const origin_y = tileset.pos_y ?? 0;
         
         const omin_x = Math.round(origin_x);
-        const omin_y = Math.round(origin_y);
+        const omax_y = Math.round(origin_y);
+        const omin_y = omax_y - this.image.width; // y operations inverted
         const omax_x = omin_x + this.image.width;
-        const omax_y = omin_y + this.image.width;
 
         min_x = Math.round(min_x ?? omin_x);
         min_y = Math.round(min_y ?? omin_y);
         max_x = Math.round(max_x ?? omax_x);
         max_y = Math.round(max_y ?? omax_y);
+        const max_w = max_x - min_x;
+        const max_h = max_y - min_y;
+
+        const d1x = omax_x - min_x;
+        const d1y = omax_y - min_y;
+        const d2x = max_x - omin_x;
+        const d2y = max_y - omin_y;
+
+        if (d1x < 0.0 || d1y < 0.0)
+            return false;
+
+        if (d2x < 0.0 || d2y < 0.0)
+            return false;
 
         const clip_x = Math.max(omin_x, min_x) - omin_x;
-        const clip_y = Math.max(omin_y, min_y) - omin_y;
-        const clip_w = clamp(max_x - omin_x, 0, this.image.width);
-        const clip_h = clamp(max_y - omin_y, 0, this.image.height);
+        const clip_y = omax_y - Math.min(omax_y, max_y);
+        const clip_w = Math.min(max_w, d1x, d2x);
+        const clip_h = Math.min(max_h, d1y, d2y);
 
-        if (!clip_w || !clip_h) {
+        if (clip_x < 0 || clip_y < 0 || clip_w <= 0 || clip_h <= 0) {
             return;
         }
 
@@ -167,7 +180,7 @@ export default class MapTileset {
 
             // add meshes
             const ox = clip_x;
-            const oy = clip_y;
+            const oy = -clip_y;
             const lx = ((i / 4) % canvas.width) * tileset.tilesize_x;
             const ly = -Math.floor((i / 4) / canvas.width) * tileset.tilesize_y;
             const pos_x = ox + lx;

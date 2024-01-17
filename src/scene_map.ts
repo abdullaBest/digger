@@ -125,12 +125,14 @@ class SceneMap {
 
             // add all tiles
             // it gonna be managed by external class
+            /*
             tileset.propagate((modelref: any, id: string, pos_x: number, pos_y: number) => {
                 const entity = new MapEntity(id);
                 const model = Object.setPrototypeOf({pos_x, pos_y}, modelref);
                 entity.components.model = new MapComponent(model);
                 this.addEntity(entity);
             })
+            */
 
             // add empty to allow transforms
             const obj = this.scene_render.addEmptyObject(id);

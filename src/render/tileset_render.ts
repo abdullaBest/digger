@@ -23,7 +23,6 @@ export default class TilesetRender {
     }
 
     update(pos_x, pos_y, ignore: {[id: string] : any}) {
-        return;
        this._draw(pos_x, pos_y, ignore);
 
        // add tiles from queue list
@@ -33,9 +32,8 @@ export default class TilesetRender {
             break;
         }
         const entity = this.queue[k];
-        this.scene_map.addEntity(entity);
+        this.scene_map.addEntity(entity).then(() => this.tiles.push(entity))
         delete this.queue[k];
-        this.tiles.push(entity);
        }
 
        // remove random tiles outside bounds
@@ -71,11 +69,12 @@ export default class TilesetRender {
         
         for(const k in this.scene_map.tilesets) {
             const tileset = this.scene_map.tilesets[k]
-            tileset.propagate((model: any, id: string) => {
+            tileset.propagate((modelref: any, id: string, pos_x: number, pos_y: number) => {
                 if (this.scene_map.entities[id] || id in ignore || this.queue[id]) {
                     return;
                 }
                 const entity = new MapEntity(id);
+                const model = Object.setPrototypeOf({pos_x, pos_y}, modelref);
                 entity.components.model = new MapComponent(model);
                 this.queue[id] = entity;
             }, this.min_x, this.min_y, this.max_x, this.max_y);
