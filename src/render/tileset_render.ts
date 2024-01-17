@@ -9,12 +9,17 @@ export default class TilesetRender {
     tiles: Array<MapEntity>
     queue: { [id: string] : MapEntity }
 
+    clip_w: number;
+    clip_h: number;
+
     constructor(scene_map: SceneMap) {
         this.scene_map = scene_map;
         this.min_x = 0;
         this.min_y = 0;
         this.max_x = 0;
         this.max_y = 0;
+        this.clip_h = 5;
+        this.clip_w = 5;
     }
 
     run() {
@@ -45,7 +50,7 @@ export default class TilesetRender {
         const tile = this.tiles[index];
         const pos_x = this.scene_map.entity_pos_x(tile.id);
         const pos_y = this.scene_map.entity_pos_y(tile.id);
-        if (pos_x < this.min_x - 2 || pos_x > this.max_x + 2|| pos_y < this.min_y - 2 || pos_y > this.max_y + 2) {
+        if (pos_x < this.min_x - this.clip_w || pos_x > this.max_x + this.clip_w|| pos_y < this.min_y - this.clip_h || pos_y > this.max_y + this.clip_h) {
             this.scene_map.removeEntity(tile.id);
             
             //remove from array
@@ -58,8 +63,8 @@ export default class TilesetRender {
     }
 
     _draw(pos_x, pos_y, ignore: {[id: string] : any}) {
-        const clip_w = 5;
-        const clip_h = 5;
+        const clip_w = this.clip_w;
+        const clip_h = this.clip_h;
         const x = Math.round(pos_x);
         const y = Math.round(pos_y);
         this.min_x = x - clip_w;
