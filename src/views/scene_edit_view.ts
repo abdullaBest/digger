@@ -167,6 +167,18 @@ export default class SceneEditView {
             } 
         });
 
+        tcontrols.addEventListener( 'object-changed',  ( e ) => {
+            const object = e.target.object;
+            if (!object) {
+                return;
+            }
+            const id = object.name;
+            const entity = this.scene_map.entities[id];
+            if (id) {
+                console.log("selected entity " + id, entity);
+            }
+        });
+
         tcontrols.addEventListener( 'mouseUp',  ( e ) => {
             const object = e.target.object;
             const id = object.name;

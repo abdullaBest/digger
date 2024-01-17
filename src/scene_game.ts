@@ -8,11 +8,8 @@ import { distlerp, lerp } from "./math";
 import { SceneElement } from "./scene_edit";
 import SceneDebug from "./scene_debug";
 import { SceneMap, MapEntity } from "./scene_map";
-
-interface FallingBlockData {
-    elapsed: number;
-    shaking: boolean;
-}
+import SystemObjectsBreak from "./gameplay/SystemObjectsBreak";
+import SystemObjectsFall from "./gameplay/SystemObjectsFall";
 
 export default class SceneGame {
     player_character: Character;
@@ -22,11 +19,11 @@ export default class SceneGame {
     scene_debug: SceneDebug;
     scene_map: SceneMap;
 
+    system_objects_break: SystemObjectsBreak;
+    system_objects_fall: SystemObjectsFall;
+
     attach_camera_to_player: boolean;
     camera_config: { attach_camera_z: number, attach_camera_y: number }
-
-    breakable_objects: {[id: string]: number}
-    falling_blocks: {[id: string]: FallingBlockData}
 
     private _listeners: Array<EventListenerDetails>;
     private active: boolean;
@@ -45,9 +42,11 @@ export default class SceneGame {
         this.scene_map = scene_map;
 
         this.player_character_render = new CharacterRender();
+        this.system_objects_break = new SystemObjectsBreak(this.scene_map);
+        this.system_objects_fall = new SystemObjectsFall(this.scene_map, this.scene_render);
+
         this.autostep = true;
         this._listeners = [];
-        this.falling_blocks = {};
         this.requested_map_switch = null;
         this.requested_map_entrance = null;
 
@@ -71,6 +70,9 @@ export default class SceneGame {
 
     async run(elements: { [id: string] : SceneElement; }, entrance_id?: string | null) {
         this.stop();
+
+        this.system_objects_break.run();
+        this.system_objects_fall.run();
 
         this.requested_map_switch = null;
         this.requested_map_entrance = null;
@@ -110,15 +112,13 @@ export default class SceneGame {
         await this.player_character_render.run(this.player_character);
 
         // teleport it at start
-        this.player_character_render.character_scene.position.set(startpos.x, startpos.y, 0);
+        (this.player_character_render.character_scene as any).position.set(startpos.x, startpos.y, 0);
 
         // teleport camera
         if (this.attach_camera_to_player) {
             const pos = this.scene_render.cache.vec3_0.set(startpos.x, startpos.y, 10);
             this.scene_render.setPos(this.scene_render.camera, pos);
         }
-
-        this.breakable_objects = {};
 
         addEventListener({callback: this._keydown.bind(this), name: "keydown", node: document.body}, this._listeners)
         addEventListener({callback: this._keyup.bind(this), name: "keyup", node: document.body}, this._listeners)
@@ -175,11 +175,10 @@ export default class SceneGame {
         this.scene_collisions.step(dt);
         this.player_character_render.step(dt);
         this.scene_debug.step();
-
-        this.stepFallingBlocks(dt);
+        this.system_objects_fall.step(dt);
 
         if (this.attach_camera_to_player && this.player_character_render.character_scene) {
-            const pos = this.scene_render.cache.vec3_0.copy(this.player_character_render.character_scene.position);
+            const pos = this.scene_render.cache.vec3_0.copy((this.player_character_render.character_scene as any).position );
 
             pos.z = this.camera_config.attach_camera_z;
             const lposx = (this.scene_render.camera as any).position.x;
@@ -263,13 +262,13 @@ export default class SceneGame {
         // shift ray towards look x direction.
         // Y look direction in priority
         if (!cha.look_direction_y) {
-            test_l = cha.body.collider.x + cha.body.collider.width * 0.5 * cha.look_direction_x + ray_size * cha.look_direction_x;
-            test_r = cha.body.collider.x + cha.body.collider.width * 0.5 * cha.look_direction_x + ray_size * cha.look_direction_x;
+            test_l = cha.body.collider.x + cha.body.collider.width * 0.4 * cha.look_direction_x + ray_size * cha.look_direction_x;
+            test_r = cha.body.collider.x + cha.body.collider.width * 0.4 * cha.look_direction_x + ray_size * cha.look_direction_x;
             test_t = cha.body.collider._top;
             test_b = cha.body.collider._bottom;
         } else {
-            test_t = cha.body.collider.y + cha.body.collider.height * 0.5 * cha.look_direction_y + ray_size * cha.look_direction_y;
-            test_b = cha.body.collider.y + cha.body.collider.height * 0.5 * cha.look_direction_y + ray_size * cha.look_direction_y;
+            test_t = cha.body.collider.y + cha.body.collider.height * 0.4 * cha.look_direction_y + ray_size * cha.look_direction_y;
+            test_b = cha.body.collider.y + cha.body.collider.height * 0.4 * cha.look_direction_y + ray_size * cha.look_direction_y;
             test_l = cha.body.collider._left;
             test_r = cha.body.collider._right;
         }
@@ -293,154 +292,16 @@ export default class SceneGame {
             return;
         }
 
-        const hit_damage = 1;
-        const hit_strength = 1;
-
-        console.log(this.scene_map.entities[hit_result]?.components.model?.properties);
-        const durability = this.breakable_objects[hit_result] ?? this.scene_map.entities[hit_result]?.components.model?.properties.durability;
-        if (!durability) {
-            return;
-        }
-
-        let endurance = (durability & 0xF0) >> 4;
-        let resistance = durability & 0x0F;
-        if (durability > 0xFF) {
-            endurance = (durability & 0xFF) >> 8;
-            resistance = durability & 0x00FF;
-        }
-
-        if (hit_strength < resistance) {
-            return;
-        }
-        console.log(endurance, resistance);
-        endurance -= hit_damage;
-        if (endurance <= 0) {
+        const broke = this.system_objects_break.hit(hit_result);
+        if (broke) {
             // falling block activate
-            this.findFallingBlockAround(hit_result);
-            
-
+            this.system_objects_fall.touchFallingBlock(hit_result);
             // remove breakable block
             this.scene_map.removeEntity(hit_result);
-            delete this.breakable_objects[hit_result];
-            
-            return;
-        }
-
-        let newdurability = ((endurance << 4) & 0xF0) + ((resistance) & 0x0F);
-        if (durability > 0xFF) {
-            newdurability = ((endurance << 8) & 0xFF00) + ((resistance) & 0x00FF);
-        }
-
-        this.breakable_objects[hit_result] = newdurability;
-    }
-
-    findFallingBlockAround(id: string, shaketime: number = 1,) {
-        const activate = (blockid: string) => {
-            // b. iterate all blocks around activating block and find out if it stays on something
-            const ca = this.scene_collisions.colliders[blockid];
-            for (const k in this.scene_collisions.colliders) {
-                if (k == id) {
-                    continue;
-                }
-                const cb = this.scene_collisions.colliders[k];
-                const collides_x = ca._left < cb._right && cb._left < ca._right;
-                const collides_y = ca._bottom <= cb._top && cb._bottom <= ca._top;
-                const ontop = ca.y > cb.y;
-                if (collides_x && collides_y && ontop) {
-                    if (this.falling_blocks[k]) {
-                        // other falling blocks atop already falling block
-                        continue;
-                    } else {
-                        // do not activate if it stil stays on something
-                        return;
-                    }
-                }
-            }
-
-            this.activateFallingBlock(blockid, shaketime);
-        }
-
-        // a. Iterate over all block around broken tile and try to activate falling blocks
-        const ca = this.scene_collisions.colliders[id];
-        if (!ca) {
-            return;
-        }
-        for (const k in this.scene_collisions.colliders) {
-            const cb = this.scene_collisions.colliders[k];
-            const collides_x = ca._left < cb._right && cb._left < ca._right;
-            const collides_y = ca._bottom <= cb._top && cb._bottom <= ca._top;
-            const ontop = ca.y < cb.y;
-            if (!collides_x || !collides_y || !ontop) {
-                continue;
-            }
-
-            const model = this.scene_render.cache.models[k];
-            if (model && model.tags && model.tags.includes("falling")) {
-                activate(k);
-            }
+            delete this.system_objects_break.breakable_objects[hit_result];
         }
     }
 
-    activateFallingBlock(id: string, shaketime: number) {
-        if (this.falling_blocks[id]) {
-            return;
-        }
-
-        this.falling_blocks[id] = {
-            elapsed: 1 - shaketime,
-            shaking: true
-        }
-    }
-    
-    stepFallingBlocks(dt: number) {
-        for(const k in this.falling_blocks) {
-            const b = this.falling_blocks[k];
-
-            const collider = this.scene_collisions.colliders[k];
-            const body = this.scene_collisions.bodies[k];
-            if (b.elapsed < 1) {
-                if (!b.shaking) {
-                    continue;
-                }
-
-                // a. 1 sec shaking, 
-                const obj = this.scene_render.cache.objects[k];
-                if (!obj || !collider) {
-                    continue;
-                }
-                const refx = collider.x;
-                const refy = collider.y;
-                const x = refx + (Math.random() - 0.5) * 0.1;
-                const y = refy + (Math.random() - 0.5) * 0.1;
-
-                obj.position.x = x;
-                obj.position.y = y;
-            } else if (!this.scene_collisions.bodies[k]) {
-                // b.1 falling
-                this.scene_collisions.addBoxBody(k, collider);
-                // b.2 make fall surrounding blocks
-                this.findFallingBlockAround(k, 0.01);
-            } else if (body) {
-                // c. deactivating
-                for(let i = 0; i < body.contacts; i++) {
-                    const c = body.contacts_list[i];
-                    if (c && c.normal_y < 0 && c.time <= 0 && !this.scene_collisions.bodies[c.id ?? ""]) {
-                        delete this.falling_blocks[k];
-                        this.scene_collisions.removeBody(k, false);
-                        
-                        const obj = this.scene_render.cache.objects[k];
-                        const collider = this.scene_collisions.colliders[k];
-                        if (obj) {
-                            obj.position.x  = collider.x;
-                            obj.position.y  = collider.y;
-                        }
-                    }
-                }
-            } 
-
-            b.elapsed += dt;
-        }
-    }
     
     _keydown(event: KeyboardEvent) {
         if (event.repeat) return;
