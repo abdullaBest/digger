@@ -7,10 +7,11 @@ import SceneRender from "./render/scene_render";
 import { distlerp, lerp } from "./math";
 import { SceneElement } from "./scene_edit";
 import SceneDebug from "./scene_debug";
-import { SceneMap, MapEntity } from "./scene_map";
+import { SceneMap, MapEntity, MapComponent } from "./scene_map";
 import SystemObjectsBreak from "./gameplay/SystemObjectsBreak";
 import SystemObjectsFall from "./gameplay/SystemObjectsFall";
 import SystemRenderBodiesPos from "./gameplay/SystemRenderBodiesPos";
+import TilesetRender from "./render/tileset_render";
 
 export default class SceneGame {
     player_character: Character;
@@ -23,6 +24,7 @@ export default class SceneGame {
     system_objects_break: SystemObjectsBreak;
     system_objects_fall: SystemObjectsFall;
     system_render_bodiespos: SystemRenderBodiesPos;
+    tileset_render: TilesetRender;
 
     attach_camera_to_player: boolean;
     camera_config: { attach_camera_z: number, attach_camera_y: number }
@@ -47,6 +49,7 @@ export default class SceneGame {
         this.system_objects_break = new SystemObjectsBreak(this.scene_map);
         this.system_objects_fall = new SystemObjectsFall(this.scene_map, this.scene_render);
         this.system_render_bodiespos = new SystemRenderBodiesPos(this.scene_map, this.scene_render);
+        this.tileset_render = new TilesetRender(this.scene_map);
 
         this.autostep = true;
         this._listeners = [];
@@ -77,17 +80,41 @@ export default class SceneGame {
         this.system_objects_break.run();
         this.system_objects_fall.run();
         this.system_render_bodiespos.run();
+        this.tileset_render.run();
 
         this.requested_map_switch = null;
         this.requested_map_entrance = null;
         this.elements = elements;
+        
+        await this._runCharacter(entrance_id);
+
+        addEventListener({callback: this._keydown.bind(this), name: "keydown", node: document.body}, this._listeners)
+        addEventListener({callback: this._keyup.bind(this), name: "keyup", node: document.body}, this._listeners)
+        addEventListener({callback: ()=> {
+            this.player_character.actionRequest("move_left", CharacterActionCode.END);
+            this.player_character.actionRequest("move_right", CharacterActionCode.END)
+        }, name: "blur", node: window as any}, this._listeners)
+        //addEventListener({callback: ()=> {console.log("focus")}, name: "focus", node: window as any}, this._listeners)
+
+        // debug outputs -- {
+        this.scene_debug.run(this.player_character, this.camera_config, this.scene_render.cache);
+        this.scene_debug.camera_config_draw.addWrite("camera_fov", 
+            () => this.scene_render.camera_base_fov, 
+            (v) => {this.scene_render.camera_base_fov = v; this.scene_render.updateCameraAspect();}
+            );
+        // debug outputs -- }
+
+        this.active = true;
+    }
+
+    async _runCharacter(entrance_id?: string | null) {
 
         // find start pos
         const startpos = new Vector2(0.1, 4);
         {
             let entrance_found = false;
-            for(const k in elements) {
-                const el = elements[k];
+            for(const k in this.elements) {
+                const el = this.elements[k];
                 const props = el.components.trigger?.properties;
                 if (!entrance_id && props && props.type == "mapentry") {
                     startpos.x = props.pos_x ?? 0;
@@ -123,24 +150,6 @@ export default class SceneGame {
             const pos = this.scene_render.cache.vec3_0.set(startpos.x, startpos.y, 10);
             this.scene_render.setPos(this.scene_render.camera, pos);
         }
-
-        addEventListener({callback: this._keydown.bind(this), name: "keydown", node: document.body}, this._listeners)
-        addEventListener({callback: this._keyup.bind(this), name: "keyup", node: document.body}, this._listeners)
-        addEventListener({callback: ()=> {
-            this.player_character.actionRequest("move_left", CharacterActionCode.END);
-            this.player_character.actionRequest("move_right", CharacterActionCode.END)
-        }, name: "blur", node: window as any}, this._listeners)
-        //addEventListener({callback: ()=> {console.log("focus")}, name: "focus", node: window as any}, this._listeners)
-
-        // debug outputs -- {
-        this.scene_debug.run(this.player_character, this.camera_config, this.scene_render.cache);
-        this.scene_debug.camera_config_draw.addWrite("camera_fov", 
-            () => this.scene_render.camera_base_fov, 
-            (v) => {this.scene_render.camera_base_fov = v; this.scene_render.updateCameraAspect();}
-            );
-        // debug outputs -- }
-
-        this.active = true;
     }
 
     stop() {
@@ -204,16 +213,7 @@ export default class SceneGame {
         }
 
         this._stepCharacterInteractions(this.player_character);
-        this._stepTilesetsClip();
-    }
-
-    private _stepTilesetsClip() {
-        const pos_x = 0;
-        const pos_y = 0;
-        const width = 10; 
-        const height = 10;
-        
-        
+        this.tileset_render.update(this.player_character.body.collider.x, this.player_character.body.collider.y, this.system_objects_break.breakable_objects);
     }
 
     private _stepCharacterInteractions(cha: Character) {
@@ -303,7 +303,6 @@ export default class SceneGame {
             this.system_objects_fall.touchFallingBlock(hit_result);
             // remove breakable block
             this.scene_map.removeEntity(hit_result);
-            delete this.system_objects_break.breakable_objects[hit_result];
         }
     }
 

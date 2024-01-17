@@ -124,8 +124,10 @@ class SceneMap {
             await Promise.all(p);
 
             // add all tiles
-            tileset.propagate((model: any, id: string) => {
+            // it gonna be managed by external class
+            tileset.propagate((modelref: any, id: string, pos_x: number, pos_y: number) => {
                 const entity = new MapEntity(id);
+                const model = Object.setPrototypeOf({pos_x, pos_y}, modelref);
                 entity.components.model = new MapComponent(model);
                 this.addEntity(entity);
             })
@@ -171,6 +173,7 @@ class SceneMap {
                 this.removeEntity(tiles[k]);
            }
            this.scene_render.removeObject(id);
+           delete this.tilesets[id];
         }
 
 
@@ -205,7 +208,25 @@ class SceneMap {
             const collider = this.scene_collisions.createBoxColliderByPos(id, pos_x, pos_y, properties.width, properties.height, ColliderType.SIGNAL);
         }
     }
+
+    entity_pos_x(id: string) {
+        const c = this.scene_collisions.colliders[id];
+        if (c) {
+            return c.x;
+        }
+
+        return 0;
+    }
+
+    entity_pos_y(id: string) {
+        const c = this.scene_collisions.colliders[id];
+        if (c) {
+            return c.y;
+        }
+
+        return 0;
+    }
 }
 
-export { SceneMap, SceneMapCache, MapEntity };
+export { SceneMap, SceneMapCache, MapEntity, MapComponent };
 export default SceneMap;

@@ -155,7 +155,7 @@ export default class SceneEditView {
                 return;
             }
 
-            let properiesa =  el.components.trigger?.properties || el.components.tileset?.properties;
+            let properiesa =  el.components.trigger?.properties;
             let properiesb = el.components.model?.properties;
             if (el && properiesa) {
                 const pos_x = (object as any).position.x;
@@ -191,6 +191,10 @@ export default class SceneEditView {
             // redraw tileset
             let properiesa = el.components.tileset?.properties;
             if (properiesa) {
+                const pos_x = (object as any).position.x;
+                const pos_y = (object as any).position.y;
+                properiesa.pos_x = pos_x;
+                properiesa.pos_y = pos_y;
                 this.scene_map.addElement(el);
             }
         } );
@@ -203,8 +207,8 @@ export default class SceneEditView {
     }
 
     closeScene(save: boolean = false) {
+        this.scene_mediator.sceneClose();
         this.props_container.innerHTML = '';
-        this.scene_map.stop();
         this.scene_edit.close(save);
     }
 

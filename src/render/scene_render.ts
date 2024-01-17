@@ -135,10 +135,11 @@ class SceneRender {
     }
 
     removeObject(id: string) {
-        this.transform_controls.detach();
-
         const object = this.cache.objects[id];
         if(object) {
+            if (this.transform_controls.object == object) {
+                this.transform_controls.detach();
+            }
             object.removeFromParent();
             delete this.cache.objects[id];
         }

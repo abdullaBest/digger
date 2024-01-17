@@ -1,5 +1,7 @@
 import Assets from "./assets";
 import { SceneEditUtils } from "./scene_edit";
+import { querySelector } from "./document";
+import { clamp } from "./math";
 
 export default class MapTileset {
     models: { [id: string] : any };
@@ -8,6 +10,7 @@ export default class MapTileset {
     image: HTMLImageElement | null;
     tileset: any | null;
     id: string;
+    canvas: HTMLCanvasElement;
 
     assets: Assets;
 
@@ -25,6 +28,7 @@ export default class MapTileset {
     async init() {
         const tileset = this.tileset;
         const id = this.id;
+        this.canvas = querySelector("db#cache canvas#cache_canvas") as HTMLCanvasElement;
 
         const color_id_prefix = tileset.color_id_prefix;
         const link_id_prefix = tileset.link_id_prefix;
@@ -97,7 +101,7 @@ export default class MapTileset {
         }
     }
 
-    propagate(ontile: (model: any, id: string) => void, clip_x?: number, clip_y?: number, clip_w?: number, clip_h?: number) {
+    propagate(ontile: (model: any, id: string, pos_x: number, pos_y: number) => void, min_x?: number, min_y?: number, max_x?: number, max_y?: number) {
         if (!this.image || !this.tileset) {
             console.error("MapTileset::propagate error - tileset wasn't initialised");
             return;
@@ -106,19 +110,35 @@ export default class MapTileset {
         const tileset = this.tileset;
 
         const img = this.image;
-        const canvas = document.createElement("canvas");
-
-        clip_x = clip_x === undefined ? 0 : clip_x;
-        clip_y = clip_y === undefined ? 0 : clip_y;
-        clip_w = clip_w === undefined ? this.image.width : clip_w;
-        clip_h = clip_h === undefined ? this.image.height : clip_h;
+        const canvas = this.canvas;
 
         const origin_x = tileset.pos_x ?? 0;
         const origin_y = tileset.pos_y ?? 0;
+        
+        const omin_x = Math.round(origin_x);
+        const omin_y = Math.round(origin_y);
+        const omax_x = omin_x + this.image.width;
+        const omax_y = omin_y + this.image.width;
+
+        min_x = Math.round(min_x ?? omin_x);
+        min_y = Math.round(min_y ?? omin_y);
+        max_x = Math.round(max_x ?? omax_x);
+        max_y = Math.round(max_y ?? omax_y);
+
+        const clip_x = Math.max(omin_x, min_x) - omin_x;
+        const clip_y = Math.max(omin_y, min_y) - omin_y;
+        const clip_w = clamp(max_x - omin_x, 0, this.image.width);
+        const clip_h = clamp(max_y - omin_y, 0, this.image.height);
+
+        if (!clip_w || !clip_h) {
+            return;
+        }
+
 
         canvas.width = clip_w;
         canvas.height = clip_h;
         const ctx = canvas.getContext("2d");
+        ctx?.clearRect(0, 0, canvas.width, canvas.height);
         ctx?.drawImage(img, clip_x, clip_y, clip_w, clip_h, 0, 0, clip_w, clip_h);
         const imgdata = ctx?.getImageData(0, 0, clip_w,  clip_h).data;
 
@@ -150,17 +170,24 @@ export default class MapTileset {
             const oy = clip_y;
             const lx = ((i / 4) % canvas.width) * tileset.tilesize_x;
             const ly = -Math.floor((i / 4) / canvas.width) * tileset.tilesize_y;
-            const pos_x = origin_x + ox + lx;
-            const pos_y = origin_y + oy + ly;
+            const pos_x = ox + lx;
+            const pos_y = oy + ly;
             const modelid = `${this.id}-tile-x${pos_x}_y${pos_y}`;
-            const model = Object.setPrototypeOf({ pos_x, pos_y }, modelref);
             this.tiles.push(modelid);
 
-            ontile(model, modelid);
+            ontile(modelref, modelid, origin_x + pos_x, origin_y + pos_y);
         }
 
         for(const i in unused_colors) {
             console.warn(`SceneRender::addTileset ref texture has color 0x${unused_colors[i].toString(16).padStart(8, "0")} which does not have tile for that.`);
         }
+    }
+
+    get pos_x() {
+        return this.tileset.pos_x ?? 0;
+    }
+
+    get pos_y() {
+        return this.tileset.pos_y ?? 0;
     }
 }
