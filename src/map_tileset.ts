@@ -101,7 +101,7 @@ export default class MapTileset {
         }
     }
 
-    propagate(ontile: (ref_id: string, id: string, pos_x: number, pos_y: number) => void, min_x?: number, min_y?: number, max_x?: number, max_y?: number) {
+    propagate(ontile: (ref_id: string, id: string, pos_x: number, pos_y: number) => void, min_x?: number | null, min_y?: number | null, max_x?: number | null, max_y?: number | null) {
         if (!this.image || !this.tileset) {
             console.error("MapTileset::propagate error - tileset wasn't initialised");
             return;

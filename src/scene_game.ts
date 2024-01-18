@@ -74,17 +74,27 @@ export default class SceneGame {
         return this;
     }
 
-    async run(elements: { [id: string] : SceneElement; }, entrance_id?: string | null) {
-        this.stop();
+    async open(elements: { [id: string] : SceneElement; }) {
+        await this.scene_map.run(elements);
 
+        this.tileset_render.run();
+        this._updateTilesetsDraw();
+
+        this.elements = elements;
+    }
+
+    _updateTilesetsDraw(clip: boolean = this.tileset_render.clip_tiles_draw) {
+        this.tileset_render.clip_tiles_draw = clip;
+        this.tileset_render.update(this.player_character?.body.collider.x ?? 0, this.player_character?.body.collider.y ?? 0, this.system_objects_break.breakable_objects ?? {});
+    }
+
+    async run(entrance_id?: string | null) {
         this.system_objects_break.run();
         this.system_objects_fall.run();
         this.system_render_bodiespos.run();
-        this.tileset_render.run();
 
         this.requested_map_switch = null;
         this.requested_map_entrance = null;
-        this.elements = elements;
         
         await this._runCharacter(entrance_id);
 
@@ -153,6 +163,9 @@ export default class SceneGame {
     }
 
     stop() {
+        this.scene_map.stop();
+        this.scene_map.cleanup();
+
         this.active = false;
         this.requested_map_switch = null;
         this.requested_map_entrance = null;
@@ -213,7 +226,10 @@ export default class SceneGame {
         }
 
         this._stepCharacterInteractions(this.player_character);
-        this.tileset_render.update(this.player_character.body.collider.x, this.player_character.body.collider.y, this.system_objects_break.breakable_objects);
+        if (this.tileset_render.clip_tiles_draw) {
+            // while map already drawn if there's no clip set
+            this._updateTilesetsDraw();
+        }
     }
 
     private _stepCharacterInteractions(cha: Character) {

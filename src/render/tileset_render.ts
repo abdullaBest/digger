@@ -7,6 +7,8 @@ export default class TilesetRender {
     max_x: number;
     max_y: number;
 
+    clip_tiles_draw: boolean;
+
     // all tiles that currently on scene
     tiles: Array<MapEntity>
     // tile add queue
@@ -27,6 +29,7 @@ export default class TilesetRender {
         this.clip_h = 16;
         this.clip_w = 16;
         this.queued = 0;
+        this.clip_tiles_draw = true;
     }
 
     run() {
@@ -36,6 +39,10 @@ export default class TilesetRender {
     }
 
     _isPosInClipbounds(pos_x: number, pos_y: number) {
+        if (!this.clip_tiles_draw) {
+            return true;
+        }
+        
         const threshold_w = this.clip_w * 0.5;
         const threshold_h = this.clip_h * 0.5;
 
@@ -43,24 +50,14 @@ export default class TilesetRender {
     }
 
     update(pos_x, pos_y, ignore: {[id: string] : any}) {
-       this._queueDraw(pos_x, pos_y, ignore);
-
-       // add tiles from queue list
-       let added = 0;
-       const toadd = Math.log(this.queued + 1) * 8;
-       for(const k in this.queue) {
-        if (added++ > toadd) {
-            break;
+        if (this.clip_tiles_draw) {
+            this._queueDrawClip(pos_x, pos_y, ignore);
+            this._drawQuqued(Math.log(this.queued + 1) * 8);
+        } else {
+            this._queueDraw(ignore);
+            this._drawQuqued(this.queued + 1);
+            return;
         }
-        const entity = this.queue[k];
-        const pos_x = entity.components.model.properties.pos_x;
-        const pos_y = entity.components.model.properties.pos_y;
-        if (this._isPosInClipbounds(pos_x, pos_y)) {
-            this.scene_map.addEntity(entity).then(() => this.tiles.push(entity))
-        }
-        delete this.queue[k];
-        this.queued -= 1;
-       }
 
        // remove random tiles outside bounds
        let picked = 0;
@@ -97,28 +94,28 @@ export default class TilesetRender {
        }
     }
 
-    _queueDraw(pos_x, pos_y, ignore: {[id: string] : any}) {
-        const clip_w = this.clip_w;
-        const clip_h = this.clip_h;
-        const x = Math.round(pos_x);
-        const y = Math.round(pos_y);
-
-        const threshold = 4;
-        const min_x = x - clip_w;
-        const min_y = y - clip_h;
-        const max_x = x + clip_w;
-        const max_y = y + clip_h;
-        if (Math.abs((min_x + min_y + max_x + max_y) - (this.min_x + this.min_y + this.max_x + this.max_y)) < threshold) {
-            return;
+    _drawQuqued(limit: number) {
+       // add tiles from queue list
+       let added = 0;
+       for(const k in this.queue) {
+        if (added++ > limit) {
+            break;
         }
+        const entity = this.queue[k];
+        const pos_x = entity.components.model.properties.pos_x;
+        const pos_y = entity.components.model.properties.pos_y;
+        if (this._isPosInClipbounds(pos_x, pos_y)) {
+            this.scene_map.addEntity(entity).then(() => this.tiles.push(entity))
+        }
+        delete this.queue[k];
+        this.queued -= 1;
+       }
+    }
 
-        this.min_x = min_x;
-        this.min_y = min_y;
-        this.max_x = max_x;
-        this.max_y = max_y;
-
+    _queueDraw(ignore: {[id: string] : any}, min_x?: number, min_y?: number, max_x?: number, max_y?: number) {
         for(const k in this.scene_map.tilesets) {
-            const tileset = this.scene_map.tilesets[k]
+            const tileset = this.scene_map.tilesets[k];
+
             tileset.propagate((ref_id: any, id: string, pos_x: number, pos_y: number) => {
                 if (this.scene_map.entities[id] || id in ignore || this.queue[id]) {
                     return;
@@ -139,7 +136,32 @@ export default class TilesetRender {
                
                 this.queue[id] = entity;
                 this.queued += 1;
-            }, this.min_x, this.min_y, this.max_x, this.max_y);
+            }, 
+            min_x, min_y, max_x, max_y);
         }
+    }
+
+    _queueDrawClip(pos_x, pos_y, ignore: {[id: string] : any}) {
+        const clip_w = this.clip_w;
+        const clip_h = this.clip_h;
+        const x = Math.round(pos_x);
+        const y = Math.round(pos_y);
+
+        const threshold = 4;
+        const min_x = x - clip_w;
+        const min_y = y - clip_h;
+        const max_x = x + clip_w;
+        const max_y = y + clip_h;
+
+        if (Math.abs((min_x + min_y + max_x + max_y) - (this.min_x + this.min_y + this.max_x + this.max_y)) < threshold) {
+            return;
+        }
+
+        this.min_x = min_x;
+        this.min_y = min_y;
+        this.max_x = max_x;
+        this.max_y = max_y;
+
+        this._queueDraw(ignore, this.min_x, this.min_y, this.max_x, this.max_y);
     }
 }

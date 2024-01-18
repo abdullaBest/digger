@@ -140,6 +140,9 @@ class App {
                 case "game_center_camera":
                     this.scene_render.focusCameraOn(this.scene_render.scene);
                     break;
+                case "game_clip_tilesets":
+                    const clip = target.classList.toggle("highlighted");
+                    this.scene_game._updateTilesetsDraw(clip);
             }
         });
 
