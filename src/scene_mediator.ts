@@ -43,9 +43,9 @@ class SceneMediator {
     }
 
     sceneClose() {
+        this.events.dispatchEvent(new CustomEvent("scene_close", { detail : {id: this.active_scene}}));
         this.active_scene = null;
         this.scene_game.stop();
-
     }
 
     async sceneSwitch(id: string) {

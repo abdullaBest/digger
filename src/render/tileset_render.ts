@@ -29,6 +29,10 @@ export default class TilesetRender {
     }
 
     run() {
+        this.cleanup();
+    }
+
+    cleanup() {
         this.queue = {};
         this.tiles = [];
         this.dump = {};
@@ -50,7 +54,7 @@ export default class TilesetRender {
         return !(pos_x < this.min_x - threshold_w || pos_x > this.max_x + threshold_w || pos_y < this.min_y - threshold_h || pos_y > this.max_y + threshold_h);
     }
 
-    update(pos_x, pos_y, ignore: {[id: string] : any}) {
+    update(pos_x, pos_y, ignore?: {[id: string] : any}) {
         if (this.clip_tiles_draw) {
             this._queueDrawClip(pos_x, pos_y, ignore);
             this._drawQuqued(Math.log(this.queued + 1) * 8);
@@ -113,12 +117,12 @@ export default class TilesetRender {
        }
     }
 
-    _queueDraw(ignore: {[id: string] : any}, min_x?: number, min_y?: number, max_x?: number, max_y?: number) {
+    _queueDraw(ignore?: {[id: string] : any}, min_x?: number, min_y?: number, max_x?: number, max_y?: number) {
         for(const k in this.scene_map.tilesets) {
             const tileset = this.scene_map.tilesets[k];
 
             tileset.propagate((ref_id: any, id: string, pos_x: number, pos_y: number) => {
-                if (this.scene_map.entities[id] || id in ignore || this.queue[id]) {
+                if (this.scene_map.entities[id] || (ignore && id in ignore) || this.queue[id]) {
                     return;
                 }
                 let entity = this.dump[ref_id]?.pop();
@@ -142,7 +146,7 @@ export default class TilesetRender {
         }
     }
 
-    _queueDrawClip(pos_x, pos_y, ignore: {[id: string] : any}) {
+    _queueDrawClip(pos_x, pos_y, ignore?: {[id: string] : any}) {
         const clip_w = this.clip_w;
         const clip_h = this.clip_h;
         const x = Math.round(pos_x);

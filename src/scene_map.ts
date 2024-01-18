@@ -90,7 +90,8 @@ class SceneMap {
     async addElement(element: SceneElement) : Promise<MapEntity> {
         const entity = this.entities[element.id] ?? new MapEntity();
         entity.init(element)
-
+        
+        this.removeEntity(element.id);
         return await this.addEntity(entity);
     }
 
@@ -198,7 +199,7 @@ class SceneMap {
             const properties = entity.components.model.properties;
             const obj = this.scene_render.cache.objects[id];
             if (properties.collider) {
-                const box = this.scene_render.produceObjectCollider(id, obj, this.scene_collisions.origin, this.scene_collisions.normal);
+                const box = this.scene_render.genObject2dAABB(id, obj, this.scene_collisions.origin, this.scene_collisions.normal);
                 if (box) {
                     this.scene_collisions.createBoxCollider(id, box);
                 } 

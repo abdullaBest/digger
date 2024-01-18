@@ -12,18 +12,20 @@ import SceneCollisions from "./scene_collisions";
 import { lerp } from "./math";
 import SceneMap from "./scene_map";
 import AppDebug from "./app_debug";
+import SceneEditTools from "./render/scene_edit_tools";
 
 class App {
     constructor() {
         this.assets = new Assets();
         this.scene_edit = new SceneEdit(this.assets);
         this.scene_collisions = new SceneCollisions();
-        this.scene_render = new SceneRender(this.scene_edit);
+        this.scene_render = new SceneRender(this.assets);
+        this.scene_edit_tools = new SceneEditTools(this.scene_render);
         this.scene_map = new SceneMap(this.scene_collisions, this.scene_render)
         this.scene_game = new SceneGame(this.scene_collisions, this.scene_render, this.scene_map);
         this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_game, this.scene_map);
         this.assets_view = new AssetsView(this.assets, this.scene_render, this.scene_mediator);
-        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_mediator, this.scene_map);
+        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_edit_tools, this.scene_mediator, this.scene_map);
 
         this.active = false;
         this.timestamp = 0;
@@ -41,6 +43,7 @@ class App {
         this.app_debug_draw = new AppDebug();
         this.app_debug_draw.app_state_draw.init(this);
         this.scene_render.init(canvas as HTMLCanvasElement);
+        this.scene_edit_tools.init();
         this.scene_game.init();
 
         return this;
@@ -87,24 +90,25 @@ class App {
         }
 
         const now = performance.now();
-        let dt = (now - this.timestamp);
+        let dtms = (now - this.timestamp);
 
-        if (dt < this.frame_threshold) {
+        if (dtms < this.frame_threshold) {
             requestAnimationFrame( this.loop.bind(this) );
             return;
         }
 
         if (this.fixed_timestep) {
-            dt = this.frame_threshold;
+            dtms = this.frame_threshold;
         }
 
-        const dtscaled = dt * 0.001;
+        const dt = dtms * 0.001;
 
         this.timestamp = now;
-        this.average_frametime = lerp(this.average_frametime, dt, 0.07);
+        this.average_frametime = lerp(this.average_frametime, dtms, 0.07);
 
-        this.scene_game.step(dtscaled);
-        this.scene_render.step(dtscaled);
+        this.scene_game.step(dt);
+        this.scene_edit_tools.step(dt);
+        this.scene_render.step(dt);
         this.scene_mediator.step();
 
         this.app_debug_draw.step();
@@ -248,6 +252,7 @@ class App {
 
     private assets: Assets;
     private scene_render: SceneRender;
+    private scene_edit_tools: SceneEditTools;
     private scene_edit: SceneEdit;
     private scene_edit_view: SceneEditView;
     private scene_mediator: SceneMediator;

@@ -2,14 +2,13 @@ import * as THREE from '../lib/three.module.js';
 import { GLTFLoader } from '../lib/GLTFLoader.js';
 import { OrbitControls } from '../lib/OrbitControls.js'
 import { Assets } from '../assets.js'
-import { SceneEdit, SceneElement, SceneEditUtils } from "../scene_edit.js";
-import { TransformControls } from '../lib/TransformControls.js';
 import SceneMath from '../scene_math.js';
 import { SceneCollisions, BoxColliderC, ColliderType } from '../scene_collisions.js';
 import { lerp, distlerp } from '../math.js';
 import TilesetEditor from './tileset_editor.js';
 import SceneRenderCache from './scene_render_cache.js';
 import SceneRenderLoader from './scene_render_loader.js';
+import { focusCameraOn, setCameraPos, setObjectPos } from './render_utils.js';
 
 const SPRITE_DEFAULT_PATH = "./res/icons/";
 
@@ -21,18 +20,14 @@ class SceneRender {
     camera_base_fov: number;
 
     private cube: THREE.Mesh;
-    private renderer: THREE.WebGLRenderer;
-    private rootscene: THREE.Scene;
+    renderer: THREE.WebGLRenderer;
+    rootscene: THREE.Scene;
     scene: THREE.Group;
     camera: THREE.PerspectiveCamera;
-    private controls: OrbitControls;
-    transform_controls: TransformControls;
-    private mousepos: THREE.Vector2;
-    private raycaster: THREE.Raycaster;
+    controls: OrbitControls;
 
     private scene_math: SceneMath;
     assets: Assets;
-    scene_edit: SceneEdit;
     private active: Boolean;
     cache: SceneRenderCache;
     loader: SceneRenderLoader;
@@ -41,13 +36,11 @@ class SceneRender {
 
     tileset_editor: TilesetEditor;
 
-    constructor(scene_edit: SceneEdit) {
-        this.scene_edit = scene_edit;
-        this.assets = this.scene_edit.assets;
+    constructor(assets: Assets) {
+        this.assets = assets;
         this.active = false;
         this.cache = new SceneRenderCache();
-        this.mousepos = new THREE.Vector2();
-        this.raycaster = new THREE.Raycaster();
+
         this.scene_math = new SceneMath();
         this._drawDebug2dAabb = false;
         this.loader = new SceneRenderLoader(this.assets, this.cache);
@@ -83,27 +76,6 @@ class SceneRender {
         this.controls = new OrbitControls(camera, renderer.domElement);
 		this.controls.screenSpacePanning = true;
 
-        this.transform_controls = new TransformControls( camera, renderer.domElement );
-        this.transform_controls.addEventListener( 'mouseDown', ( event ) => {
-            this.controls.enabled = false;
-        } );
-        this.transform_controls.addEventListener( 'mouseUp',  ( event ) => {
-            this.controls.enabled = true;
-        } );
-        rootscene.add(this.transform_controls);
-
-        let localMouse = {x: 0, y: 0}
-        canvas.addEventListener('mousedown', (ev: MouseEvent) => {
-            localMouse.x = ev.clientX;
-            localMouse.y = ev.clientY;
-        });
-        canvas.addEventListener('mouseup', (ev: MouseEvent) => {
-            const deltax = Math.abs(ev.clientX - localMouse.x);
-            const deltay = Math.abs(ev.clientY - localMouse.y);
-            if (deltax + deltay < 10) {
-                this.onMouseClick(ev);
-            }
-        });
         
         (camera as any).position.z = 2;
 
@@ -137,9 +109,6 @@ class SceneRender {
     removeObject(id: string, fullclear: boolean = false) {
         const object = this.cache.objects[id];
         if(object) {
-            if (this.transform_controls.object == object) {
-                this.transform_controls.detach();
-            }
             object.removeFromParent();
             delete this.cache.objects[id];
         }
@@ -181,7 +150,7 @@ class SceneRender {
         return new THREE.Sprite( await this.getMaterial("sprite", spritepath, true) as THREE.SpriteMaterial);
     }
 
-    produceObjectCollider(id: string, obj: THREE.Object3D, scene_origin: THREE.Vector3, scene_normal: THREE.Vector3) : THREE.Box2 | null {
+    genObject2dAABB(id: string, obj: THREE.Object3D, scene_origin: THREE.Vector3, scene_normal: THREE.Vector3) : THREE.Box2 | null {
         let box: THREE.Box2 | null = null;
         obj.traverse((o) => {
             if (!o.isMesh) {
@@ -201,33 +170,6 @@ class SceneRender {
         });
 
         return box;
-    }
-
-    drawColliderDebug(id: string, collider: BoxColliderC, color?: number, shift?: THREE.Vector2) {
-        let plane = this.cache.debug_colliders[id];
-
-        color = color ?? collider.type == ColliderType.RIGID ? 0x00ffff : 0xff00ff;
-
-        if (!plane) {
-            const geometry = new THREE.PlaneGeometry( 1, 1 );
-            // tynroar tmp todo: move material into cache
-            const material = new THREE.MeshStandardMaterial( { color, wireframe: true } );
-            plane = new THREE.Mesh( geometry, material as any );
-            this.scene.add( plane );
-        }
-
-        let shift_x = 0;
-        let shift_y = 0;
-        if (shift) {
-            shift_x = shift.x;
-            shift_y = shift.y;
-        }
-
-        this.setPos(plane, new THREE.Vector3(collider.x + shift_x, collider.y + shift_y, this.colliders.origin.z))
-        const planepos = (plane as any).position;
-        (plane as any).scale.set(collider.width, collider.height, 1);
-        plane.lookAt(planepos.x + this.colliders.normal.x, planepos.y + this.colliders.normal.y, this.colliders.origin.z + this.colliders.normal.z);
-        this.cache.debug_colliders[id] = plane;
     }
 
     clearCached() {
@@ -290,12 +232,7 @@ class SceneRender {
     }
 
     focusCameraOn(object: THREE.Object3D) {
-        const box = new THREE.Box3().setFromObject( object );
-        const center = box.getCenter(new THREE.Vector3())
-        const sphere = box.getBoundingSphere(new THREE.Sphere(center));
-
-        const pos = new THREE.Vector3(1, 1, 1).multiplyScalar(sphere.radius + Math.log(sphere.radius * 1.3));
-        this.setCameraPos(pos, center);
+        focusCameraOn(object, this.camera, this.cache.vec3_0.set(1, 1, 1), this.controls);
     }
 
     /**
@@ -325,21 +262,6 @@ class SceneRender {
 
         this.cube.rotateX(0.01);
         this.cube.rotateY(0.01);
-        /*
-        for(const k in this.colliders.bodies) {
-            const body = this.colliders.bodies[k];
-            const obj = this.cache.objects[k];
-            if (obj && this.cache.models[k]) {
-                const x = distlerp(obj.position.x, body.collider.x, 0.01, 3);
-                const y = distlerp(obj.position.y, body.collider.y, 0.01, 3);
-                obj.position.x  = x;
-                obj.position.y  = y;
-            }
-            if(this._drawDebug2dAabb && body.collider) {
-                this.drawColliderDebug(k, body.collider);
-                //this.drawColliderDebug(k + "_predict", body.collider, 0xff0000, this.colliders.getBodyNextShift(body, this.cache.vec2_0));
-            }
-        }*/
 
         this.tileset_editor.step(dt);
     
@@ -357,26 +279,31 @@ class SceneRender {
         this.renderer.render( this.rootscene, this.camera );
 
         // render ui
-        const padding = 16;
         this.renderer.clearDepth();
-        /*
-        this.renderer.setScissorTest(true);
-        this.renderer.setScissor(
-            width - this.tileset_editor.palette_w - padding,
-            height - this.tileset_editor.palette_h - padding,
-            this.tileset_editor.palette_w,
-            this.tileset_editor.palette_h
-        );
-        */
+        const sidebar_size = this.getSidebarSize();
         this.renderer.setViewport(
-            width - this.tileset_editor.palette_w - padding,
-            height - this.tileset_editor.palette_h - padding,
-            this.tileset_editor.palette_w,
-            this.tileset_editor.palette_h
+            sidebar_size.min.x,
+            sidebar_size.min.y,
+            sidebar_size.max.x - sidebar_size.min.x,
+            sidebar_size.max.y - sidebar_size.min.y
         );
         this.renderer.autoClear = false;
         this.renderer.render(this.tileset_editor.rootscene, this.tileset_editor.camera);
-        //this.renderer.setScissorTest(false);
+    }
+
+    getSidebarSize() {
+        const padding = 16;
+
+        const width = this.getRenderWidth();
+        const height = this.getRenderHeight();
+        const box = this.cache.box2_0;
+
+        box.max.x = width - padding;
+        box.min.x = box.max.x - this.tileset_editor.palette_w * (height / this.tileset_editor.palette_h);;
+        box.min.y = padding;
+        box.max.y = height - padding;
+
+        return box;
     }
 
     /**
@@ -421,62 +348,17 @@ class SceneRender {
         this.camera.updateProjectionMatrix();
     }
 
-    onMouseClick( event ) {
-        event.preventDefault();
-        this.mousepos.x = ( event.layerX / event.target.offsetWidth ) * 2 - 1;
-        this.mousepos.y = - ( event.layerY / event.target.offsetHeight ) * 2 + 1;
-        this.raycaster.setFromCamera( this.mousepos, this.camera );
-        const intersects = this.raycaster.intersectObjects( this.scene.children, true );
-
-        let object: THREE.Object3D | null = null;
-        for(const i in intersects) {
-            const intersect = intersects[i];
-            let o = intersect.object;
-            while(o) {
-                if (this.cache.objects[o.name]) {
-                    object = o;
-                    break;
-                }
-                o = o.parent;
-            } 
-            if (object) {
-                break;
-            }
-        }
-
-        if ( object ) {
-            console.log("transform attached to " + object.name)
-            this.transform_controls.attach(object);
-        }
-
-    }
-
-    /**
-     * 
-     * @param id model id
-     */
-    attachTransformControls(id: string) {
-        const object = this.cache.objects[id];
-        if (object) {
-            this.transform_controls.attach(object);
-        }
-    }
-
     /**
      * Avoiding typescript errors
      * @param o 
      * @param pos 
      */
     setPos(o: THREE.Object3D, pos: THREE.Vector3) {
-        if((o as any).position) {
-            (o as any).position.copy(pos);
-        }
+        setObjectPos(o, pos);
     }
 
     setCameraPos(pos: THREE.Vector3, target: THREE.Vector3) {
-        this.setPos(this.camera, pos);
-        this.camera.lookAt(target.x, target.y, target.z);
-        this.controls.target.copy(target);
+        setCameraPos(pos, target, this.camera, this.controls);
     }
 
 

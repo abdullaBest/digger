@@ -4,21 +4,24 @@ import { AssetsView, AssetPropertyEdit } from "./assets_view";
 import SceneRender from "../render/scene_render";
 import SceneMediator from "../scene_mediator";
 import SceneMap from "../scene_map";
+import SceneEditTools from "../render/scene_edit_tools";
 
 export default class SceneEditView {
     list_container: HTMLElement;
     props_container: HTMLElement;
     scene_edit: SceneEdit;
     scene_render: SceneRender;
+    scene_edit_tools: SceneEditTools;
     scene_mediator: SceneMediator;
     scene_map: SceneMap;
     private _listeners: Array<EventListenerDetails>;
 
-    constructor(scene_edit: SceneEdit, scene_render: SceneRender, scene_mediator: SceneMediator, scene_map: SceneMap){
+    constructor(scene_edit: SceneEdit, scene_render: SceneRender, scene_edit_tools: SceneEditTools, scene_mediator: SceneMediator, scene_map: SceneMap){
         this.scene_edit = scene_edit;
         this.scene_render = scene_render;
         this.scene_mediator = scene_mediator;
         this.scene_map = scene_map;
+        this.scene_edit_tools = scene_edit_tools;
     }
 
     /**
@@ -38,6 +41,10 @@ export default class SceneEditView {
             this.propagate();
         }, node: this.scene_mediator.events}, this._listeners)
 
+        addEventListener({name: "scene_close", callback: async (ev) => {
+            this.scene_render.tileset_editor.discardPalette();
+        }, node: this.scene_mediator.events}, this._listeners);
+
         // select scene to edit
         addEventListener({name: "click", callback: async (ev) => {
             const id = (ev.target as HTMLElement).id;
@@ -53,9 +60,14 @@ export default class SceneEditView {
         // select scene element to edit
         addEventListener({name: "click", callback: async (ev) => {
             const el = (ev.target as HTMLElement);
-            if(this.scene_edit.elements[el.id]) {
+            const scene_element = this.scene_edit.elements[el.id];
+            if(scene_element) {
                 el.classList.toggle('collapse');
-                this.scene_render.attachTransformControls(el.id);
+                this.scene_edit_tools.attachTransformControls(el.id);
+                if (scene_element.components.tileset) {
+                    
+                    this.scene_render.tileset_editor.drawPalette(this.scene_map.tilesets[el.id]);
+                }
             } else {
                 // element actions
                 const id = el.parentElement?.dataset["elementid"];
@@ -122,7 +134,7 @@ export default class SceneEditView {
         }, this._listeners)
 
         // toggles modes of transform helper
-        const tcontrols = this.scene_render.transform_controls
+        const tcontrols = this.scene_edit_tools.transform_controls
         listenClick("#controls_mode_transform_translate", () => tcontrols?.setMode( 'translate' ), this._listeners)
         listenClick("#controls_mode_transform_rotate", () => tcontrols?.setMode( 'rotate' ), this._listeners)
         listenClick("#controls_mode_transform_scale", () => tcontrols?.setMode( 'scale' ), this._listeners)
@@ -142,6 +154,16 @@ export default class SceneEditView {
             const mode_text = mode_local ? 'local'  : 'world'
             tcontrols.setSpace( mode_text );
             //(ev.target as HTMLElement).innerHTML = "t: " + mode_text;
+        }, this._listeners)
+
+        listenClick("#controls_mode_draw_tiles", (ev) =>  {
+            const toggled = (ev.target as HTMLElement)?.classList.toggle("highlighted")
+            querySelector("#controls_mode_erase_tiles").classList.remove("highlighted");
+        }, this._listeners)
+
+        listenClick("#controls_mode_erase_tiles", (ev) =>  {
+            const toggled = (ev.target as HTMLElement)?.classList.toggle("highlighted")
+            querySelector("#controls_mode_draw_tiles").classList.remove("highlighted");
         }, this._listeners)
 
         tcontrols.addEventListener( 'objectChange', (e) => {
@@ -250,8 +272,14 @@ export default class SceneEditView {
             el.dataset["name"] = element.name;
         }).drawTextEditOption(el);
 
-        const redraw = () => {
-            this.scene_map.addElement(element);
+        const redraw = async () => {
+            await this.scene_map.addElement(element);
+
+            if (element.components.tileset) {
+                this.scene_mediator.scene_game.tileset_render.cleanup();
+                this.scene_mediator.scene_game.tileset_render.update(0, 0);
+                this.scene_render.tileset_editor.drawPalette(this.scene_map.tilesets[element.id]);
+            }
         };
         if (inrender) {
             redraw();
