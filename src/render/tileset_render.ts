@@ -11,6 +11,7 @@ export default class TilesetRender {
     tiles: Array<MapEntity>
     // tile add queue
     queue: { [id: string] : MapEntity }
+    queued: number;
     // removed tiles that can be reused
     dump: { [id: string] : Array<MapEntity> }
 
@@ -23,8 +24,9 @@ export default class TilesetRender {
         this.min_y = 0;
         this.max_x = 0;
         this.max_y = 0;
-        this.clip_h = 5;
-        this.clip_w = 5;
+        this.clip_h = 16;
+        this.clip_w = 16;
+        this.queued = 0;
     }
 
     run() {
@@ -33,30 +35,49 @@ export default class TilesetRender {
         this.dump = {};
     }
 
+    _isPosInClipbounds(pos_x: number, pos_y: number) {
+        const threshold_w = this.clip_w * 0.5;
+        const threshold_h = this.clip_h * 0.5;
+
+        return !(pos_x < this.min_x - threshold_w || pos_x > this.max_x + threshold_w || pos_y < this.min_y - threshold_h || pos_y > this.max_y + threshold_h);
+    }
+
     update(pos_x, pos_y, ignore: {[id: string] : any}) {
-       this._draw(pos_x, pos_y, ignore);
+       this._queueDraw(pos_x, pos_y, ignore);
 
        // add tiles from queue list
        let added = 0;
+       const toadd = Math.log(this.queued + 1) * 8;
        for(const k in this.queue) {
-        if (added++ > 1) {
+        if (added++ > toadd) {
             break;
         }
         const entity = this.queue[k];
-        this.scene_map.addEntity(entity).then(() => this.tiles.push(entity))
+        const pos_x = entity.components.model.properties.pos_x;
+        const pos_y = entity.components.model.properties.pos_y;
+        if (this._isPosInClipbounds(pos_x, pos_y)) {
+            this.scene_map.addEntity(entity).then(() => this.tiles.push(entity))
+        }
         delete this.queue[k];
+        this.queued -= 1;
        }
 
        // remove random tiles outside bounds
        let picked = 0;
+       const topick = Math.log(this.tiles.length + 1) * 10;
        let removed = 0;
-       while(this.tiles.length && picked < 10 && removed < 5) {
+       while(this.tiles.length && picked < topick && removed < 5) {
         picked += 1;
         const index = Math.floor(Math.random() * this.tiles.length);
         const tile = this.tiles[index];
         const pos_x = this.scene_map.entity_pos_x(tile.id);
         const pos_y = this.scene_map.entity_pos_y(tile.id);
-        if (pos_x < this.min_x - this.clip_w || pos_x > this.max_x + this.clip_w|| pos_y < this.min_y - this.clip_h || pos_y > this.max_y + this.clip_h) {
+        if (this.queue[tile.id]) {
+            continue;
+        }
+
+        
+        if (!this._isPosInClipbounds(pos_x, pos_y)) {
             this.scene_map.removeEntity(tile.id);
             
             //remove from array
@@ -71,21 +92,31 @@ export default class TilesetRender {
                     arr = this.dump[tile.inherits] = [];
                 }
                 arr.push(tile);
-            } else {}
+            }
         } 
        }
     }
 
-    _draw(pos_x, pos_y, ignore: {[id: string] : any}) {
+    _queueDraw(pos_x, pos_y, ignore: {[id: string] : any}) {
         const clip_w = this.clip_w;
         const clip_h = this.clip_h;
         const x = Math.round(pos_x);
         const y = Math.round(pos_y);
-        this.min_x = x - clip_w;
-        this.min_y = y - clip_h;
-        this.max_x = x + clip_w;
-        this.max_y = y + clip_h;
-        
+
+        const threshold = 4;
+        const min_x = x - clip_w;
+        const min_y = y - clip_h;
+        const max_x = x + clip_w;
+        const max_y = y + clip_h;
+        if (Math.abs((min_x + min_y + max_x + max_y) - (this.min_x + this.min_y + this.max_x + this.max_y)) < threshold) {
+            return;
+        }
+
+        this.min_x = min_x;
+        this.min_y = min_y;
+        this.max_x = max_x;
+        this.max_y = max_y;
+
         for(const k in this.scene_map.tilesets) {
             const tileset = this.scene_map.tilesets[k]
             tileset.propagate((ref_id: any, id: string, pos_x: number, pos_y: number) => {
@@ -100,12 +131,14 @@ export default class TilesetRender {
                     const model = Object.setPrototypeOf({ pos_x, pos_y }, tileset.models[ref_id]);
                     entity.components.model = new MapComponent(model);
                 } else {
+                    entity.id = id;
                     const model = entity.components.model;
                     model.properties.pos_x = pos_x;
                     model.properties.pos_y = pos_y;
                 }
                
                 this.queue[id] = entity;
+                this.queued += 1;
             }, this.min_x, this.min_y, this.max_x, this.max_y);
         }
     }
