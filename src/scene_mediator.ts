@@ -38,7 +38,7 @@ class SceneMediator {
 
         this.active_scene = id;
         await this.scene_edit.load(id);
-        this.scene_game.open(this.scene_edit.elements);
+        this.scene_game.run(this.scene_edit.elements);
         this.events.dispatchEvent(new CustomEvent("scene_open", { detail : {id}}));
     }
 
@@ -54,7 +54,7 @@ class SceneMediator {
     }
 
     play(entrance_id?: string | null) {
-        this.scene_game.run(entrance_id);
+        this.scene_game.play(entrance_id);
     }
 }
 

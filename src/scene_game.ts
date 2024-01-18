@@ -31,6 +31,7 @@ export default class SceneGame {
 
     private _listeners: Array<EventListenerDetails>;
     private active: boolean;
+    private inplay: boolean;
     autostep: boolean;
     elements: { [id: string] : SceneElement; }
 
@@ -51,6 +52,8 @@ export default class SceneGame {
         this.system_render_bodiespos = new SystemRenderBodiesPos(this.scene_map, this.scene_render);
         this.tileset_render = new TilesetRender(this.scene_map);
 
+        this.active = false;
+        this.inplay = false;
         this.autostep = true;
         this._listeners = [];
         this.requested_map_switch = null;
@@ -74,21 +77,17 @@ export default class SceneGame {
         return this;
     }
 
-    async open(elements: { [id: string] : SceneElement; }) {
+    async run(elements: { [id: string] : SceneElement; }) {
         await this.scene_map.run(elements);
 
         this.tileset_render.run();
         this._updateTilesetsDraw();
 
         this.elements = elements;
+        this.active = true;
     }
 
-    _updateTilesetsDraw(clip: boolean = this.tileset_render.clip_tiles_draw) {
-        this.tileset_render.clip_tiles_draw = clip;
-        this.tileset_render.update(this.player_character?.body.collider.x ?? 0, this.player_character?.body.collider.y ?? 0, this.system_objects_break.breakable_objects ?? {});
-    }
-
-    async run(entrance_id?: string | null) {
+    async play(entrance_id?: string | null) {
         this.system_objects_break.run();
         this.system_objects_fall.run();
         this.system_render_bodiespos.run();
@@ -114,11 +113,10 @@ export default class SceneGame {
             );
         // debug outputs -- }
 
-        this.active = true;
+        this.inplay = true;
     }
 
     async _runCharacter(entrance_id?: string | null) {
-
         // find start pos
         const startpos = new Vector2(0.1, 4);
         {
@@ -167,6 +165,7 @@ export default class SceneGame {
         this.scene_map.cleanup();
 
         this.active = false;
+        this.inplay = false;
         this.requested_map_switch = null;
         this.requested_map_entrance = null;
         this.scene_debug.stop();
@@ -186,6 +185,15 @@ export default class SceneGame {
      */
     step(dt: number, forced: boolean = false) {
         if (!this.active) {
+            return;
+        }
+
+        if (this.tileset_render.clip_tiles_draw) {
+            // while map already drawn if there's no clip set
+            this._updateTilesetsDraw();
+        }
+
+        if (!this.inplay) {
             return;
         }
         if (!this.autostep && !forced) {
@@ -226,10 +234,6 @@ export default class SceneGame {
         }
 
         this._stepCharacterInteractions(this.player_character);
-        if (this.tileset_render.clip_tiles_draw) {
-            // while map already drawn if there's no clip set
-            this._updateTilesetsDraw();
-        }
     }
 
     private _stepCharacterInteractions(cha: Character) {
@@ -260,6 +264,12 @@ export default class SceneGame {
         }
 
         this.player_character_render.drawUiInteractSprite(interacts);
+    }
+
+    
+    _updateTilesetsDraw(clip: boolean = this.tileset_render.clip_tiles_draw) {
+        this.tileset_render.clip_tiles_draw = clip;
+        this.tileset_render.update(this.player_character?.body.collider.x ?? 0, this.player_character?.body.collider.y ?? 0, this.system_objects_break.breakable_objects ?? {});
     }
 
     requestMapSwitch(signal: string) {

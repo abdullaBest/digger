@@ -61,9 +61,9 @@ export default class TilesetRender {
 
        // remove random tiles outside bounds
        let picked = 0;
-       const topick = Math.log(this.tiles.length + 1) * 10;
+       const topick = Math.log(this.tiles.length + 1) * 16;
        let removed = 0;
-       while(this.tiles.length && picked < topick && removed < 5) {
+       while(this.tiles.length && picked < topick && removed < topick * 0.5) {
         picked += 1;
         const index = Math.floor(Math.random() * this.tiles.length);
         const tile = this.tiles[index];
