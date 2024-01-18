@@ -134,7 +134,7 @@ class SceneRender {
         return object;
     }
 
-    removeObject(id: string) {
+    removeObject(id: string, fullclear: boolean = false) {
         const object = this.cache.objects[id];
         if(object) {
             if (this.transform_controls.object == object) {
@@ -143,11 +143,12 @@ class SceneRender {
             object.removeFromParent();
             delete this.cache.objects[id];
         }
-        this.loader.unloadModel(id, false);
+        this.loader.unloadModel(id, fullclear);
     }
-    
-    removeModel(id: string) {
+
+    removeGLTF(id: string) {
         this.removeObject(id);
+        delete this.cache.gltfs[id];
     }
 
     addEmptyObject(id: string) : THREE.Object3D {
@@ -231,7 +232,7 @@ class SceneRender {
 
     clearCached() {
         for(const k in this.cache.objects) {
-            this.removeObject(k)
+            this.removeObject(k, true);
         }
     }
 
@@ -267,7 +268,7 @@ class SceneRender {
                 gltf.scene.name = id;
                 this.cache.gltfs[id] = gltf;
                 this.cache.objects[id] = gltf.scene;
-                console.log(dumpObject(gltf.scene).join('\n'));
+                //console.log(dumpObject(gltf.scene).join('\n'));
                 resolve(gltf);
             }, undefined,  ( error ) => {
                 console.error( error );

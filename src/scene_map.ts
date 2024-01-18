@@ -69,15 +69,10 @@ class SceneMap {
 
     stop() {
         for(const k in this.entities) {
-            this.removeEntity(k);
+            this.removeEntity(k, true);
         }
 
         this.scene_collisions.clear();
-    }
-
-    cleanup() {
-        this.stop();
-        this.scene_render.clearCached();
     }
 
     async propagate(elements: { [id: string] : SceneElement; }) {
@@ -158,30 +153,30 @@ class SceneMap {
         return entity;
     }
 
-    removeEntity(id: string) {
+    removeEntity(id: string, fullclear: boolean = false) {
         const entity = this.entities[id];
         if (!entity) {
             return;
         }
 
         if(entity.components.model) {
-            this.scene_render.removeObject(id);
+            this.scene_render.removeObject(id, fullclear);
         }
 
         if (entity.components.trigger) {
-            this.scene_render.removeObject(id);
+            this.scene_render.removeObject(id, fullclear);
         }
 
         if (entity.components.tileset) {
            const tiles = this.tilesets[id].tiles;
            for(const k in tiles) {
-                this.removeEntity(tiles[k]);
+                this.removeEntity(tiles[k], fullclear);
            }
            const models = this.tilesets[id].models;
            for(const k in models) {
-                this.scene_render_loader.unloadModel(k, true);
+                this.scene_render_loader.unloadModel(k, fullclear);
            }
-           this.scene_render.removeObject(id);
+           this.scene_render.removeObject(id, fullclear);
            delete this.tilesets[id];
         }
 

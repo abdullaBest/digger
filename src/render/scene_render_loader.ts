@@ -94,11 +94,11 @@ export default class SceneRenderLoader {
     unloadModel(id: string, withmesh: boolean = false) {
         const model = this.cache.models[id];
         if (model) {
+            delete this.cache.models[id];
+
             if (withmesh) {
                 delete this.cache.gltfs[model.gltf];
             }
-
-            delete this.cache.models[id];
         }
     }
 

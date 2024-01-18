@@ -173,7 +173,6 @@ export default class SceneGame {
     stop() {
         this.stopPlay();
         this.scene_map.stop();
-        this.scene_map.cleanup();
 
         this.active = false;
         this.requested_map_switch = null;

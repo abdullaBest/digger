@@ -69,7 +69,7 @@ export default class CharacterRender {
     }
 
     stop() {
-        this.scene_render.removeModel("player_character");
+        this.scene_render.removeGLTF("player_character");
         while(this.debug_bodypos_path.length) {
             const m = this.debug_bodypos_path.pop();
             if (m) {
