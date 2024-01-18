@@ -143,11 +143,11 @@ class SceneRender {
             object.removeFromParent();
             delete this.cache.objects[id];
         }
+        this.loader.unloadModel(id, false);
     }
     
     removeModel(id: string) {
         this.removeObject(id);
-        this.loader.unloadModel(id);
     }
 
     addEmptyObject(id: string) : THREE.Object3D {

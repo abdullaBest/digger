@@ -101,7 +101,10 @@ class SceneMap {
 
     async addEntity(entity: MapEntity) : Promise<MapEntity> {
         const id = entity.id;
-        this.removeEntity(id);
+        if (this.entities[id]) {
+            throw new Error(`Entiry ${id} already exists!`)
+        }
+        //this.removeEntity(id);
 
         this.entities[id] = entity;
 
@@ -170,10 +173,13 @@ class SceneMap {
         }
 
         if (entity.components.tileset) {
-           // this.scene_render.removeTileset(id);
            const tiles = this.tilesets[id].tiles;
            for(const k in tiles) {
                 this.removeEntity(tiles[k]);
+           }
+           const models = this.tilesets[id].models;
+           for(const k in models) {
+                this.scene_render_loader.unloadModel(k, true);
            }
            this.scene_render.removeObject(id);
            delete this.tilesets[id];

@@ -9,9 +9,9 @@ import { importGltfSequence } from "./importer";
 import SceneGame from "./scene_game";
 import SceneMediator from "./scene_mediator";
 import SceneCollisions from "./scene_collisions";
-import PropertyDraw from "./views/property_draw";
 import { lerp } from "./math";
 import SceneMap from "./scene_map";
+import AppDebug from "./app_debug";
 
 class App {
     constructor() {
@@ -38,14 +38,10 @@ class App {
             throw new Error("can't find canvas to render");
         }
 
-        this.app_debug_draw = new PropertyDraw(querySelector("#app_state_details"), querySelector("#app_state_details-toggle")).init(this);
+        this.app_debug_draw = new AppDebug();
+        this.app_debug_draw.app_state_draw.init(this);
         this.scene_render.init(canvas as HTMLCanvasElement);
         this.scene_game.init();
-        
-        this.app_debug_draw.addWrite("frame_threshold");
-        this.app_debug_draw.addWrite("fixed_timestep");
-        this.app_debug_draw.addRead("average_frametime");
-        this.app_debug_draw.addRead("[fps]", () => 1000 / this.average_frametime);
 
         return this;
     }
@@ -81,6 +77,8 @@ class App {
             this.timestamp = performance.now();
             this.loop();
         }, name: "focus", node: window as any}, this._listeners)
+
+        this.app_debug_draw.run(this.scene_render.cache);
     }
 
     private loop() {
@@ -267,7 +265,7 @@ class App {
 
     private _listeners: Array<EventListenerDetails>;
 
-    private app_debug_draw: PropertyDraw;
+    private app_debug_draw: AppDebug;
 }
 
 export default App;

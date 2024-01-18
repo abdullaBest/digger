@@ -88,6 +88,7 @@ export default class SceneGame {
     }
 
     async play(entrance_id?: string | null) {
+        this.stopPlay();
         this.system_objects_break.run();
         this.system_objects_fall.run();
         this.system_render_bodiespos.run();
@@ -106,7 +107,7 @@ export default class SceneGame {
         //addEventListener({callback: ()=> {console.log("focus")}, name: "focus", node: window as any}, this._listeners)
 
         // debug outputs -- {
-        this.scene_debug.run(this.player_character, this.camera_config, this.scene_render.cache);
+        this.scene_debug.run(this.player_character, this.camera_config);
         this.scene_debug.camera_config_draw.addWrite("camera_fov", 
             () => this.scene_render.camera_base_fov, 
             (v) => {this.scene_render.camera_base_fov = v; this.scene_render.updateCameraAspect();}
@@ -160,21 +161,25 @@ export default class SceneGame {
         }
     }
 
-    stop() {
-        this.scene_map.stop();
-        this.scene_map.cleanup();
-
-        this.active = false;
+    stopPlay() {
         this.inplay = false;
-        this.requested_map_switch = null;
-        this.requested_map_entrance = null;
-        this.scene_debug.stop();
-        removeEventListeners(this._listeners);
-        
+
         if(this.player_character) {
             this.player_character_render.stop();
             this.scene_collisions.removeBody(this.player_character.body.id, true);
         }
+    }
+
+    stop() {
+        this.stopPlay();
+        this.scene_map.stop();
+        this.scene_map.cleanup();
+
+        this.active = false;
+        this.requested_map_switch = null;
+        this.requested_map_entrance = null;
+        this.scene_debug.stop();
+        removeEventListeners(this._listeners);
     }
 
     /**
