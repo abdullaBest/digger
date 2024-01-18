@@ -22,10 +22,6 @@ export default class TilesetRender {
 
     constructor(scene_map: SceneMap) {
         this.scene_map = scene_map;
-        this.min_x = 0;
-        this.min_y = 0;
-        this.max_x = 0;
-        this.max_y = 0;
         this.clip_h = 16;
         this.clip_w = 16;
         this.queued = 0;
@@ -36,6 +32,11 @@ export default class TilesetRender {
         this.queue = {};
         this.tiles = [];
         this.dump = {};
+        
+        this.min_x = -Infinity;
+        this.min_y = -Infinity;
+        this.max_x = Infinity;
+        this.max_y = Infinity;
     }
 
     _isPosInClipbounds(pos_x: number, pos_y: number) {
