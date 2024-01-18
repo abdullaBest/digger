@@ -255,44 +255,9 @@ export default class SceneGame {
         this.requested_map_entrance = entrance_id;
     }
 
-    private _actionHitCollisionTest(cha: Character): string | null {
-        const tile_size = 1;
-        const ray_size = tile_size * 0.9;
-        // default in center
-        let test_l = cha.body.collider.x;
-        let test_r = cha.body.collider.x;
-        let test_t = cha.body.collider.y;
-        let test_b = cha.body.collider.y;
-
-        // shift ray towards look x direction.
-        // Y look direction in priority
-        if (!cha.look_direction_y) {
-            test_l = cha.body.collider.x + cha.body.collider.width * 0.4 * cha.look_direction_x + ray_size * cha.look_direction_x;
-            test_r = cha.body.collider.x + cha.body.collider.width * 0.4 * cha.look_direction_x + ray_size * cha.look_direction_x;
-            test_t = cha.body.collider._top;
-            test_b = cha.body.collider._bottom;
-        } else {
-            test_t = cha.body.collider.y + cha.body.collider.height * 0.4 * cha.look_direction_y + ray_size * cha.look_direction_y;
-            test_b = cha.body.collider.y + cha.body.collider.height * 0.4 * cha.look_direction_y + ray_size * cha.look_direction_y;
-            test_l = cha.body.collider._left;
-            test_r = cha.body.collider._right;
-        }
-        let hit_collider: string | null = null;
-        for(const k in this.scene_collisions.colliders) {
-            const c = this.scene_collisions.colliders[k];
-            const collides_x = test_l <= c._right && c._left <= test_r;
-            const collides_y = test_b <= c._top && c._bottom <= test_t;
-            if (collides_x && collides_y) {
-                hit_collider = k;
-                break;
-            }
-        }
-
-        return hit_collider;
-    }
 
     private _actionHit() {
-        const hit_result = this._actionHitCollisionTest(this.player_character);
+        const hit_result = this.system_objects_break._actionHitCollisionTest(this.player_character, this.scene_collisions.colliders);
         if (!hit_result) {
             return;
         }
