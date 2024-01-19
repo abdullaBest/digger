@@ -20,8 +20,8 @@ class App {
         this.scene_edit = new SceneEdit(this.assets);
         this.scene_collisions = new SceneCollisions();
         this.scene_render = new SceneRender(this.assets);
-        this.scene_edit_tools = new SceneEditTools(this.scene_render);
         this.scene_map = new SceneMap(this.scene_collisions, this.scene_render)
+        this.scene_edit_tools = new SceneEditTools(this.scene_render, this.scene_collisions, this.scene_map);
         this.scene_game = new SceneGame(this.scene_collisions, this.scene_render, this.scene_map);
         this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_game, this.scene_map);
         this.assets_view = new AssetsView(this.assets, this.scene_render, this.scene_mediator);
@@ -106,14 +106,27 @@ class App {
         this.timestamp = now;
         this.average_frametime = lerp(this.average_frametime, dtms, 0.07);
 
-        this.scene_game.step(dt);
-        this.scene_edit_tools.step(dt);
-        this.scene_render.step(dt);
-        this.scene_mediator.step();
-
-        this.app_debug_draw.step();
+        this.step(dt);
+        this.draw();
 
         requestAnimationFrame( this.loop.bind(this) );
+    }
+
+    step(dt: number) {
+        this.scene_game.step(dt);
+
+        // scene_edit_tools steps before scene_render
+        this.scene_edit_tools.step(dt);
+        this.scene_render.step(dt);
+
+        this.scene_mediator.step();
+        this.app_debug_draw.step();
+    }
+
+    draw() {
+        // scene_edit_tools renders before scene_render
+        this.scene_render.render();
+        this.scene_edit_tools.render();
     }
 
     // tmp

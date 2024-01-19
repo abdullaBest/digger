@@ -121,29 +121,34 @@ export default class TilesetRender {
         for(const k in this.scene_map.tilesets) {
             const tileset = this.scene_map.tilesets[k];
 
-            tileset.propagate((ref_id: any, id: string, pos_x: number, pos_y: number) => {
+            tileset.propagate((ref_id: string, id: string, pos_x: number, pos_y: number) => {
                 if (this.scene_map.entities[id] || (ignore && id in ignore) || this.queue[id]) {
                     return;
                 }
-                let entity = this.dump[ref_id]?.pop();
-                if (!entity) {
-                    entity = new MapEntity(id);
-                    // tynroar todo: make proper inheritance insead of ref_id
-                    entity.inherits = ref_id;
-                    const model = Object.setPrototypeOf({ pos_x, pos_y }, tileset.models[ref_id]);
-                    entity.components.model = new MapComponent(model);
-                } else {
-                    entity.id = id;
-                    const model = entity.components.model;
-                    model.properties.pos_x = pos_x;
-                    model.properties.pos_y = pos_y;
-                }
-               
+                const entity = this.makeTileEntity(tileset.models[ref_id], ref_id, id, pos_x, pos_y);
                 this.queue[id] = entity;
                 this.queued += 1;
             }, 
             min_x, min_y, max_x, max_y);
         }
+    }
+
+    makeTileEntity(ref: any, ref_id: string, id: string, pos_x: number, pos_y: number) {
+        let entity = this.dump[ref_id]?.pop();
+        if (!entity) {
+            entity = new MapEntity(id);
+            // tynroar todo: make proper inheritance insead of ref_id
+            entity.inherits = ref_id;
+            const model = Object.setPrototypeOf({ pos_x, pos_y }, ref);
+            entity.components.model = new MapComponent(model);
+        } else {
+            entity.id = id;
+            const model = entity.components.model;
+            model.properties.pos_x = pos_x;
+            model.properties.pos_y = pos_y;
+        }
+
+        return entity;
     }
 
     _queueDrawClip(pos_x, pos_y, ignore?: {[id: string] : any}) {

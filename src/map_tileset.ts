@@ -6,6 +6,7 @@ import { clamp } from "./math";
 export default class MapTileset {
     models: { [id: string] : any };
     models_ids: { [id: number] : string };
+    colors: { [id: string] : string }
     tiles: Array<string>;
     image: HTMLImageElement | null;
     tileset: any | null;
@@ -20,6 +21,7 @@ export default class MapTileset {
         this.id = id;
         this.tileset = tileset;
         this.models = {};
+        this.colors = {};
         this.models_ids = {};
         this.tiles = [];
         this.image = null;
@@ -97,6 +99,7 @@ export default class MapTileset {
             const modelid = `${id}-tileref-${i}`;
             const colorid = parseInt(color)
             this.models[modelid] = model;
+            this.colors[modelid] = color;
             this.models_ids[colorid] = modelid;
         }
     }
@@ -168,7 +171,6 @@ export default class MapTileset {
             const a = imgdata[i + 3] & 0xFF;
             const color = (r<< 24 >>>0) + (g<<16) + (b<<8) + (a<<0);
 
-
             const cache_id = this.models_ids[color];
             const modelref = this.models[cache_id];
             if (!modelref) {
@@ -185,7 +187,7 @@ export default class MapTileset {
             const ly = -Math.floor((i / 4) / canvas.width) * tileset.tilesize_y;
             const pos_x = ox + lx;
             const pos_y = oy + ly;
-            const modelid = `${this.id}-tile-x${pos_x}_y${pos_y}`;
+            const modelid = this.makeTileId(pos_x, pos_y);
             this.tiles.push(modelid);
 
             ontile(cache_id, modelid, origin_x + pos_x, origin_y + pos_y);
@@ -194,6 +196,10 @@ export default class MapTileset {
         for(const i in unused_colors) {
             console.warn(`SceneRender::addTileset ref texture has color 0x${unused_colors[i].toString(16).padStart(8, "0")} which does not have tile for that.`);
         }
+    }
+
+    makeTileId(pos_x: number, pos_y: number): string {
+        return `${this.id}-tile-x${pos_x}_y${pos_y}`;
     }
 
     get pos_x() {

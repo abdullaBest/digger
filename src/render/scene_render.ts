@@ -5,7 +5,6 @@ import { Assets } from '../assets.js'
 import SceneMath from '../scene_math.js';
 import { SceneCollisions, BoxColliderC, ColliderType } from '../scene_collisions.js';
 import { lerp, distlerp } from '../math.js';
-import TilesetEditor from './tileset_editor.js';
 import SceneRenderCache from './scene_render_cache.js';
 import SceneRenderLoader from './scene_render_loader.js';
 import { focusCameraOn, setCameraPos, setObjectPos } from './render_utils.js';
@@ -26,7 +25,7 @@ class SceneRender {
     camera: THREE.PerspectiveCamera;
     controls: OrbitControls;
 
-    private scene_math: SceneMath;
+    scene_math: SceneMath;
     assets: Assets;
     private active: Boolean;
     cache: SceneRenderCache;
@@ -34,7 +33,6 @@ class SceneRender {
 
     _drawDebug2dAabb: boolean;
 
-    tileset_editor: TilesetEditor;
 
     constructor(assets: Assets) {
         this.assets = assets;
@@ -44,7 +42,6 @@ class SceneRender {
         this.scene_math = new SceneMath();
         this._drawDebug2dAabb = false;
         this.loader = new SceneRenderLoader(this.assets, this.cache);
-        this.tileset_editor = new TilesetEditor(this.loader);
         this.camera_base_fov = 45;
     }
     init(canvas: HTMLCanvasElement) : SceneRender {
@@ -86,9 +83,6 @@ class SceneRender {
         this.camera = camera;
 
         this.updateSize();
-        //this.test();
-
-        this.tileset_editor.init();
        
         return this;
     }
@@ -263,9 +257,6 @@ class SceneRender {
         this.cube.rotateX(0.01);
         this.cube.rotateY(0.01);
 
-        this.tileset_editor.step(dt);
-    
-        this.render();
     }
 
     render() {
@@ -277,34 +268,8 @@ class SceneRender {
         this.renderer.setViewport(0, 0, width, 
             height);
         this.renderer.render( this.rootscene, this.camera );
-
-        // render ui
-        this.renderer.clearDepth();
-        const sidebar_size = this.getSidebarSize();
-        this.renderer.setViewport(
-            sidebar_size.min.x,
-            sidebar_size.min.y,
-            sidebar_size.max.x - sidebar_size.min.x,
-            sidebar_size.max.y - sidebar_size.min.y
-        );
-        this.renderer.autoClear = false;
-        this.renderer.render(this.tileset_editor.rootscene, this.tileset_editor.camera);
     }
 
-    getSidebarSize() {
-        const padding = 16;
-
-        const width = this.getRenderWidth();
-        const height = this.getRenderHeight();
-        const box = this.cache.box2_0;
-
-        box.max.x = width - padding;
-        box.min.x = box.max.x - this.tileset_editor.palette_w * (height / this.tileset_editor.palette_h);;
-        box.min.y = padding;
-        box.max.y = height - padding;
-
-        return box;
-    }
 
     /**
      * attaches scene canvas to new parent node

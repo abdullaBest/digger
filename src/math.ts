@@ -22,3 +22,7 @@ export function distlerp(a: number, b: number, min: number, max: number) : numbe
     return lerp(a, b, c);
 }
 
+export function snap(value, step) {
+    return Math.round(value / step) * step;
+}
+

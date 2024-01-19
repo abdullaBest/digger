@@ -13,17 +13,25 @@ export default class TilesetEditor {
     palette_h: number;
     palette_w: number;
 
+    tilesize_x: number;
+    tilesize_y: number;
+
     loader: SceneRenderLoader;
 
     objects: { [id:string] : THREE.Object3D };
+    colors: { [id:string] : string }
 
     slected_object: THREE.Object3D | null;
+    selected_tileset: string | null;
 
     constructor(loader: SceneRenderLoader) {
         this.palette_h = 512;
         this.palette_w = 64;
+        this.tilesize_x = 1;
+        this.tilesize_y = 1;
         this.loader = loader;
         this.objects = {};
+        this.colors = {};
     }
 
     init() : TilesetEditor {
@@ -91,12 +99,18 @@ export default class TilesetEditor {
     async drawPalette(tileset: MapTileset) {
         this.cleanupPalette();
 
+        this.tilesize_x = tileset.tileset.tilesize_x;
+        this.tilesize_y = tileset.tileset.tilesize_y;
+        this.selected_tileset = tileset.id;
+
         let index = 0;
-        for(const id in tileset.models) {
+        for(const color in tileset.models_ids) {
+            const id = tileset.models_ids[color];
             const m = tileset.models[id];
             const o = await this.loader.getModel(id, m);
             o.name = id;
             this.objects[id] = o;
+            this.colors[id] = tileset.colors[id]
             this.scene.add(o);
             (o as any).position.y = index-- * 2;
         }
@@ -111,5 +125,7 @@ export default class TilesetEditor {
         }
 
         this.slected_object = null;
+        this.selected_tileset = null;
+        this.colors = {};
     }
 }
