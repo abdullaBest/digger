@@ -16,6 +16,8 @@ export default class TilesetRender {
     queued: number;
     // removed tiles that can be reused
     dump: { [id: string] : Array<MapEntity> }
+    // removed tiles that gonna be restored as it was (preserved)
+    dump_exact: { [id: string] : MapEntity };
 
     clip_w: number;
     clip_h: number;
@@ -36,6 +38,7 @@ export default class TilesetRender {
         this.queue = {};
         this.tiles = [];
         this.dump = {};
+        this.dump_exact = {};
         
         this.min_x = -Infinity;
         this.min_y = -Infinity;
@@ -89,11 +92,18 @@ export default class TilesetRender {
             removed += 1;
 
             if (tile.inherits) {
-                let arr = this.dump[tile.inherits]
-                if (!arr) {
-                    arr = this.dump[tile.inherits] = [];
+                // save entity into dump
+                // a. save into exact list - gonna be restored as it was
+                // b. save into dump array - just saves some memory operations
+                if (tile.persist) {
+                    this.dump_exact[tile.id] = tile;
+                } else {
+                    let arr = this.dump[tile.inherits]
+                    if (!arr) {
+                        arr = this.dump[tile.inherits] = [];
+                    }
+                    arr.push(tile);
                 }
-                arr.push(tile);
             }
         } 
        }
@@ -134,19 +144,22 @@ export default class TilesetRender {
     }
 
     makeTileEntity(ref: any, ref_id: string, id: string, pos_x: number, pos_y: number) {
-        let entity = this.dump[ref_id]?.pop();
+        let entity = this.dump_exact[id] ?? this.dump[ref_id]?.pop();
         if (!entity) {
             entity = new MapEntity(id);
             // tynroar todo: make proper inheritance insead of ref_id
             entity.inherits = ref_id;
             const model = Object.setPrototypeOf({ pos_x, pos_y }, ref);
             entity.components.model = new MapComponent(model);
+        } else if (this.dump_exact[id]) {
+           delete this.dump_exact[id];
         } else {
             entity.id = id;
             const model = entity.components.model;
             model.properties.pos_x = pos_x;
             model.properties.pos_y = pos_y;
         }
+
 
         return entity;
     }

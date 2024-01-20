@@ -40,17 +40,14 @@ export default class SystemObjectsBreak {
         }
         
         endurance -= hit_damage;
-        if (endurance > 0) {
-            let newdurability = ((endurance << 4) & 0xF0) + ((resistance) & 0x0F);
-            if (durability > 0xFF) {
-                newdurability = ((endurance << 8) & 0xFF00) + ((resistance) & 0x00FF);
-            }
-
-            this.breakable_objects[id] = newdurability;
-            return false;
+        let newdurability = ((endurance << 4) & 0xF0) + ((resistance) & 0x0F);
+        if (durability > 0xFF) {
+            newdurability = ((endurance << 8) & 0xFF00) + ((resistance) & 0x00FF);
         }
 
-        return true;
+        this.breakable_objects[id] = Math.max(0, newdurability);
+
+        return endurance <= 0;
     }
 
     

@@ -29,6 +29,11 @@ export default class SystemObjectsFall {
 
             const collider = this.scene_collisions.colliders[k];
             const body = this.scene_collisions.bodies[k];
+        
+            if (!collider) {
+                continue;
+            }
+            
             if (b.elapsed < 1) {
                 if (!b.shaking) {
                     continue;
@@ -66,6 +71,15 @@ export default class SystemObjectsFall {
                             (obj as any).position.y  = collider.y;
                         }
                     }
+                }
+
+                
+                const entity = this.scene_map.entities[k];
+                const model = entity?.components.model?.properties;
+                if (model) {
+                    model.pos_x = collider.x;
+                    model.pos_y = collider.y;
+                    entity.persist = true;
                 }
             } 
 

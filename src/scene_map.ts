@@ -23,10 +23,12 @@ class MapEntity {
     id: string;
     inherits: string | null;
     components: { [id: string] : MapComponent }
+    persist: boolean;
 
     constructor(id?: string) {
        this.id = id ?? "";
        this.components = {};
+       this.persist = false;
     }
 
     init(element: SceneElement) {
