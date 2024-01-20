@@ -23,6 +23,7 @@ export default class TilesetEditor {
 
     slected_object: THREE.Object3D | null;
     selected_tileset: string | null;
+    changed_tilesets:  { [id:string] : number };
 
     constructor(loader: SceneRenderLoader) {
         this.palette_h = 512;
@@ -32,6 +33,7 @@ export default class TilesetEditor {
         this.loader = loader;
         this.objects = {};
         this.colors = {};
+        this.changed_tilesets = {};
     }
 
     init() : TilesetEditor {
@@ -72,11 +74,20 @@ export default class TilesetEditor {
         this.cube.rotateY(0.01);
     }
 
+    cleanup() {
+        this.changed_tilesets = {};
+        this.cleanupPalette();
+    }
+
     cleanupPalette() {
         for(const k in this.objects) {
             this.objects[k].removeFromParent();
             delete this.objects[k];
         }
+
+        this.slected_object = null;
+        this.selected_tileset = null;
+        this.colors = {};
     }
 
     pickObject(id: string) {
@@ -116,16 +127,5 @@ export default class TilesetEditor {
         }
 
         focusCameraOn(this.scene, this.camera);
-    }
-
-    discardPalette() {
-        for(const k in this.objects) {
-            this.objects[k].removeFromParent();
-            delete this.objects[k];
-        }
-
-        this.slected_object = null;
-        this.selected_tileset = null;
-        this.colors = {};
     }
 }

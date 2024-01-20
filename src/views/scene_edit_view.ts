@@ -5,6 +5,7 @@ import SceneRender from "../render/scene_render";
 import SceneMediator from "../scene_mediator";
 import SceneMap from "../scene_map";
 import { SceneEditTools, SceneEditToolMode } from "../render/scene_edit_tools";
+import { sendFiles } from "../assets";
 
 export default class SceneEditView {
     list_container: HTMLElement;
@@ -42,7 +43,8 @@ export default class SceneEditView {
         }, node: this.scene_mediator.events}, this._listeners)
 
         addEventListener({name: "scene_close", callback: async (ev) => {
-            this.scene_edit_tools.tileset_editor.discardPalette();
+            this.scene_edit_tools.tileset_editor.cleanup();
+           
         }, node: this.scene_mediator.events}, this._listeners);
 
         // select scene to edit
@@ -127,6 +129,9 @@ export default class SceneEditView {
 
         // saves and returs to scene list
         listenClick("#back_to_scene_list_btn_save",  async (ev) => {
+            for(const k in this.scene_edit_tools.tileset_editor.changed_tilesets) {
+                this.saveTileset(k);
+            }
             this.closeScene(true);
         }, this._listeners)
         listenClick("#back_to_scene_list_btn_unsave",  async (ev) => {
@@ -254,6 +259,44 @@ export default class SceneEditView {
         } );
 
         return this;
+    }
+
+    /**
+     * saves new tileset image
+     * 
+     * @param id tileset id
+     */
+    saveTileset(id: string) {
+        const tileset = this.scene_map.tilesets[id];
+        const image_asset = this.scene_edit.assets.get(tileset.tileset.texture);
+        const image_file = tileset.image;
+        if (!image_file) {
+            return;
+        }
+
+        // is it possible to send files without canvas?
+        const canvas = tileset.canvas;
+        const image = tileset.image;
+        const ctx = canvas.getContext("2d");
+        if (!canvas || !image || !ctx) {
+            return;
+        }
+        
+        canvas.width = image.width;
+        canvas.height = image.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0);
+        canvas.toBlob(async (blob) => {
+            if (!blob || !image_asset) {
+                return;
+            }
+            const file = new File([blob], image_asset.info.id, {
+                type: image_asset.info.type,
+            });
+
+            await sendFiles("/assets/upload/" + image_asset.info.id, [file]);
+            this.scene_edit.assets.loadAsset(image_asset.info.id);
+        });
     }
 
     dispose() {

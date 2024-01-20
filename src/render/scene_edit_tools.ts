@@ -23,6 +23,10 @@ class SceneEditTools {
     private mousepos: THREE.Vector2;
     private mousepos_abs: THREE.Vector2;
     private mousepressed: boolean;
+
+    /**
+     * position will be aligned to selected tileset
+     */
     private mousepos_world: THREE.Vector3;
 
     transform_controls: TransformControls;
@@ -131,7 +135,14 @@ class SceneEditTools {
         const pos = this.scene_render.scene_math.intersectRayPlane(this.raycaster.ray.origin, this.raycaster.ray.direction, this.scene_collisions.origin, this.scene_collisions.normal); //cache.vec3_0
         if (pos) {
             pos.x = snap(pos.x, this.tileset_editor.tilesize_x);
-            pos.y = snap(pos.y, this.tileset_editor.tilesize_y)
+            pos.y = snap(pos.y, this.tileset_editor.tilesize_y);
+
+            if (this.tileset_editor.selected_tileset) {
+                const tileset = this.scene_map.tilesets[this.tileset_editor.selected_tileset];
+                pos.x += tileset.pos_x % 1;
+                pos.y += tileset.pos_y % 1;
+            }
+
             this.mousepos_world.copy(pos);
         }
         if (pos && this.isInTileEditMode()) {
@@ -179,22 +190,29 @@ class SceneEditTools {
 
     tilesetDraw() {
         const drawobject = this.tileset_editor.slected_object;
-        if (!drawobject || !this.tileset_editor.selected_tileset) {
+        if (!this.tileset_editor.selected_tileset) {
             return;
         }
 
+        if (!drawobject && this.editmode == SceneEditToolMode.TILE_DRAW) {
+            return;
+        }
+
+        const tileset_id = this.tileset_editor.selected_tileset;
+        const tileset = this.scene_map.tilesets[tileset_id];
+
         const pos_x = this.mousepos_world.x;
         const pos_y = this.mousepos_world.y;
-        const tileset = this.scene_map.tilesets[this.tileset_editor.selected_tileset];
-        const drawid = drawobject.name;
-        let drawcolor = this.tileset_editor.colors[drawid];
-        if (this.editmode == SceneEditToolMode.TILE_ERASE) {
-            drawcolor = tileset.tileset.zero_color;
-        }
-        const drawmodel = tileset.models[drawid];
-        const newid = tileset.makeTileId(pos_x, pos_y);
+        const rpos_x = pos_x - tileset.pos_x;
+        const rpos_y = pos_y - tileset.pos_y;
 
-        if (this.editmode == SceneEditToolMode.TILE_DRAW) {
+        let drawcolor = tileset.tileset.zero_color
+        const newid = tileset.makeTileId(rpos_x, rpos_y);
+
+        if (drawobject && this.editmode == SceneEditToolMode.TILE_DRAW) {
+            const drawid = drawobject.name;
+            const drawmodel = tileset.models[drawid];
+            drawcolor = this.tileset_editor.colors[drawid];
             const entity = new MapEntity(newid);
             // tynroar todo: make proper inheritance insead of ref_id
             entity.inherits = drawid;
@@ -214,11 +232,14 @@ class SceneEditTools {
             canvas.height = image.height;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(image, 0, 0);
-            ctx.rect(pos_x, pos_y, 1, 1);
-            ctx.fillStyle = drawcolor;
+            ctx.rect(rpos_x, -rpos_y, 1, 1);
+            ctx.fillStyle = drawcolor.replace("0x", "#");
+            console.log(drawcolor);
             ctx.fill();
             image.src = canvas.toDataURL();
         }
+
+        this.tileset_editor.changed_tilesets[tileset_id] = (this.tileset_editor.changed_tilesets[tileset_id] ?? 0) + 1
     }
     
     /**
