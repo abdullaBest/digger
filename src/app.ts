@@ -14,6 +14,11 @@ import SceneMap from "./scene_map";
 import AppDebug from "./app_debug";
 import SceneEditTools from "./render/scene_edit_tools";
 
+import Tabs from "./page/tabs";
+import ControlsContainerCollapse from "./page/controls_container_collapse";
+
+import test from "./test/index";
+
 class App {
     constructor() {
         this.assets = new Assets();
@@ -46,8 +51,24 @@ class App {
         this.scene_edit_tools.init();
         this.scene_game.init();
 
+        this.initPages();
+
         return this;
     }
+
+    initPages() {
+        const maintabs = new Tabs().init(querySelector("#header"), querySelector("#apptabs"));
+        maintabs.click("debug-tab");
+        const debugWindows = ControlsContainerCollapse.construct(querySelector("#debug-tab"));
+        const test_tabls = new Tabs().init(querySelector("#testcases-select-window"), querySelector("#debug-tab"), (id: string) => {
+            switch (id) {
+                case "testcase-matters-tab":
+                    test.matters(querySelector("#testcase-matters-window content"));
+                    break;
+            }
+        });
+    }
+
     dispose() {
         this.scene_render.dispose();
         this.stop();

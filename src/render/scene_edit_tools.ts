@@ -201,10 +201,21 @@ class SceneEditTools {
         const tileset_id = this.tileset_editor.selected_tileset;
         const tileset = this.scene_map.tilesets[tileset_id];
 
+        const canvas = tileset.canvas;
+        const image = tileset.image;
+
+        if (!image) {
+            return;
+        }
+
         const pos_x = this.mousepos_world.x;
         const pos_y = this.mousepos_world.y;
         const rpos_x = pos_x - tileset.pos_x;
         const rpos_y = pos_y - tileset.pos_y;
+
+        if (rpos_x < 0 || rpos_y < 0 || rpos_x >= image.width || rpos_y >= image.height) {
+            throw new Error("Can't draw outside canvas.");
+        }
 
         let drawcolor = tileset.tileset.zero_color
         const newid = tileset.makeTileId(rpos_x, rpos_y);
@@ -223,8 +234,6 @@ class SceneEditTools {
             this.scene_map.removeEntity(newid);
         }
 
-        const canvas = tileset.canvas;
-        const image = tileset.image;
         const ctx = canvas.getContext("2d");
 
         if (canvas && image && ctx) {

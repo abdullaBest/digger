@@ -1,3 +1,5 @@
+import { Matters } from "./matters"
+
 /**
  * starts to listen form "submit" and posts request on such
  * @param opts func options
@@ -143,6 +145,12 @@ class Asset {
 
 class Assets {
     list: { [id: string] : Asset; };
+    matters: Matters;
+
+    init() {
+        this.matters = new Matters();
+        this.matters.init();
+    }
 
     get(id: string) : Asset {
         const asset = this.list[id] ?? null;

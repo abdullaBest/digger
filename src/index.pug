@@ -8,13 +8,43 @@ html(lang="en")
 	link(rel="stylesheet", href="./index.less")
 	script(type="module", src="./index.ts" async defer)
 
-body
+body.appcore
 	#popup.hidden
 		btn#popup_close
 		header#popup_header xxx
 		container#popup_content_wrapper 
 			container#popup_content
-	#rootlayout
+	#approot.flex-row.colors-default
+		#header.flex-column.gap-minor.icons-s1.container
+			o.padding-minor DT █
+			btn(data-tab="play-tab").icon.img-play.tab-switch
+			btn(data-tab="library-tab").icon.img-library.tab-switch
+			btn(data-tab="debug-tab").icon.img-debug.tab-switch
+			btn(data-tab="docs-tab").icon.img-docs.tab-switch
+		#apptabs.padding-minimum
+			tab#play-tab.hidden
+				a play
+			tab#library-tab.hidden
+				a library
+			tab#debug-tab.flex-row.gap-minor.styleset-a
+				section.flex-column
+					container#testcases-select-window.style-window.behave-collapsing.flex-column.width-medium
+						header tests
+						content.padding-minor.flex-column.buttons-list-s1
+							btn(data-tab="testcase-matters-tab").tab-switch "matters" test
+							btn(data-tab="testcase-assets-tab").tab-switch assets test
+				section#testcase-matters-tab.flex-column
+					container#testcase-matters-window.style-window.behave-collapsing.flex-column.width-medium-x2
+						header "matters" test
+						content.padding-minor
+				section#testcase-assets-tab.flex-column
+					container#testcase-assets-window.style-window.behave-collapsing.flex-column.width-medium
+						header assets test
+						content.padding-minor
+							btn#testcase-matters-tab.tab-switch bbb
+			tab#docs-tab.hidden
+				a docs
+	#rootlayout.hidden
 		#header
 			o digger toolbox █
 			a(href="#scene_view") scene
