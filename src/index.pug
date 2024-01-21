@@ -14,19 +14,24 @@ body.appcore
 		header#popup_header xxx
 		container#popup_content_wrapper 
 			container#popup_content
-	#approot.flex-row.colors-default
+	#approot.flex-row.colors-default.size-fill
 		#header.flex-column.gap-minor.icons-s1.container.bg-default
-			o.padding-minor DT █
+			o.padding-minimum DT █
 			btn(data-tab="play-tab").icon.img-play.tab-switch
+			btn(data-tab="edit-tab").icon.img-edit.tab-switch
 			btn(data-tab="library-tab").icon.img-library.tab-switch
 			btn(data-tab="debug-tab").icon.img-debug.tab-switch
 			btn(data-tab="docs-tab").icon.img-docs.tab-switch
-		#apptabs.padding-minimum
-			tab#play-tab.hidden
-				a play
+		#apptabs.size-fill
+			tab#play-tab.size-fill.hidden.display-block
+				container#gameroot.size-fill.display-block
+					container#gameui.size-fill.display-block.position-absolute
+						a gameui
+			tab#edit-tab.hidden
+				a edit
 			tab#library-tab.hidden
 				a library
-			tab#debug-tab.flex-row.gap-minor.styleset-a
+			tab#debug-tab.flex-row.gap-minor.styleset-a.padding-minimum
 				section.flex-column
 					container#testcases-select-window.style-window.behave-collapsing.flex-column.width-medium
 						header tests
@@ -97,7 +102,7 @@ body.appcore
 						container#character_config_details.flex-table.hidden
 						splitter#character_state_details-toggle.cursor-pointer character state
 						container#character_state_details.flex-table.hidden
-				canvas#rootcanvas
+				canvas#rootcanvas.position-absolute
 			.footer
 				o scene viewer
 				o v5

@@ -57,7 +57,13 @@ class App {
     }
 
     initPages() {
-        const maintabs = new Tabs().init(querySelector("#header"), querySelector("#apptabs"));
+        const maintabs = new Tabs().init(querySelector("#header"), querySelector("#apptabs"), (id: string) => {
+            switch (id) {
+                case "play-tab":
+                    this.scene_render.reattach(querySelector("#gameroot"))
+                    break;
+            }
+        });
         maintabs.click("debug-tab");
         const debugWindows = ControlsContainerCollapse.construct(querySelector("#debug-tab"));
         const test_tabls = new Tabs().init(querySelector("#testcases-select-window"), querySelector("#debug-tab"), (id: string) => {
