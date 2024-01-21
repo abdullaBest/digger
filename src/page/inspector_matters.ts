@@ -24,6 +24,7 @@ export default class InspectorMatters {
 
         const container = this.init_container();
         this.container = container;
+        this.container.classList.add("colapsed");
         const header = querySelector("header", container);
         const content = querySelector("content", container);
     
@@ -206,7 +207,7 @@ export default class InspectorMatters {
         }
 
         const value =  matter.get(key);
-        if (typeof value == "string" && value.startsWith("**")) {
+        if ((typeof value == "string" && value.startsWith("**"))) {
             btn_external_ref.classList.remove("hidden");
         }
 
