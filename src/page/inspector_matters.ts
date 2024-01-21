@@ -5,16 +5,18 @@ import { EventListenerDetails, querySelector, listenClick, addEventListener, rem
 export default class InspectorMatters {
     matter: Matter;
     matters: Matters;
-    controls: ControlsContainerCollapse | null;
     private _listeners: Array<EventListenerDetails>;
     container: HTMLElement | null;
     entries: { [id: string]: HTMLElement };
+    subinspectors: { [id: string]: InspectorMatters }
+    events: HTMLElement;
 
     constructor(matter: Matter, matters: Matters) {
         this.matter = matter;
         this.matters = matters;
         this._listeners = [];
         this.entries = {};
+        this.events = document.createElement("events");
     }
 
     init(clone: (m: Matter) => void, del: (m: Matter) => void, link: (m: Matter) => void, onchange: (m: Matter, key: string) => void) {
@@ -36,7 +38,7 @@ export default class InspectorMatters {
         btn_link.classList.add("img-link-add", "fittext");
         header.append(header_label, btn_delete, btn_copy, btn_link);
     
-        this.controls = new ControlsContainerCollapse().init(container);
+        new ControlsContainerCollapse(this._listeners).init(container);
         
         this.propagate_fields(matter, content, onchange);
 
@@ -69,7 +71,7 @@ export default class InspectorMatters {
         return container;
     }
 
-    init_input(matter: Matter, key: string, entry: HTMLElement, onchange: (m: Matter, key: string) => void) : HTMLInputElement {
+    init_input(matter: Matter, key: string, entry: HTMLElement, onchange?: (m: Matter, key: string) => void) : HTMLInputElement {
         const input_value = document.createElement("input") as HTMLInputElement;
         input_value.value = matter[key] ?? "none";
         input_value.size = 10;
@@ -78,22 +80,30 @@ export default class InspectorMatters {
         if (datatype !== "string" && datatype !== "number") {
             input_value.classList.add('disabled');
         }
-        addEventListener({callback: ()=> {
-            let val: string | number = input_value.value;
-            input_value.classList.remove('error');
+        if (onchange) {
+            addEventListener({callback: ()=> {
+                let val: string | number = input_value.value;
+                input_value.classList.remove('error');
 
-            if (datatype === "number") {
-                let _val = parseFloat(val);
-                if (Number.isNaN(_val)) {
-                    input_value.classList.add('error');
-                    return;
+                if (datatype === "number") {
+                    let _val = parseFloat(val);
+                    if (Number.isNaN(_val)) {
+                        input_value.classList.add('error');
+                        return;
+                    }
+                    val = _val;
                 }
-                val = _val;
-            }
-            matter.set(key, val);
-            this.draw_field(matter, key, entry);
-            onchange(matter, key);
-        }, name: "change", node: input_value}, this._listeners);
+                matter.set(key, val);
+                this.draw_field(key, matter, entry);
+                onchange(matter, key);
+            }, name: "change", node: input_value}, this._listeners);
+
+            addEventListener({callback: (ev)=> {
+                ev.stopPropagation();
+            }, name: "click", node: input_value}, this._listeners);
+        } else {
+            input_value.classList.add("disabled");
+        }
 
         entry.appendChild(input_value);
 
@@ -102,37 +112,45 @@ export default class InspectorMatters {
         return input_value;
     }
 
-    init_field_controls(matter: Matter, key: string, entry: HTMLElement, onchange: (m: Matter, key: string) => void) : HTMLElement {
+    init_field_controls(matter: Matter, key: string, entry: HTMLElement, onchange?: (m: Matter, key: string) => void) : HTMLElement {
         const controls = document.createElement("controls");
         controls.classList.add('flex-row');
-        const icon_external = document.createElement("icon");
-        icon_external.classList.add("img-external-code", "fittext");
 
+        const icon_external_code = document.createElement("icon");
+        icon_external_code.classList.add("img-external-code", "fittext");
+        const btn_external_ref = document.createElement("btn");
+        btn_external_ref.classList.add("img-external", "fittext");
         const btn_discard = document.createElement("btn");
         btn_discard.classList.add("img-discard", "fittext");
 
-        controls.appendChild(icon_external);
+        controls.appendChild(icon_external_code);
+        controls.appendChild(btn_external_ref);
         controls.appendChild(btn_discard);
         entry.appendChild(controls);
 
-        addEventListener({callback: ()=> {
-            matter.reset(key);
-            this.draw_field(matter, key, entry);
-            onchange(matter, key);
-        }, name: "click", node: btn_discard});
+        if (onchange) {
+            addEventListener({callback: ()=> {
+                matter.reset(key);
+                this.draw_field(key, matter, entry);
+                onchange(matter, key);
+            }, name: "click", node: btn_discard}, this._listeners);
+        } else {
+            controls.classList.add("disabled");
+        }
 
         return controls;
     }
 
-    propagate_fields(matter: Matter, container: HTMLElement, onchange: (m: Matter, key: string) => void) {
+    propagate_fields(matter: Matter, container: HTMLElement, onchange?: (m: Matter, key: string) => void) {
         for (const k in matter) {
-            this.init_field(matter, container, k, onchange);
+            const entry = this.init_field(matter, container, k, onchange);
+            container.appendChild(entry);
         }
     }
 
-    init_field(matter: Matter, container: HTMLElement, key: string, onchange: (m: Matter, key: string) => void) : HTMLElement {
+    init_field(matter: Matter, container: HTMLElement, key: string, onchange?: (m: Matter, key: string) => void) : HTMLElement {
         const entry = document.createElement("entry");
-        entry.classList.add('flex-row');
+        entry.classList.add('flex-grow-1', 'flex-row');
         const label_name = document.createElement("label");
         label_name.innerHTML = `${key}: `;
         label_name.classList.add("flex-grow-1")
@@ -145,21 +163,36 @@ export default class InspectorMatters {
             entry.classList.add("disabled");
         } 
 
-        this.draw_field(matter, key, entry);
+        this.draw_field(key, matter, entry);
 
-        container.appendChild(entry);
+        /*
+        // reqursive fields draw
+        const value = matter.get(key);
+        if (typeof value == "string" && value.startsWith("**")) {
+            const subcontainer = this.init_container();
+            const header = querySelector("header", subcontainer);
+            const content = querySelector("content", subcontainer);
+            header.appendChild(entry);
+            this.propagate_fields(this.matters.get(value.substring(2)), content);
+            new ControlsContainerCollapse(this._listeners).init(subcontainer);
+
+            return subcontainer;
+        }
+        */
 
         return entry;
     }
 
-    draw_field(matter: Matter, key: string, entry: HTMLElement = this.entries[key]) {
-        const icon_external = querySelector(".img-external-code", entry);
+    draw_field(key: string, matter: Matter = this.matter, entry: HTMLElement = this.entries[key]) {
+        const icon_external_code = querySelector(".img-external-code", entry);
+        const btn_external_ref = querySelector(".img-external", entry);
         const btn_discard = querySelector(".img-discard", entry);
         const input_value = querySelector("input", entry) as HTMLInputElement;
 
         input_value.value = matter.get(key);
 
-        icon_external.classList.add("hidden");
+        icon_external_code.classList.add("hidden");
+        btn_external_ref.classList.add("hidden");
         btn_discard.classList.add("hidden");
 
         if (entry.classList.contains("disabled")) {
@@ -167,23 +200,23 @@ export default class InspectorMatters {
         }
 
         if (matter.is_inherited(key)) {
-            icon_external.classList.remove("hidden");
+            icon_external_code.classList.remove("hidden");
         } else if (matter.is_overrided(key)) {
             btn_discard.classList.remove("hidden");
         }
 
+        const value =  matter.get(key);
+        if (typeof value == "string" && value.startsWith("**")) {
+            btn_external_ref.classList.remove("hidden");
+        }
+
         if (key == "name" && this.container) {
-            querySelector("header label", this.container).innerHTML = matter.get(key);
+            querySelector("header label", this.container).innerHTML = value;
         }
     }
 
     dispose() {
         removeEventListeners(this._listeners);
-        
-        if (this.controls) {
-            this.controls.dispose();
-            this.controls = null;
-        }
 
         this.entries = {};
 

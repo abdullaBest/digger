@@ -3,8 +3,8 @@ import { EventListenerDetails, querySelector, listenClick, removeEventListeners 
 export default class ControlsContainerCollapse {
     private _listeners: Array<EventListenerDetails>;
 
-    constructor() {
-        this._listeners = [];
+    constructor(listeners: Array<EventListenerDetails> = []) {
+        this._listeners = listeners;
     }
 
     init(container: HTMLElement) : ControlsContainerCollapse {

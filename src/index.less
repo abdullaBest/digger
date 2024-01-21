@@ -175,8 +175,10 @@ body,
     }
 }
 
-.appcore container.style-window > header {
-    background-color: var(--background-color-a);
+.appcore container.style-window {
+    &, & > header {
+        background-color: var(--background-color-a);
+    }
 }
 
 .appcore container.style-nested > content {

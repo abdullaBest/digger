@@ -1,7 +1,7 @@
 import { Matters, Matter } from "../matters"
 import InspectorMatter from "../page/inspector_matters";
 
-const inspectors = {};
+const inspectors: { [id: string] : InspectorMatter } = {};
 
 function draw(container: HTMLElement, matters: Matters) {
     container.innerHTML = "";
@@ -26,6 +26,7 @@ function draw(container: HTMLElement, matters: Matters) {
     }
 
     const change = (m: Matter, key: string) => {
+        console.log(m, key);
         let dependents = m.dependents;
         for(const k in matters.list) {
             const _m = matters.get(k);
@@ -56,8 +57,8 @@ export default function main(container: HTMLElement, matters?: Matters) {
 
     const testmatter1 = _matters.create({ value: 666, value1: 18 });
     const testmatter2 = _matters.create({ value: 777, value2: 13}, testmatter1.id);
-    const testmatter3 = _matters.create({ link: "**" + testmatter2.id}, testmatter1.id);
-    const testmatter4 = _matters.create({}, testmatter3.id);
+    const testmatter3 = _matters.create({ link: "**" + testmatter2.id }, testmatter1.id);
+    const testmatter4 = _matters.create({ link: "**" + testmatter3.id }, testmatter3.id);
 
     draw(container, _matters)
 }
