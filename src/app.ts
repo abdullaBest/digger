@@ -259,10 +259,7 @@ class App {
     }
     async load() {
         this.scene_edit_view.list_container.classList.add("disabled");
-        await this.assets.load();
-        
-        /*
-        await this.assets.load((id)=> {
+        this.assets.events.on("asset", ({id}) => {
             // draw in main assets view
             this.assets_view.draw(id);
 
@@ -270,8 +267,8 @@ class App {
             if (this.assets.filter(id, {extension: "scene"})) {
                 this.assets_view.draw(id, this.scene_edit_view.list_container, "#scene_edit_details");
             }
-        });
-        */
+        })
+        await this.assets.load();
 
         this.scene_edit_view.list_container.classList.remove("disabled");
     }

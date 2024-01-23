@@ -1,0 +1,20 @@
+tab#docs-tab.hidden.padding-minimum.display-block
+    splitter игра
+    ul
+        li 
+            | model и tile durability задаются числом вида 0xAB или 0xAABB где A/AA - запас прочности, B/BB - сопротивление повреждениям. 
+            | Если сопротивление выше урона, то повреждений не наносится.
+        li 
+            | mapetry, mapexit. Элементы для входа/выхода на карту
+            | Для элемента типа mapexit указывается значение в поле signal вида "XX" или "XX,YY" где XX - id сцены, на которую совершается переход,
+            | YY - id элемента, на который будет перемещен персонаж. Если YY не указан, персонаж будет перемещен на произвольный mapentry
+    splitter запросы
+    ul
+        li GET /, /editor - alias для папки сборки ./dist
+        li POST /assets/upload - загрузка новых файлов. Возвращает массив новых id
+        li POST /assets/upload/:id - обновление параметров уже существующих файлов
+        li GET /assets/list - массив id всех загруженных файлов
+        li GET /assets/get/:id - объект информации о ассете
+        li GET /assets/load/:id/:revision - отправляет файл по id ассета. revision - номер ревизии. revision ставить last для загрузки последней версии
+        li GET /assets/load?name=something - ищет в ассетах тот что соответствует всем параметрам в query. Временное решение
+    splitter заметки

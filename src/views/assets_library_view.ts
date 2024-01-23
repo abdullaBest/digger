@@ -6,6 +6,7 @@ export default class AssetsLibraryView {
     assets: Assets;
     container_list: HTMLElement;
     asset_inspector: InspectorMatters;
+    asset_info_inspector: InspectorMatters;
 
     constructor(assets: Assets) {
         this.assets = assets;
@@ -53,13 +54,23 @@ export default class AssetsLibraryView {
     }
 
     viewAsset(id: string) {
+        const asset = this.assets.get(id);
+        
         if (this.asset_inspector) {
             this.asset_inspector.dispose();
         }
+        if (this.asset_info_inspector) {
+            this.asset_info_inspector.dispose();
+        }
 
-        this.asset_inspector = new InspectorMatters(this.assets.matters.get(id), this.assets.matters);
         const container = querySelector("#assets-library-details content")
         container.innerHTML = "";
-        container.appendChild(this.asset_inspector.init());
+        const content = this.assets.matters.get(id);
+        if (content) {
+            this.asset_inspector = new InspectorMatters(this.assets.matters.get(id), this.assets.matters);
+            container.appendChild(this.asset_inspector.init());
+        }
+        this.asset_info_inspector = new InspectorMatters(asset.info, this.assets.matters);
+        container.appendChild(this.asset_info_inspector.init());
     }
 }

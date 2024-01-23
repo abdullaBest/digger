@@ -293,13 +293,13 @@ class Assets {
             revision: data.revision,
             tags: data.tags ?? "",
             thumbnail: data.thumbnail
-        }, this._base_content_info.id, id + '-info') as AssetInfo;
+        }, this._base_content_info.id, id) as AssetInfo;
 
         const asset = new Asset(info, id);
 
         if (asset.info.type.includes("json")) {
             await asset.load();
-            asset.content = this.matters.create(asset.content, this._base_content_extensions[asset.info.extension]?.id, id, info.name);
+            asset.content = this.matters.create(asset.content, this._base_content_extensions[asset.info.extension]?.id, id + "-content", info.name);
         }
 
         this.list[id] = asset;
