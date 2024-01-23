@@ -1,9 +1,11 @@
 import Assets from "../assets";
-import { querySelector } from "../document";
+import { querySelector, listenClick } from "../document";
+import InspectorMatters from "../page/inspector_matters";
 
 export default class AssetsLibraryView {
     assets: Assets;
     container_list: HTMLElement;
+    asset_inspector: InspectorMatters;
 
     constructor(assets: Assets) {
         this.assets = assets;
@@ -17,6 +19,13 @@ export default class AssetsLibraryView {
         this.assets.events.on("asset", ({id}) => {
             this.listAsset(id);
         })
+
+        listenClick(this.container_list, (ev) => {
+            const id = (ev.target as HTMLElement)?.id;
+            if (this.assets.list[id]) {
+                this.viewAsset(id);
+            }
+        });
     }
 
     listAsset(id: string) {
@@ -41,5 +50,16 @@ export default class AssetsLibraryView {
             entry.appendChild(name_label);
             this.container_list.appendChild(entry);
         }
+    }
+
+    viewAsset(id: string) {
+        if (this.asset_inspector) {
+            this.asset_inspector.dispose();
+        }
+
+        this.asset_inspector = new InspectorMatters(this.assets.matters.get(id), this.assets.matters);
+        const container = querySelector("#assets-library-details content")
+        container.innerHTML = "";
+        container.appendChild(this.asset_inspector.init());
     }
 }

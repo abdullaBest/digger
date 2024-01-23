@@ -29,11 +29,27 @@ body.appcore
 						a gameui
 			tab#edit-tab.hidden
 				a edit
-			tab#library-tab.hidden.size-fill.display-block
-				section.flex-column.padding-minimum.display-block.size-limit
+			tab#library-tab.hidden.size-fill.flex-row.padding-minimum.gap-minor.styleset-a
+				section.flex-column.display-block.size-limit
+					container#assets-library-add.style-window.behave-collapsing.flex-column.width-medium
+						.header add assets
+						content.padding-minor.flex-column.buttons-list-s1.size-limit
+							btn upload file
+				section.flex-column.display-block.size-limit
 					container#assets-library-list.style-window.behave-collapsing.flex-column.width-medium-x4.size-limit.overflow-auto
 						.header assets list
 						content.padding-minor.flex-column.buttons-list-s1.size-limit.overflow-auto
+				section.flex-column.flex-column.size-limit.gap-minor
+					container#assets-library-details.style-window.behave-collapsing.flex-column.width-medium-x2
+						.header asset details
+						content.flex-column
+					container#assets-library-manage.style-window.behave-collapsing.flex-column.width-medium-x2
+						.header asset manage
+						content.padding-minor.flex-column
+				section.flex-column.flex-column.size-limit.gap-minor
+					container#assets-library-preview.style-window.behave-collapsing.flex-column.width-medium-x4
+						.header asset preview
+						content
 			tab#debug-tab.flex-row.gap-minor.styleset-a.padding-minimum
 				section.flex-column
 					container#testcases-select-window.style-window.behave-collapsing.flex-column.width-medium

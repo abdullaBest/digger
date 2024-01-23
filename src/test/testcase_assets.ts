@@ -7,7 +7,6 @@ export default function main(container: HTMLElement, assets: Assets) {
     container.innerHTML = "";
     const construct_inpector = (asset: Asset) => {
         if (!asset.content) {
-            console.log(asset);
             return;
         }
         const inspector = new InspectorMatter(asset.content, assets.matters);
