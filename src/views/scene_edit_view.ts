@@ -1,4 +1,5 @@
-import { querySelector, EventListenerDetails, addEventListener, removeEventListeners, listenClick, popupListSelectMultiple, popupListSelect } from "../document";
+import { querySelector, EventListenerDetails, addEventListener, removeEventListeners, listenClick } from "../document";
+import { popupListSelectMultiple, popupListSelect } from "../page/popup"
 import SceneEdit, { SceneElement } from "../scene_edit";
 import { AssetsView, AssetPropertyEdit } from "./assets_view";
 import SceneRender from "../render/scene_render";

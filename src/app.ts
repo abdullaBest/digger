@@ -3,7 +3,8 @@ import Assets from "./assets";
 import {SceneEditUtils, SceneEdit } from "./scene_edit";
 import SceneEditView from "./views/scene_edit_view";
 import { listenFormSubmit, sendFiles } from "./assets";
-import { reattach, listenClick, popupListSelect, switchPage, querySelector, addEventListener, popupListSelectMultiple, EventListenerDetails } from "./document";
+import { reattach, listenClick, switchPage, querySelector, addEventListener, EventListenerDetails } from "./document";
+import { popupListSelectMultiple, popupListSelect } from "./page/popup"
 import { importGltfSequence } from "./importer";
 import SceneGame from "./scene_game";
 import SceneMediator from "./scene_mediator";

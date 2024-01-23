@@ -1,4 +1,4 @@
-import { popupConfirm, querySelector } from "./document";
+import { popupConfirm } from "./page/popup";
 import { sendFiles } from "./assets";
 
 function blobToBase64(blob : Blob) : Promise<string | ArrayBuffer | null> {

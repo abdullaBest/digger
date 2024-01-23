@@ -2,6 +2,9 @@ import Assets from "../assets";
 import { querySelector, listenClick } from "../document";
 import InspectorMatters from "../page/inspector_matters";
 
+/**
+ * Second assets viewer implementation 
+ */
 export default class AssetsLibraryView {
     assets: Assets;
     container_list: HTMLElement;
@@ -65,9 +68,8 @@ export default class AssetsLibraryView {
 
         const container = querySelector("#assets-library-details content")
         container.innerHTML = "";
-        const content = this.assets.matters.get(id);
-        if (content) {
-            this.asset_inspector = new InspectorMatters(this.assets.matters.get(id), this.assets.matters);
+        if (asset.content) {
+            this.asset_inspector = new InspectorMatters(asset.content, this.assets.matters);
             container.appendChild(this.asset_inspector.init());
         }
         this.asset_info_inspector = new InspectorMatters(asset.info, this.assets.matters);

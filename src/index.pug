@@ -9,13 +9,8 @@ html(lang="en")
 	script(type="module", src="./index.ts" async defer)
 
 body.appcore
-	#popup.hidden
-		btn#popup_close
-		header#popup_header xxx
-		container#popup_content_wrapper 
-			container#popup_content
-	#approot.flex-row.colors-default.size-fill
-		#header.flex-column.gap-minor.icons-s1.container.bg-default
+	#approot.flex-row.colors-default.size-fill.bg-zero
+		#header.flex-column.gap-minor.icons-s1.container.bg-default.no-shrink
 			o.padding-minimum DT █
 			btn(data-tab="play-tab").icon.img-play.tab-switch
 			btn(data-tab="edit-tab").icon.img-edit.tab-switch
@@ -28,7 +23,6 @@ body.appcore
 			include ./views/tab-library.pug
 			include ./views/tab-debug.pug
 			include ./views/tab-docs.pug
-
 
 	db#cache
 		canvas#cache_canvas

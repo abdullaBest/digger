@@ -1,7 +1,8 @@
 import { Asset, Assets, listenFormSubmit, sendFiles } from "../assets";
 import SceneRender from "../render/scene_render";
 import { sprintf } from "../lib/sprintf.js";
-import { listenClick, reattach, switchPage, querySelector, popupListSelect, EventListenerDetails } from "../document";
+import { listenClick, reattach, switchPage, querySelector, EventListenerDetails } from "../document";
+import { popupListSelect } from "../page/popup"
 import { SceneEditUtils } from "../scene_edit";
 import SceneMediator from "../scene_mediator";
 
