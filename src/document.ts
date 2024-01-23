@@ -1,3 +1,5 @@
+import { EventListenerDetails } from "./events";
+
 /**
  * Page helpers functions
  */
@@ -9,11 +11,6 @@ export function querySelector(query: string, root: HTMLElement = document.body) 
     return element;
 }
 
-export interface EventListenerDetails {
-    callback: EventListenerOrEventListenerObject;
-    name: string;
-    node: HTMLElement;
-} 
 
 /**
  * 
@@ -226,3 +223,5 @@ export function reattach(element: Element, container: Element) {
     element.parentElement?.removeChild(element);
     container.appendChild(element);
 }
+
+export { EventListenerDetails };

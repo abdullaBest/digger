@@ -77,8 +77,8 @@ class Matters {
      * @param id .
      */
     create(content: any, inherite?: string | null, id?: string, name?: string) : Matter {
-        const _name = name ?? content.name ?? "noname";
         const _id = id ?? content.id ?? this.newid();
+        const _name = name ?? content.name ?? _id;
         const _inherites = inherite ?? content.inherites ?? this.base_matter.id;
         const matter = { ...content, id: _id, name: _name, inherites: _inherites, dependents: 0 };
 

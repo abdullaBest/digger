@@ -9,7 +9,7 @@ export default class InspectorMatters {
     container: HTMLElement | null;
     entries: { [id: string]: HTMLElement };
     subinspectors: { [id: string]: InspectorMatters }
-    events: HTMLElement;
+    events: HTMLElement | null;
 
     constructor(matter: Matter, matters: Matters) {
         this.matter = matter;
@@ -19,13 +19,13 @@ export default class InspectorMatters {
         this.events = document.createElement("events");
     }
 
-    init(clone: (m: Matter) => void, del: (m: Matter) => void, link: (m: Matter) => void, onchange: (m: Matter, key: string) => void) {
+    init() {
         const matter = this.matter;
 
         const container = this.init_container();
         this.container = container;
         this.container.classList.add("colapsed");
-        const header = querySelector("header", container);
+        const header = querySelector(".header", container);
         const content = querySelector("content", container);
     
         const header_label = document.createElement("label");
@@ -41,20 +41,24 @@ export default class InspectorMatters {
     
         new ControlsContainerCollapse(this._listeners).init(container);
         
-        this.propagate_fields(matter, content, onchange);
-
+        const id = matter.id;
+        const onchange = (matter: Matter, key: string) => {
+            this.events?.dispatchEvent(new CustomEvent("change", { detail : { id: matter.id, key }}));
+        }
         listenClick(btn_copy, (ev) => { 
             ev.stopPropagation();
-            clone(matter); 
+            this.events?.dispatchEvent(new CustomEvent("clone", { detail : {id}}));
         }, this._listeners);
         listenClick(btn_delete, (ev) => {
             ev.stopPropagation();
-            del(matter)
+            this.events?.dispatchEvent(new CustomEvent("delete", { detail : {id}}));
         }, this._listeners);
         listenClick(btn_link, (ev) => { 
             ev.stopPropagation();
-            link(matter);
+            this.events?.dispatchEvent(new CustomEvent("link", { detail : {id}}));
         }, this._listeners);
+
+        this.propagate_fields(matter, content, onchange);
 
         return container;
     }
@@ -62,8 +66,8 @@ export default class InspectorMatters {
     init_container() : HTMLElement {
         const container = document.createElement("container");
         container.classList.add("style-nested", "behave-collapsing");
-        const header = document.createElement("header");
-        header.classList.add('flex-row');
+        const header = document.createElement("entry");
+        header.classList.add('flex-row', "header");
         const content = document.createElement("content");
         content.classList.add("flex-column");
         container.appendChild(header);
@@ -212,7 +216,7 @@ export default class InspectorMatters {
         }
 
         if (key == "name" && this.container) {
-            querySelector("header label", this.container).innerHTML = value;
+            querySelector(".header label", this.container).innerHTML = value;
         }
     }
 
@@ -220,6 +224,7 @@ export default class InspectorMatters {
         removeEventListeners(this._listeners);
 
         this.entries = {};
+        this.events = null;
 
         if (this.container) {
             this.container.parentElement?.removeChild(this.container);

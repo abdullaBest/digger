@@ -2,7 +2,6 @@ import SceneRender from "./render/scene_render";
 import Assets from "./assets";
 import {SceneEditUtils, SceneEdit } from "./scene_edit";
 import SceneEditView from "./views/scene_edit_view";
-import AssetsView from "./views/assets_view";
 import { listenFormSubmit, sendFiles } from "./assets";
 import { reattach, listenClick, popupListSelect, switchPage, querySelector, addEventListener, popupListSelectMultiple, EventListenerDetails } from "./document";
 import { importGltfSequence } from "./importer";
@@ -19,6 +18,13 @@ import ControlsContainerCollapse from "./page/controls_container_collapse";
 
 import test from "./test/index";
 
+// deprecated {
+import AssetsView from "./views/assets_view";
+// deprecated }
+
+import { AssetsLibraryView } from "./views";
+
+
 class App {
     constructor() {
         this.assets = new Assets();
@@ -31,6 +37,7 @@ class App {
         this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_game, this.scene_map);
         this.assets_view = new AssetsView(this.assets, this.scene_render, this.scene_mediator);
         this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_edit_tools, this.scene_mediator, this.scene_map);
+        this.assets_library_view = new AssetsLibraryView(this.assets);
 
         this.active = false;
         this.timestamp = 0;
@@ -45,6 +52,8 @@ class App {
             throw new Error("can't find canvas to render");
         }
 
+        this.assets.init();
+        this.assets_library_view.init();
         this.app_debug_draw = new AppDebug();
         this.app_debug_draw.app_state_draw.init(this);
         this.scene_render.init(canvas as HTMLCanvasElement);
@@ -70,6 +79,9 @@ class App {
             switch (id) {
                 case "testcase-matters-tab":
                     test.matters(querySelector("#testcase-matters-window content"));
+                    break;
+                case "testcase-assets-tab":
+                    test.assets(querySelector("#testcase-assets-window content"), this.assets);
                     break;
             }
         });
@@ -247,7 +259,9 @@ class App {
     }
     async load() {
         this.scene_edit_view.list_container.classList.add("disabled");
+        await this.assets.load();
         
+        /*
         await this.assets.load((id)=> {
             // draw in main assets view
             this.assets_view.draw(id);
@@ -257,6 +271,7 @@ class App {
                 this.assets_view.draw(id, this.scene_edit_view.list_container, "#scene_edit_details");
             }
         });
+        */
 
         this.scene_edit_view.list_container.classList.remove("disabled");
     }
@@ -298,8 +313,12 @@ class App {
     private scene_mediator: SceneMediator;
     private scene_collisions: SceneCollisions;
     private scene_map: SceneMap;
-    private assets_view: AssetsView;
     private scene_game: SceneGame;
+    private assets_library_view: AssetsLibraryView;
+
+    // deprecated {
+    private assets_view: AssetsView;
+    // deprecated }
 
     private active: Boolean;
     private timestamp: number;

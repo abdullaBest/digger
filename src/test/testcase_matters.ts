@@ -10,23 +10,26 @@ function draw(container: HTMLElement, matters: Matters) {
         delete inspectors[k];
     }
 
-    const del = (m: Matter) => {
+    const del = (id: string) => {
+        const m = matters.get(id);
         matters.remove(m.id);
         draw(container, matters);
     }
 
-    const clone = (m: Matter) => {
+    const clone = (id: string) => {
+        const m = matters.get(id);
         matters.clone(m.id);
         draw(container, matters);
     }
 
-    const link = (m: Matter) => {
+    const link = (id: string) => {
+        const m = matters.get(id);
         matters.inherite(m.id);
         draw(container, matters);
     }
 
-    const change = (m: Matter, key: string) => {
-        console.log(m, key);
+    const change = (id: string, key: string) => {
+        const m = matters.get(id);
         let dependents = m.dependents;
         for(const k in matters.list) {
             const _m = matters.get(k);
@@ -44,7 +47,13 @@ function draw(container: HTMLElement, matters: Matters) {
     const construct_inpector = (matter: Matter) => {
         const inspector = new InspectorMatter(matter, matters);
         inspectors[matter.id] = inspector;
-        container.appendChild(inspector.init(clone, del, link, change));
+        if (inspector.events) {
+            inspector.events.addEventListener("change", ((ev: CustomEvent) => change(ev.detail.id, ev.detail.key)) as EventListener)
+            inspector.events.addEventListener("link", ((ev: CustomEvent) => link(ev.detail.id)) as EventListener)
+            inspector.events.addEventListener("clone", ((ev: CustomEvent) => clone(ev.detail.id)) as EventListener)
+            inspector.events.addEventListener("delete", ((ev: CustomEvent) => clone(ev.detail.id)) as EventListener)
+        }
+        container.appendChild(inspector.init());
     }
 
     for(const k in matters.list) {

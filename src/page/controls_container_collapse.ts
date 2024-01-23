@@ -8,7 +8,7 @@ export default class ControlsContainerCollapse {
     }
 
     init(container: HTMLElement) : ControlsContainerCollapse {
-        const header = querySelector("header", container);
+        const header = querySelector(".header", container);
         const content = querySelector("content", container);
 
         listenClick(header, () => {

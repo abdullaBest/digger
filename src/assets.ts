@@ -1,4 +1,5 @@
-import { Matters } from "./matters"
+import { Matters, Matter } from "./matters"
+import Events from "./events";
 
 /**
  * starts to listen form "submit" and posts request on such
@@ -103,7 +104,7 @@ enum AssetStatus {
     LOADED = 3
 }
 
-interface AssetInfo {
+interface AssetInfo extends Matter {
     url: string;
     name: string;
     tags: string;
@@ -114,15 +115,60 @@ interface AssetInfo {
     thumbnail: string | null;
 }
 
+interface AssetContentTypeModel extends Matter {
+    gltf: string, 
+    material: string, 
+    texture: string, 
+    matrix: Array<number> | null, 
+    collider: boolean, 
+    durability: string, 
+    tags: string
+}
+
+interface AssetContentTypeTileset extends Matter {
+    guids: 0, 
+    texture: string, 
+    zero_color: string, 
+    color_id_prefix: string, 
+    link_id_prefix: string, 
+    durability_id_prefix: string, 
+    tilesize_x: number, 
+    tilesize_y: number, 
+    default_tile: string | null
+}
+
 class Asset {
     status: AssetStatus;
     info: AssetInfo;
+    content: any;
+    id: string;
     private _thumbnail: string | null;
 
-    constructor(options: AssetInfo) {
+    constructor(options: AssetInfo, id: string) {
         this.status = AssetStatus.UNKNOWN;
         this.info = options;
         this._thumbnail = null;
+        this.id = id;
+    }
+
+    /**
+     * Loads asset content
+     */
+    async load() {
+        this.status = AssetStatus.LOADING;
+        const path = this.info.url;
+        const id = this.info.id;
+
+        const res = await fetch(path);
+        if(!res.ok) {
+            console.error(`asset ${id} loading error`, res);
+            throw new Error(`asset ${id} loading error`);
+        }
+
+        if (this.info.type.includes("json")) {
+            this.content = await res.json();
+        }
+        this.status = AssetStatus.LOADED;
     }
 
     get thumbnail() : string {
@@ -146,10 +192,37 @@ class Asset {
 class Assets {
     list: { [id: string] : Asset; };
     matters: Matters;
+    events: Events;
+
+    private _base_content_info: AssetInfo;
+    private _base_content_extensions: { model: AssetContentTypeModel, tileset: AssetContentTypeTileset }
 
     init() {
+        this.events = new Events();
         this.matters = new Matters();
         this.matters.init();
+
+        const base_asset_info = {
+            id: "base_asset_info",
+            name: "base_asset_info",
+            url: "http",
+            tags: "base,config",
+            type: "info",
+            extension: "config",
+            revision: 0,
+            thumbnail: "http"
+        }
+
+        const base_asset_extension_model = { gltf: "toset", material: "standart", texture: "toset", matrix: null, collider: false, durability: "0x00", tags: "" }
+        const base_asset_extension_tileset = { guids: 0, texture: "toset", zero_color: "0xffffffff", color_id_prefix: "tile_color_", link_id_prefix: "tile_link_", durability_id_prefix: "tile_durablity_", tilesize_x: 1, tilesize_y: 1, default_tile: null }
+
+        this._base_content_info = this.matters.create(base_asset_info) as AssetInfo;
+
+        this._base_content_extensions = {
+            model: this.matters.create(base_asset_extension_model, null, "base_asset_type_model") as AssetContentTypeModel,
+            tileset: this.matters.create(base_asset_extension_tileset, null, "base_asset_type_tileset") as AssetContentTypeTileset,
+        };
+
     }
 
     get(id: string) : Asset {
@@ -198,10 +271,10 @@ class Assets {
     }
 
     /**
-     * Loads asset metadata. To get asset data itself use asset.info.url
+     * Loads asset metadata + asset content if it json type
      * @param onprogress callbacks on asset loaded
      */
-    async loadAsset(id: string, onprogress?: (id: string) => void) {
+    async loadAsset(id: string) {
         const path = "/assets/get/" + id;
         const res = await fetch(path);
         if(!res.ok) {
@@ -210,7 +283,8 @@ class Assets {
         }
         const data = await res.json();
         //const myContentType = res.headers.get("Content-Type");
-        const asset = new Asset({
+
+        const info = this.matters.create({
             url: data.url,
             name: data.name,
             id: data.id,
@@ -219,18 +293,24 @@ class Assets {
             revision: data.revision,
             tags: data.tags ?? "",
             thumbnail: data.thumbnail
-        });
-        this.list[id] = asset;
-        if(onprogress) {
-            onprogress(id);
+        }, this._base_content_info.id, id + '-info') as AssetInfo;
+
+        const asset = new Asset(info, id);
+
+        if (asset.info.type.includes("json")) {
+            await asset.load();
+            asset.content = this.matters.create(asset.content, this._base_content_extensions[asset.info.extension]?.id, id, info.name);
         }
+
+        this.list[id] = asset;
+        this.events.emit("asset", { id });
     }
 
     /**
      * 
      * @param onprogress callbacks on asset loaded
      */
-    async load(onprogress?: (id: string) => void) {
+    async load() {
         const res = await fetch("/assets/list");
         if (!res.ok) {
             console.error("Assets loading error", res);
@@ -239,7 +319,7 @@ class Assets {
         this.list = {};
         const data = await res.json();
         for (const i in data) {
-            await this.loadAsset(data[i], onprogress);
+            await this.loadAsset(data[i]);
         }
     }
 }

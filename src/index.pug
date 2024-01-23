@@ -29,22 +29,25 @@ body.appcore
 						a gameui
 			tab#edit-tab.hidden
 				a edit
-			tab#library-tab.hidden
-				a library
+			tab#library-tab.hidden.size-fill.display-block
+				section.flex-column.padding-minimum.display-block.size-limit
+					container#assets-library-list.style-window.behave-collapsing.flex-column.width-medium-x4.size-limit.overflow-auto
+						.header assets list
+						content.padding-minor.flex-column.buttons-list-s1.size-limit.overflow-auto
 			tab#debug-tab.flex-row.gap-minor.styleset-a.padding-minimum
 				section.flex-column
 					container#testcases-select-window.style-window.behave-collapsing.flex-column.width-medium
-						header tests
+						.header tests
 						content.padding-minor.flex-column.buttons-list-s1
 							btn(data-tab="testcase-matters-tab").tab-switch "matters" test
 							btn(data-tab="testcase-assets-tab").tab-switch assets test
 				section#testcase-matters-tab.flex-column
 					container#testcase-matters-window.style-window.behave-collapsing.flex-column.width-medium-x2
-						header "matters" test
+						.header "matters" test
 						content.padding-minor
 				section#testcase-assets-tab.flex-column
-					container#testcase-assets-window.style-window.behave-collapsing.flex-column.width-medium
-						header assets test
+					container#testcase-assets-window.style-window.behave-collapsing.flex-column.width-medium-x2
+						.header assets test
 						content.padding-minor
 							btn#testcase-matters-tab.tab-switch bbb
 			tab#docs-tab.hidden
