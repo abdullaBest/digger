@@ -104,7 +104,7 @@ enum AssetStatus {
     LOADED = 3
 }
 
-interface AssetInfo extends Matter {
+interface AssetInfo {
     url: string;
     name: string;
     tags: string;
@@ -115,7 +115,12 @@ interface AssetInfo extends Matter {
     thumbnail: string | null;
 }
 
-interface AssetContentTypeModel extends Matter {
+
+interface AssetContentTypeComponent extends Matter {
+    type: string;
+}
+
+interface AssetContentTypeModel extends AssetContentTypeComponent {
     gltf: string, 
     material: string, 
     texture: string, 
@@ -125,7 +130,7 @@ interface AssetContentTypeModel extends Matter {
     tags: string
 }
 
-interface AssetContentTypeTileset extends Matter {
+interface AssetContentTypeTileset extends AssetContentTypeComponent {
     guids: 0, 
     texture: string, 
     zero_color: string, 
@@ -194,33 +199,21 @@ class Assets {
     matters: Matters;
     events: Events;
 
-    private _base_content_info: AssetInfo;
-    private _base_content_extensions: { model: AssetContentTypeModel, tileset: AssetContentTypeTileset }
+    private _base_content_extensions: { model: AssetContentTypeModel, tileset: AssetContentTypeTileset, component: AssetContentTypeComponent }
 
     init() {
         this.events = new Events();
         this.matters = new Matters();
         this.matters.init();
 
-        const base_asset_info = {
-            id: "base_asset_info",
-            name: "base_asset_info",
-            url: "http",
-            tags: "base,config",
-            type: "info",
-            extension: "config",
-            revision: 0,
-            thumbnail: "http"
-        }
-
-        const base_asset_extension_model = { gltf: "toset", material: "standart", texture: "toset", matrix: null, collider: false, durability: "0x00", tags: "" }
-        const base_asset_extension_tileset = { guids: 0, texture: "toset", zero_color: "0xffffffff", color_id_prefix: "tile_color_", link_id_prefix: "tile_link_", durability_id_prefix: "tile_durablity_", tilesize_x: 1, tilesize_y: 1, default_tile: null }
-
-        this._base_content_info = this.matters.create(base_asset_info) as AssetInfo;
+        const base_asset_extension_component = { type: "component" };
+        const base_asset_extension_model = { type: "model", gltf: "toset", material: "standart", texture: "toset", matrix: null }
+        const base_asset_extension_tileset = { type: "tileset", guids: 0, texture: "toset", zero_color: "0xffffffff", color_id_prefix: "tile_color_", link_id_prefix: "tile_link_", durability_id_prefix: "tile_durablity_", tilesize_x: 1, tilesize_y: 1, default_tile: null }
 
         this._base_content_extensions = {
-            model: this.matters.create(base_asset_extension_model, null, "base_asset_type_model") as AssetContentTypeModel,
-            tileset: this.matters.create(base_asset_extension_tileset, null, "base_asset_type_tileset") as AssetContentTypeTileset,
+            component: this.matters.create(base_asset_extension_component, null, "base_asset_type_component") as AssetContentTypeComponent,
+            model: this.matters.create(base_asset_extension_model, "base_asset_type_component", "base_asset_type_model") as AssetContentTypeModel,
+            tileset: this.matters.create(base_asset_extension_tileset, "base_asset_type_component", "base_asset_type_tileset") as AssetContentTypeTileset,
         };
 
     }
@@ -284,7 +277,7 @@ class Assets {
         const data = await res.json();
         //const myContentType = res.headers.get("Content-Type");
 
-        const info = this.matters.create({
+        const info = {
             url: data.url,
             name: data.name,
             id: data.id,
@@ -293,13 +286,18 @@ class Assets {
             revision: data.revision,
             tags: data.tags ?? "",
             thumbnail: data.thumbnail
-        }, this._base_content_info.id, id) as AssetInfo;
+        } as AssetInfo;
 
         const asset = new Asset(info, id);
 
         if (asset.info.type.includes("json")) {
             await asset.load();
-            asset.content = this.matters.create(asset.content, this._base_content_extensions[asset.info.extension]?.id, id + "-content", info.name);
+            if (this.matters.get(id)) {
+                asset.content = this.matters.replace(asset.content, id);
+            } else {
+                const inherites = asset.content.inherites ?? this._base_content_extensions[asset.info.extension]?.id;
+                asset.content = this.matters.create(asset.content, inherites, id, info.name);
+            }
         }
 
         this.list[id] = asset;

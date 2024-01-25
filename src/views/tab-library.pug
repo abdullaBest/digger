@@ -1,21 +1,33 @@
-tab#library-tab.hidden.size-fill.flex-row.padding-minimum.gap-minor.styleset-a
-    section.flex-column.display-block.size-limit
-        container#assets-library-add.style-window.behave-collapsing.flex-column.width-medium
+tab#library-tab.hidden.size-fill.flex-row.flex-wrap.padding-minimum.gap-minor.styleset-a
+    section.flex-column.display-block
+        container#assets-library-add.style-window.behave-collapsing.flex-column.width-medium-x2
             .header add assets
-            content.padding-minor.flex-column.buttons-list-s1.size-limit
-                btn upload file
+            content.padding-minor.flex-column.buttons-list-s1
+                btn#asset-import-images import images
+                btn#asset-import-gltfs import gltf
+                btn#assets-create-component create component
+                btn#assets-create-model create model
     section.flex-column.display-block.size-limit
         container#assets-library-list.style-window.behave-collapsing.flex-column.width-medium-x4.size-limit.overflow-auto
             .header assets list
             content.padding-minor.flex-column.buttons-list-s1.size-limit.overflow-auto
-    section.flex-column.flex-column.size-limit.gap-minor
+    section.flex-column.gap-minor
         container#assets-library-details.style-window.behave-collapsing.flex-column.width-medium-x4
             .header asset details
             content.flex-column.padding-minimum
-        container#assets-library-manage.style-window.behave-collapsing.flex-column.width-medium-x2
-            .header asset manage
-            content.padding-minor.flex-column
-    section.flex-column.flex-column.size-limit.gap-minor
-        container#assets-library-preview.style-window.behave-collapsing.flex-column.width-medium-x4
+        section.flex-row.gap-minor
+            container#assets-library-manage.style-window.behave-collapsing.flex-column.width-medium
+                .header asset manage
+                content.padding-minor.flex-column.buttons-list-s1
+                    btn#asset-manage-save save
+                    btn#asset-manage-delete delete
+            container#asset-components-manage.style-window.behave-collapsing.flex-column.width-medium.hidden
+                .header components
+                content.padding-minor.flex-column.buttons-list-s1
+                    btn#asset-component-add add
+    section.flex-column.flex-column.gap-minor
+        container#assets-library-preview.style-window.behave-collapsing.flex-column
             .header asset preview
             content
+                container#asset-render-preview.size-square-medium-x4.display-block.hidden
+                img#asset-image-preview.hidden

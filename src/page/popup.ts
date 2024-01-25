@@ -1,8 +1,93 @@
-import { querySelector } from "../document";
+import { querySelector, listenClick, EventListenerDetails, removeEventListeners } from "../document";
+
+class Popup {
+    private static _instance: Popup;
+    container: HTMLElement;
+    content: HTMLElement;
+    header: HTMLElement;
+    label: HTMLElement;
+    private _listeners: Array<EventListenerDetails>;
+
+    private constructor() {
+        this._listeners = [];
+    }
+
+    private init(container: HTMLElement = querySelector("#popup-default")) {
+        this.container = container;
+        this.header = querySelector(".header", container);
+        this.label = querySelector("label", this.header);
+        this.content = querySelector("#popup-content", container);
+    }
+
+    static get instance() {
+        if (!Popup._instance) {
+            Popup._instance = new Popup();
+        }
+
+        return Popup._instance;
+    }
+
+    async confirm(message: string, propagate?: (el: HTMLElement) => void) {
+        this.label.innerHTML = message;
+    
+        this.content.innerHTML = "";
+        if (propagate) {
+            propagate(this.content);
+        }
+    
+        return this.apply();
+    }
+
+    async message(header: string, content: string) {
+        this.label.innerHTML = header;
+        this.content.innerHTML = content;
+        
+        return this.apply();
+    }
+
+    private async apply() {
+        return new Promise((resolve, reject) => {
+            const callback = async (ev) => {
+                this.close();
+                resolve(1);
+            }
+            const close = () => {
+                this.close();
+                reject('cancel');
+            }
+            listenClick("#popup-controls-close", close, this._listeners, this.container);
+            listenClick("#popup-controls-confirm", callback, this._listeners, this.container);
+        })
+    }
+
+    show(container: HTMLElement = this.container) {
+        if (!container || this.container != container) {
+            this.init(container);
+        }
+
+        const rootlayout = querySelector("#appcontent");
+        rootlayout?.classList.add('fade');
+
+        this.container.classList.remove("hidden");
+
+        return this;
+    }
+
+    close() {
+        this.container.classList.add("hidden");
+        removeEventListeners(this._listeners);
+
+        const rootlayout = querySelector("#appcontent");
+        rootlayout?.classList.remove('fade');
+    }
+}
+
+// -- deprecated
+
 /**
  * @param message 
  */
-export function popupListSelect(message: string, propagete?: (el: HTMLElement) => void) : Promise<string> {
+function popupListSelect(message: string, propagete?: (el: HTMLElement) => void) : Promise<string> {
     const header = document.getElementById("popup_header");
     const rootlayout = document.getElementById("rootlayout");
     const _popup = document.getElementById("popup");
@@ -46,7 +131,7 @@ export function popupListSelect(message: string, propagete?: (el: HTMLElement) =
 /**
  * @param message 
  */
-export function popupListSelectMultiple(message: string, propagate?: (el: HTMLElement) => void) : Promise<Array<string>> {
+function popupListSelectMultiple(message: string, propagate?: (el: HTMLElement) => void) : Promise<Array<string>> {
     const header = document.getElementById("popup_header");
     const rootlayout = document.getElementById("rootlayout");
     const _popup = document.getElementById("popup");
@@ -105,7 +190,7 @@ export function popupListSelectMultiple(message: string, propagate?: (el: HTMLEl
  * 
  * @param message 
  */
-export function popupConfirm(message, propagete?: (el: HTMLElement) => void) : Promise<number> {
+function popupConfirm(message, propagete?: (el: HTMLElement) => void) : Promise<number> {
     const header = document.getElementById("popup_header");
     const rootlayout = document.getElementById("rootlayout");
     const _popup = document.getElementById("popup");
@@ -146,3 +231,6 @@ export function popupConfirm(message, propagete?: (el: HTMLElement) => void) : P
         _popup_close?.addEventListener('click', close);
     })
 }
+
+export default Popup;
+export { Popup, popupConfirm, popupListSelect, popupListSelectMultiple };

@@ -42,6 +42,23 @@ class Matter {
         return !this.hasOwnProperty(key) && (key in this);
     }
 
+    inherited_equals(key: string, value: any) {
+        let p = this;
+        while (true) {
+            if (p[key] === value) {
+                return true;
+            }
+
+            if (!p.inherites || p.id == "base") {
+                break;
+            }
+
+            p = p.get_prototype();
+        }
+
+        return false;
+    }
+
     get_prototype() {
         return Object.getPrototypeOf(this);
     }
@@ -97,6 +114,16 @@ class Matters {
         this.list[matter.id] = matter;
 
         return matter;
+    }
+
+    replace(content: any, id: any) {
+        const _id = id ?? content.id;
+        const matter = this.list[_id]
+        if (!matter) {
+            throw new Error(`Matters::replace error - Matter ${_id} does not exist.`);
+        }
+
+        return Object.assign(matter, content);
     }
 
     remove(id: string) {

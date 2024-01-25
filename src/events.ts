@@ -7,7 +7,7 @@ export interface EventListenerDetails {
 export default class Events {
     core: HTMLElement;
     guids: number;
-    list: { [id: number] : EventListenerDetails };
+    list: { [id: string] : EventListenerDetails };
 
     constructor(node?: HTMLElement) {
         this.core = node ?? document.createElement("events");
@@ -15,17 +15,19 @@ export default class Events {
         this.list = {};
     }
 
-    on(name: string, callback: (details: any) => void) : number {
+    on(name: string, callback: (details: any) => void, list?: Array<EventListenerDetails>) : number {
         const guid = this.guids++;
         const _callback = ((ev: CustomEvent) => callback(ev.detail)) as EventListener;
         this.core.addEventListener(name, _callback);
         
-        this.list[guid] = { callback: _callback, name, node: this.core };
+        const opts =  { callback: _callback, name, node: this.core };
+        this.list[guid] = opts;
+        list?.push(opts);
 
         return guid;
     }
 
-    off(id: number) {
+    off(id: string) {
         const ev = this.list[id];
         ev?.node?.removeEventListener(ev.name, ev.callback);
         delete this.list[id];
@@ -33,5 +35,11 @@ export default class Events {
 
     emit(name: string, detail: any) {
         this.core.dispatchEvent(new CustomEvent(name, { detail }));
+    }
+
+    dispose() {
+        for(const k in this.list) {
+            this.off(k);
+        }
     }
 }

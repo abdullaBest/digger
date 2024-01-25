@@ -24,7 +24,7 @@ export default class InspectorMatters {
 
         const container = this.init_container();
         this.container = container;
-        this.container.classList.add("colapsed");
+        //this.container.classList.add("colapsed");
         const header = querySelector(".header", container);
         const content = querySelector("content", container);
     

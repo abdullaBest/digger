@@ -10,19 +10,22 @@ html(lang="en")
 
 body.appcore
 	#approot.flex-row.colors-default.size-fill.bg-zero
-		#header.flex-column.gap-minor.icons-s1.container.bg-default.no-shrink
-			o.padding-minimum DT █
-			btn(data-tab="play-tab").icon.img-play.tab-switch
-			btn(data-tab="edit-tab").icon.img-edit.tab-switch
-			btn(data-tab="library-tab").icon.img-library.tab-switch
-			btn(data-tab="debug-tab").icon.img-debug.tab-switch
-			btn(data-tab="docs-tab").icon.img-docs.tab-switch
-		#apptabs.size-fill
-			include ./views/tab-play.pug
-			include ./views/tab-edit.pug
-			include ./views/tab-library.pug
-			include ./views/tab-debug.pug
-			include ./views/tab-docs.pug
+		include ./views/popup.pug
+
+		#appcontent.size-fill.flex-row
+			#header.flex-column.gap-minor.icons-s1.container.bg-default.no-shrink
+				o.padding-minimum DT █
+				btn(data-tab="play-tab").icon.img-play.tab-switch
+				btn(data-tab="edit-tab").icon.img-edit.tab-switch
+				btn(data-tab="library-tab").icon.img-library.tab-switch
+				btn(data-tab="debug-tab").icon.img-debug.tab-switch
+				btn(data-tab="docs-tab").icon.img-docs.tab-switch
+			#apptabs.size-fill
+				include ./views/tab-play.pug
+				include ./views/tab-edit.pug
+				include ./views/tab-library.pug
+				include ./views/tab-debug.pug
+				include ./views/tab-docs.pug
 
 	db#cache
 		canvas#cache_canvas

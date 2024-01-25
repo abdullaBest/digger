@@ -38,7 +38,7 @@ class App {
         this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_game, this.scene_map);
         this.assets_view = new AssetsView(this.assets, this.scene_render, this.scene_mediator);
         this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_edit_tools, this.scene_mediator, this.scene_map);
-        this.assets_library_view = new AssetsLibraryView(this.assets);
+        this.assets_library_view = new AssetsLibraryView(this.assets, this.scene_render);
 
         this.active = false;
         this.timestamp = 0;
@@ -74,7 +74,7 @@ class App {
                     break;
             }
         });
-        maintabs.click("debug-tab");
+        maintabs.click("library-tab");
         const debugWindows = ControlsContainerCollapse.construct(querySelector("#debug-tab"));
         const test_tabls = new Tabs().init(querySelector("#testcases-select-window"), querySelector("#debug-tab"), (id: string) => {
             switch (id) {
@@ -229,7 +229,7 @@ class App {
         });
 
         listenClick("#create_scene_btn", (ev) => {
-            const file = new File([`{"guids": 0}`], "newscene.scene", {
+            const file = new File([`{}`], "newscene.scene", {
                 type: "application/json",
             });
             sendFiles("/assets/upload", [file], res_update_callback);
