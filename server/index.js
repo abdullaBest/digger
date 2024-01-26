@@ -3,7 +3,7 @@ import express from 'express';
 import { WebSocketServer } from 'ws';
 import Assets from './assets.js';
 import { upload, upload_thumbnail, path_uploads, path_uploads_thumbnails } from './upload.js';
-import { existsSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 
 const port = 3000
 
@@ -146,6 +146,32 @@ app.get('/assets/load', async (req, res, next) => {
     res.statusCode = 404;
     res.send("No file matching query found.");
   })
+})
+
+/**
+ * Removes completely removes asset and all data
+ */
+app.post('/assets/wipe/:id', async (req, res, next) => {
+  const id = req.params.id;
+  const asset = assets.get(id);
+
+  if (!asset) {
+    res.sendStatus(404);
+    return;
+  }
+
+  for(const i in asset.revisions) {
+    const filename = asset.revisions[i];
+    const path = assets.directory + filename;
+    if (existsSync(path)){
+      rmSync(path, { force: true });
+    }
+  }
+  delete assets.content.data[id];
+
+  await assets.save();
+
+  res.sendStatus(200);
 })
 
 app.get('/assets/load/thumbnail/:id', async (req, res, next) => {

@@ -40,38 +40,31 @@ export default class AssetsLibraryView {
         }, this._listeners)
 
         listenClick(this.container_list, (ev) => {
+            this.saveAsset(this.asset_selected?.id);
             const id = (ev.target as HTMLElement)?.id;
             if (this.assets.list[id]) {
                 this.viewAsset(id);
             }
         }, this._listeners)
         
-        const res_update_callback = async (success: boolean, res:Response): Promise<Array<string>> => {
-            const ids = await res.json();
-            for(const i in ids) {
-                const id = ids[i];
-                await this.assets.loadAsset(id);
-            }
-
-            return ids;
-        }
-
         listenClick("#asset-import-images", async (ev) => {
-            const res = await importImageSequence();
-            res_update_callback(res.ok, res);
+            await importImageSequence(this.assets);
         }, this._listeners);
         listenClick("#asset-import-gltfs", async (ev) => {
-            const res = await importGltfSequence();
-            res_update_callback(res.ok, res);
+            await importGltfSequence(this.assets);
         }, this._listeners)
         listenClick("#assets-create-component", async (ev) => {
-            await this._createComponent("component", null, res_update_callback);
+            await this._createComponent("component", null);
         }, this._listeners);
         listenClick("#assets-create-model", async (ev) => {
             const gltfid = await this._showSelectList("select gltf", {extension: /gltf/});
             const textureid = await this._showSelectList("select texture", {extension: /(png|jpg)/});
-            await this._createComponent("model", { gltf: gltfid, texture: textureid }, res_update_callback);
+            await this._createComponent("model", { gltf: gltfid, texture: textureid });
         }, this._listeners)
+        listenClick("#assets-create-tileset", async (ev) => {
+            const textureid = await this._showSelectList("select texture", {extension: /(png)/});
+            await this._createComponent("tileset", { texture: textureid });
+        }, this._listeners);
         listenClick("#asset-component-add", async (ev) => {
             const link_id = await this._showSelectList("select", {}, "component");
             if (!link_id) {
@@ -85,8 +78,7 @@ export default class AssetsLibraryView {
         listenClick("#asset-collider-add", async (ev) => {
             let link_id = await this._showSelectList("select", {}, "collider", ["create"]);
             if (link_id == "create") {
-                const res = await this._createComponent("collider", null);
-                const ids = await res_update_callback(res.ok, res);
+                const ids = await this._createComponent("collider", null);
                 link_id = ids[0];
             }
             const asset = this.asset_selected;
@@ -94,29 +86,57 @@ export default class AssetsLibraryView {
             this.viewAsset(asset.id);
         }, this._listeners);
         listenClick("#asset-manage-save", async (ev) => {
+            this.saveAsset(this.asset_selected?.id);
+        }, this._listeners)
+        listenClick("#asset-manage-wipe", async (ev) => {
             const asset = this.asset_selected;
-            if (!asset) {
+            const matter = this.assets.matters.get(asset.id)
+            if (matter && matter.dependents) {
+                Popup.instance.show().message("wipe error", `Asset ${asset.id} has ${matter.dependents} dependents. Could not delete`);
                 return;
             }
-            const content = asset.content;
-            if (!content) {
+
+            const links: Array<string> = [];
+            for(const k in this.assets.matters.list) {
+                const m = this.assets.matters.list[k];
+                for(const kk in m) {
+                    const val = m[kk];
+                    if (typeof val === "string" && val.startsWith("**") && val.substring(2) === asset.id) {
+                        links.push(m.id);
+                    }
+                }
+            }
+            if (links.length) {
+                let message = `<q>Asset ${asset.id} referensed in [${links}] assets. Could not delete.</q>`;
+               
+                Popup.instance.show().message("wipe error", message);
                 return;
             }
-            const file = new File([JSON.stringify(content)], `v${asset.info.revision}_${asset.info.name}`, {
-                type: "application/json",
-            });
+            await this.assets.wipeAsset(asset.id);
+            const el = this.container_list.querySelector("#" + asset.id) as HTMLElement;
+            if (el) {
+                el.parentElement?.removeChild(el);
+            }
+            
+        }, this._listeners)
+    }
 
-            const formData = new FormData();
-            formData.append("name", content.name);
-            formData.append("files", file);
+    async saveAsset(id?: string | null) {
+        if (!id || !this.assets.list[id]) {
+            return;
+        }
 
-            const res = await fetch(`/assets/upload/${asset.id}`, {
-                method: 'POST',
-                body: formData,
-                headers: {}
-            })
-            await this.assets.loadAsset(asset.id);
-            }, this._listeners)
+        const asset = this.assets.get(id);
+        if (!asset) {
+            return;
+        }
+
+        const content = asset.content;
+        if (!content) {
+            return;
+        }
+
+        await this.assets.uploadJSON(content, asset.id, {name: content.name});
     }
 
     async _showSelectList(message: string, filter: any = {}, extension?: string, extra?: Array<string>): Promise<string | null> {
@@ -150,16 +170,13 @@ export default class AssetsLibraryView {
         return selected.shift() ?? null;
     }
 
-    async _createComponent(extension: string, content?: any | null, callback?: (success: boolean, res:Response) => void) {
+    async _createComponent(extension: string, content?: any | null) : Promise<Array<string>> {
         const inherites = await this._showSelectList("inherite", {}, extension);
         const component = { inherites };
         if (content) {
             Object.assign(component, content);
         }
-        const file = new File([JSON.stringify(component)], `new.${extension}`, {
-            type: "application/json",
-        });
-        return sendFiles("/assets/upload", [file], callback);
+        return this.assets.createJSON(component, extension)
     }
 
     listAsset(id: string, container: HTMLElement = this.container_list) {
@@ -206,12 +223,32 @@ export default class AssetsLibraryView {
 
         const container = querySelector("#assets-library-details content")
         container.innerHTML = "";
-        if (asset.content) {
-            this.asset_inspector = new InspectorMatters(asset.content, this.assets.matters);
-            container.appendChild(this.asset_inspector.init());
-        }
+        try {
+            if (asset.content) {
+                const mutators = {
+                    texture: (value: string, el?: HTMLElement) => {
+                        if (!el) {
+                            const btn = document.createElement("btn");
+                            btn.innerHTML = `[${value}] change`;
+                            btn.classList.add("btn-s1", "flex-grow-1")
+                            el = btn;
+                        }
+                        return el;
+                    },
+                    gltf: (key: string, el?: HTMLElement) => {
+                        return el;
+                    }
+                }
+                this.asset_inspector = new InspectorMatters(asset.content, this.assets.matters);
+                container.appendChild(this.asset_inspector.init(mutators));
+            }
 
-        this.renderAsset(id);
+            this.renderAsset(id);
+        } catch(err) {
+            const errmsg = "AssetsLibraryView::viewAsset error.";
+            console.error(errmsg, err);
+            container.innerHTML = `<q>${errmsg}</q><q>${err}</q>`
+        }
     }
 
     async renderAsset(id: string) {

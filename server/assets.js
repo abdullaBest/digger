@@ -9,7 +9,6 @@ export default class Assets {
             guids: 0
         }
         this._instance = null;
-        this.data = {};
         this.filename = "assets.json"
         this.directory = ""
     }

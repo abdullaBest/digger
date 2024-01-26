@@ -151,13 +151,21 @@ class Asset {
     info: AssetInfo;
     content: any;
     id: string;
+
+    /**
+     * Some assets (configs) may be bundled in one file. This value stores bundle id
+     * not implemented for now
+     */
+    bundle: string | null;
+
     private _thumbnail: string | null;
 
-    constructor(options: AssetInfo, id: string) {
+    constructor(options: AssetInfo, id: string, bundle: string | null = null) {
         this.status = AssetStatus.UNKNOWN;
         this.info = options;
         this._thumbnail = null;
         this.id = id;
+        this.bundle = bundle;
     }
 
     /**
@@ -219,9 +227,9 @@ class Assets {
         this.matters.init();
 
         const base_asset_extension_component = { type: "component" };
-        const base_asset_extension_collider = { type: "collider" };
+        const base_asset_extension_collider = { type: "collider", autosize: true };
         const base_asset_extension_model = { type: "model", gltf: "toset", material: "standart", texture: "toset", matrix: null }
-        const base_asset_extension_tileset = { type: "tileset", guids: 0, texture: "toset", zero_color: "0xffffffff", color_id_prefix: "tile_color_", link_id_prefix: "tile_link_", durability_id_prefix: "tile_durablity_", tilesize_x: 1, tilesize_y: 1, default_tile: null }
+        const base_asset_extension_tileset = { type: "tileset", guids: 0, texture: "toset", zero_color: "#ffffffff", tilesize_x: 1, tilesize_y: 1, default_tile: null }
 
         this._base_content_extensions = {
             component: this.matters.create(base_asset_extension_component, null, "base_asset_type_component") as AssetContentTypeComponent,
@@ -310,7 +318,11 @@ class Assets {
                 asset.content = this.matters.replace(asset.content, id);
             } else {
                 const inherites = asset.content.inherites ?? this._base_content_extensions[asset.info.extension]?.id;
-                asset.content = this.matters.create(asset.content, inherites, id, info.name);
+                try {
+                    asset.content = this.matters.create(asset.content, inherites, id, info.name);
+                } catch(err) {
+                    console.error(`Asset ${asset.id} creating error:`, err);
+                }
             }
         }
 
@@ -331,7 +343,63 @@ class Assets {
         this.list = {};
         const data = await res.json();
         for (const i in data) {
-            await this.loadAsset(data[i]);
+            try {
+                await this.loadAsset(data[i]);
+            } catch(err) {
+                console.error(`Asset ${data[i]} loading error:`, err);
+            }
+        }
+    }
+
+    async uploadJSON(content: any, id: string, custom?: any) {
+        const asset = this.get(id);
+
+        const file = new File([JSON.stringify(content)], `v${asset.info.revision}_${asset.info.name}`, {
+            type: "application/json",
+        });
+
+        const formData = new FormData();
+        for(const k in custom) {
+            formData.append(k, custom[k]);
+        }
+        formData.append("files", file);
+
+        const res = await fetch(`/assets/upload/${asset.id}`, {
+            method: 'POST',
+            body: formData,
+            headers: {}
+        })
+        await this.loadAsset(asset.id);
+    }
+
+    async createFiles(files: Array<File>) : Promise<Array<string>> {
+        const res = await sendFiles("/assets/upload", files);
+        const ids = await res.json();
+        for(const i in ids) {
+            const id = ids[i];
+            await this.loadAsset(id);
+        }
+
+        return ids;
+    }
+
+    async createJSON(content: any, extension: string) : Promise<Array<string>> {
+        const file = new File([JSON.stringify(content)], `new.${extension}`, {
+            type: "application/json",
+        });
+       return this.createFiles([file]);
+    }
+
+    async wipeAsset(id: string) {
+        if (this.matters.list[id]) {
+            this.matters.remove(id);
+        }
+        const res = await fetch(`/assets/wipe/${id}`, {
+            method: 'POST',
+        });
+        
+        if (res.ok) {
+            delete this.list[id];
         }
     }
 }

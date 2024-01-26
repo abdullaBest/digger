@@ -1,6 +1,7 @@
 import { Popup } from "./page/popup";
 import { sendFiles, Asset } from "./assets";
 import SceneRender from "./render/scene_render";
+import Assets from "./assets";
 
 function blobToBase64(blob : Blob) : Promise<string | ArrayBuffer | null> {
     const reader = new FileReader();
@@ -12,7 +13,7 @@ function blobToBase64(blob : Blob) : Promise<string | ArrayBuffer | null> {
     });
 };
 
-export async function importImageSequence() {
+export async function importImageSequence(assets: Assets) {
     try {
         const input = document.createElement("input");
         await Popup.instance.show().confirm("select image", (container) => {
@@ -35,19 +36,19 @@ export async function importImageSequence() {
             files.push(file);
         }
 
-        return await sendFiles("/assets/upload", files);
+        return assets.createFiles(files);
     } catch(err) {
         if (err == 'cancel') {
             throw err;
         }
 
         await Popup.instance.show().message("error", err);
-        return await importImageSequence();
+        return await importImageSequence(assets);
     }
 }
 
 
-export async function importGltfSequence() {
+export async function importGltfSequence(assets: Assets) {
     let gltfContents: Array<any> = [];
     let gltfFiles: Array<File> = [];
     try {
@@ -120,7 +121,7 @@ export async function importGltfSequence() {
         }
 
         await Popup.instance.show().message("error", err);
-        return await importGltfSequence();
+        return await importGltfSequence(assets);
     }
 
     const files: Array<File> = [];
@@ -133,7 +134,7 @@ export async function importGltfSequence() {
         files.push(file);
     }
 
-    return await sendFiles("/assets/upload", files);
+    return assets.createFiles(files);
 }
 
 

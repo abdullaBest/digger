@@ -220,17 +220,17 @@ body,
     }
 }
 
-.appcore .buttons-list-s1 {
-    btn {
+.appcore  {
+    .buttons-list-s1 btn, .btn-s1 {
         border-bottom: 2px var(--border-color-a) solid;
-    }
 
-    btn label {
-        pointer-events: none;
-    }
+        label {
+            pointer-events: none;
+        }
 
-    btn.highlighted {
-        border-bottom: 2px var(--highlight-color-a) solid;
+        &.highlighted {
+            border-bottom: 2px var(--highlight-color-a) solid;
+        }
     }
 }
 
@@ -286,6 +286,10 @@ body,
     input.error {
         border-bottom: 1px var(--highlight-color-error) solid;
         color: var(--highlight-color-error);
+    }
+
+    .img-color {
+        border: 1px solid var(--border-color-a);
     }
 }
 

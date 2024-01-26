@@ -1,6 +1,7 @@
 import { Matter, Matters } from "../matters"
 import ControlsContainerCollapse from "./controls_container_collapse";
 import { EventListenerDetails, querySelector, listenClick, addEventListener, removeEventListeners } from "../document";
+import { PropertyInput, PropertyInputMutator } from "./property_input";
 
 export default class InspectorMatters {
     matter: Matter;
@@ -10,17 +11,24 @@ export default class InspectorMatters {
     entries: { [id: string]: HTMLElement };
     subinspectors: { [id: string]: InspectorMatters }
     events: HTMLElement | null;
+    inputs: { [id: string]: PropertyInput }
+    mutators: { [id: string] : PropertyInputMutator };
 
     constructor(matter: Matter, matters: Matters) {
         this.matter = matter;
         this.matters = matters;
         this._listeners = [];
         this.entries = {};
+        this.inputs = {};
+        this.mutators = {};
         this.events = document.createElement("events");
     }
 
-    init() {
+    init(mutators?: { [id: string] : PropertyInputMutator }) {
         const matter = this.matter;
+        if (mutators) {
+            this.mutators = mutators;
+        }
 
         const container = this.init_container();
         this.container = container;
@@ -76,45 +84,24 @@ export default class InspectorMatters {
         return container;
     }
 
-    init_input(matter: Matter, key: string, entry: HTMLElement, onchange?: (m: Matter, key: string) => void) : HTMLInputElement {
-        const input_value = document.createElement("input") as HTMLInputElement;
-        input_value.classList.add("width-half");
-        input_value.value = matter[key] ?? "none";
-
-        const datatype = typeof matter[key];
-        if (datatype !== "string" && datatype !== "number") {
-            input_value.classList.add('disabled');
-        }
-        if (onchange) {
-            addEventListener({callback: ()=> {
-                let val: string | number = input_value.value;
-                input_value.classList.remove('error');
-
-                if (datatype === "number") {
-                    let _val = parseFloat(val);
-                    if (Number.isNaN(_val)) {
-                        input_value.classList.add('error');
-                        return;
-                    }
-                    val = _val;
-                }
-                matter.set(key, val);
-                this.draw_field(key, matter, entry);
+    init_input(matter: Matter, key: string, entry: HTMLElement, onchange?: (m: Matter, key: string) => void) : HTMLElement {
+        const input = new PropertyInput(this.mutators[key] ?? null);
+        this.inputs[key] = input;
+        const input_container = input.init(matter[key], (value) => {
+            matter.set(key, value);
+            this.draw_field(key, matter, entry);
+            if (onchange) {
                 onchange(matter, key);
-            }, name: "change", node: input_value}, this._listeners);
+            }
+        }, this._listeners);
+        input_container.classList.add("width-half");
 
-            addEventListener({callback: (ev)=> {
-                ev.stopPropagation();
-            }, name: "click", node: input_value}, this._listeners);
-        } else {
-            input_value.classList.add("disabled");
+        if (!onchange) {
+            input_container.classList.add("disabled");
         }
 
-        entry.appendChild(input_value);
 
-        this.entries[key] = entry;
-
-        return input_value;
+        return input_container;
     }
 
     init_field_controls(matter: Matter, key: string, entry: HTMLElement, onchange?: (m: Matter, key: string) => void) : HTMLElement {
@@ -145,6 +132,7 @@ export default class InspectorMatters {
             addEventListener({callback: ()=> {
                 matter.reset(key);
                 const el = this.entries[key];
+                delete this.inputs[key];
                 el.parentElement?.removeChild(el)
                 onchange(matter, key);
             }, name: "click", node: btn_remove}, this._listeners);
@@ -173,9 +161,13 @@ export default class InspectorMatters {
         const input_controls = this.init_field_controls(matter, key, entry, onchange);
         const input_value = this.init_input(matter, key, entry, onchange);
 
+        entry.appendChild(input_value);
+
         if (key == "id" || key == "inherites" || key == "dependents") {
             entry.classList.add("disabled");
         } 
+
+        this.entries[key] = entry;
 
         this.draw_field(key, matter, entry);
 
@@ -202,9 +194,8 @@ export default class InspectorMatters {
         const btn_external_ref = querySelector(".img-external", entry);
         const btn_discard = querySelector(".img-discard", entry);
         const btn_remove = querySelector(".img-remove", entry);
-        const input_value = querySelector("input", entry) as HTMLInputElement;
 
-        input_value.value = matter.get(key);
+        this.inputs[key].draw(matter.get(key));
 
         icon_external_code.classList.add("hidden");
         btn_external_ref.classList.add("hidden");
@@ -237,6 +228,8 @@ export default class InspectorMatters {
         removeEventListeners(this._listeners);
 
         this.entries = {};
+        this.inputs = {};
+        this.mutators = {};
         this.events = null;
 
         if (this.container) {
