@@ -106,7 +106,6 @@ class SceneRender {
             object.removeFromParent();
             delete this.cache.objects[id];
         }
-        this.loader.unloadModel(id, fullclear);
     }
 
     removeGLTF(id: string) {

@@ -1,4 +1,4 @@
-import { Assets } from '../assets.js'
+import { Assets, AssetContentTypeModel } from '../assets.js'
 import SceneRenderCache from './scene_render_cache.js'
 import * as THREE from '../lib/three.module.js';
 import { GLTFLoader } from '../lib/GLTFLoader.js';
@@ -30,7 +30,6 @@ export default class SceneRenderLoader {
         }
         
         const afterload = async (scene: THREE.Object3D) => {
-            this.cache.models[id] = model;
             scene.name = id;
 
             if (model.matrix?.length) {
@@ -91,15 +90,8 @@ export default class SceneRenderLoader {
         return load();
     }
 
-    unloadModel(id: string, withmesh: boolean = false) {
-        const model = this.cache.models[id];
-        if (model) {
-            delete this.cache.models[id];
-
-            if (withmesh) {
-                delete this.cache.gltfs[model.gltf];
-            }
-        }
+    unloadModel(model: AssetContentTypeModel) {
+        delete this.cache.gltfs[model.gltf];
     }
 
     /**

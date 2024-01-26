@@ -19,7 +19,7 @@ export default class AppDebug {
         this.app_state_draw.addRead("[fps]", () => 1000 / this.app_state_draw.object.average_frametime);
 
         this.scene_state_draw.init(scene_cache);
-        this.scene_state_draw.addRead("[cached models]", () => Object.keys(scene_cache.models).length );
+        //this.scene_state_draw.addRead("[cached models]", () => Object.keys(scene_cache.models).length );
         this.scene_state_draw.addRead("[cached objects]", () => Object.keys(scene_cache.objects).length );
         this.scene_state_draw.addRead("[cached gltfs]", () => Object.keys(scene_cache.gltfs).length );
         this.scene_state_draw.addRead("[cached materials]", () => Object.keys(scene_cache.materials).length );

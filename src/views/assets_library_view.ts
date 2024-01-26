@@ -1,8 +1,9 @@
-import { Assets, Asset, sendFiles } from "../assets";
+import { Assets, Asset, sendFiles, AssetContentTypeComponent } from "../assets";
 import { querySelector, listenClick, EventListenerDetails } from "../document";
 import InspectorMatters from "../page/inspector_matters";
 import { importGltfSequence, importImageSequence, uploadThumbnail } from "../importer";
 import SceneRender from "../render/scene_render";
+import SceneMap from "../scene_map";
 import { Popup } from "../page/popup";
 import ListSelect from "../page/list_select";
 /**
@@ -17,12 +18,14 @@ export default class AssetsLibraryView {
     asset_inspector: InspectorMatters;
     asset_info_inspector: InspectorMatters;
     scene_render: SceneRender;
+    scene_map: SceneMap;
     private _listeners: Array<EventListenerDetails>;
 
-    constructor(assets: Assets, scene_render: SceneRender) {
+    constructor(assets: Assets, scene_render: SceneRender, scene_map: SceneMap) {
         this.assets = assets;
         this._listeners = [];
         this.scene_render = scene_render;
+        this.scene_map = scene_map;
     }
 
     init() {
@@ -189,6 +192,10 @@ export default class AssetsLibraryView {
     }
 
     renderAsset(id: string) {
+        this.scene_map.cleanup();
+        this.scene_render.clearCached();
+        this.scene_render.reattach(this.container_preview_render as HTMLElement);
+
         this.container_preview_render.classList.add("hidden");
         this.preview_image.classList.add("hidden");
 
@@ -196,10 +203,10 @@ export default class AssetsLibraryView {
         querySelector("#asset-components-manage").classList[its_component ? "remove" : "add"]("hidden");
 
         const asset = this.assets.get(id);
+        const matter = this.assets.matters.get(id);
+
         if (asset.info.extension == "gltf") {
             this.container_preview_render.classList.remove('hidden');
-            this.scene_render.reattach(this.container_preview_render as HTMLElement);
-            this.scene_render.clearCached();
 
             this.scene_render.viewGLTF(asset.info.url).then(() => {
                 if (!asset.thumbnail) {
@@ -209,6 +216,9 @@ export default class AssetsLibraryView {
         } else if (asset.info.type.includes("image")) {
             this.preview_image.classList.remove('hidden');
 			this.preview_image.src = asset.thumbnail;
-		} 
+		} else if (matter.inherited_equals("type", "component")) {
+            this.container_preview_render.classList.remove('hidden');
+            this.scene_map.add(matter as AssetContentTypeComponent);
+        }
     }
 }

@@ -32,13 +32,13 @@ class App {
         this.scene_edit = new SceneEdit(this.assets);
         this.scene_collisions = new SceneCollisions();
         this.scene_render = new SceneRender(this.assets);
-        this.scene_map = new SceneMap(this.scene_collisions, this.scene_render)
+        this.scene_map = new SceneMap(this.assets.matters, this.scene_collisions, this.scene_render)
         this.scene_edit_tools = new SceneEditTools(this.scene_render, this.scene_collisions, this.scene_map);
         this.scene_game = new SceneGame(this.scene_collisions, this.scene_render, this.scene_map);
         this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_game, this.scene_map);
         this.assets_view = new AssetsView(this.assets, this.scene_render, this.scene_mediator);
         this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_edit_tools, this.scene_mediator, this.scene_map);
-        this.assets_library_view = new AssetsLibraryView(this.assets, this.scene_render);
+        this.assets_library_view = new AssetsLibraryView(this.assets, this.scene_render, this.scene_map);
 
         this.active = false;
         this.timestamp = 0;

@@ -201,9 +201,12 @@ class Assets {
 
     private _base_content_extensions: { model: AssetContentTypeModel, tileset: AssetContentTypeTileset, component: AssetContentTypeComponent }
 
-    init() {
+    constructor () {
         this.events = new Events();
         this.matters = new Matters();
+    }
+
+    init() {
         this.matters.init();
 
         const base_asset_extension_component = { type: "component" };
@@ -323,4 +326,4 @@ class Assets {
 }
 
 export default Assets;
-export { Assets, Asset, listenFormSubmit, sendFiles }
+export { Assets, Asset, listenFormSubmit, sendFiles, AssetContentTypeComponent, AssetContentTypeModel }

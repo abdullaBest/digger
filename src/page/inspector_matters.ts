@@ -127,10 +127,13 @@ export default class InspectorMatters {
         btn_external_ref.classList.add("img-external", "fittext");
         const btn_discard = document.createElement("btn");
         btn_discard.classList.add("img-discard", "fittext");
+        const btn_remove = document.createElement("btn");
+        btn_remove.classList.add("img-remove", "fittext");
 
         controls.appendChild(icon_external_code);
         controls.appendChild(btn_external_ref);
         controls.appendChild(btn_discard);
+        controls.appendChild(btn_remove);
         entry.appendChild(controls);
 
         if (onchange) {
@@ -139,6 +142,12 @@ export default class InspectorMatters {
                 this.draw_field(key, matter, entry);
                 onchange(matter, key);
             }, name: "click", node: btn_discard}, this._listeners);
+            addEventListener({callback: ()=> {
+                matter.reset(key);
+                const el = this.entries[key];
+                el.parentElement?.removeChild(el)
+                onchange(matter, key);
+            }, name: "click", node: btn_remove}, this._listeners);
         } else {
             controls.classList.add("disabled");
         }
@@ -192,6 +201,7 @@ export default class InspectorMatters {
         const icon_external_code = querySelector(".img-external-code", entry);
         const btn_external_ref = querySelector(".img-external", entry);
         const btn_discard = querySelector(".img-discard", entry);
+        const btn_remove = querySelector(".img-remove", entry);
         const input_value = querySelector("input", entry) as HTMLInputElement;
 
         input_value.value = matter.get(key);
@@ -199,6 +209,7 @@ export default class InspectorMatters {
         icon_external_code.classList.add("hidden");
         btn_external_ref.classList.add("hidden");
         btn_discard.classList.add("hidden");
+        btn_remove.classList.add("hidden");
 
         if (entry.classList.contains("disabled")) {
             return;
@@ -208,6 +219,8 @@ export default class InspectorMatters {
             icon_external_code.classList.remove("hidden");
         } else if (matter.is_overrided(key)) {
             btn_discard.classList.remove("hidden");
+        } else {
+            btn_remove.classList.remove("hidden");
         }
 
         const value =  matter.get(key);

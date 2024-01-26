@@ -1,193 +1,86 @@
 import SceneRender from "./render/scene_render";
 import SceneRenderLoader from "./render/scene_render_loader";
 import { SceneCollisions, ColliderType } from './scene_collisions';
-import { SceneElement, OverridedAssetLink } from "./scene_edit";
 import MapTileset from "./map_tileset";
+import { Matter, Matters } from "./matters";
+import { AssetContentTypeComponent, AssetContentTypeModel } from './assets';
 
-class SceneMapCache {
-
+class MapSystem {
+    add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {}
+    remove(component: AssetContentTypeComponent) {}
 }
 
-/**
- * MapComponent uses properties by pointer. Change properties fields with caution
- */
-class MapComponent {
-    properties: any;
-
-    constructor(properties: any) {
-        this.properties = properties;
-    }
-}
-
-class MapEntity {
-    id: string;
-    inherits: string | null;
-    components: { [id: string] : MapComponent }
-    persist: boolean;
-
-    constructor(id?: string) {
-       this.id = id ?? "";
-       this.components = {};
-       this.persist = false;
+class MapRenderModelSystem extends MapSystem {
+    private scene_render: SceneRender;
+    constructor(scene_render: SceneRender) {
+        super();
+        this.scene_render = scene_render;
     }
 
-    init(element: SceneElement) {
-        this.dispose();
-        this.id = element.id;
-        
-        for(const k in element.components) {
-            this.components[k] = new MapComponent(element.components[k].properties)
-        }
-
-        return this;
+    add(component: AssetContentTypeModel, owner?: AssetContentTypeComponent) {
+        const obj = this.scene_render.addModel(component.id, component);
     }
 
-    dispose() {
-        for(const k in this.components) {
-            delete this.components[k];
-        }
+    remove(component: AssetContentTypeModel) {
+        this.scene_render.removeObject(component.id);
     }
 }
 
 class SceneMap {
     private scene_render: SceneRender;
-    private scene_render_loader: SceneRenderLoader;
-
     scene_collisions: SceneCollisions;
-    entities: { [id: string] : MapEntity; }
+    matters: Matters;
+    components: { [id: string] : AssetContentTypeComponent }
     tilesets: { [id: string] : MapTileset; }
+    systems: { [id: string] : MapSystem; }
 
-    constructor(scene_collisions: SceneCollisions, scene_render: SceneRender) {
+    constructor(matters: Matters, scene_collisions: SceneCollisions, scene_render: SceneRender) {
+        this.matters = matters;
         this.scene_collisions = scene_collisions;
         this.scene_render = scene_render;
-        this.scene_render_loader = scene_render.loader;
-        this.entities = {};
+        this.components = {};
         this.tilesets = {};
+        this.systems = {
+            model: new MapRenderModelSystem(this.scene_render)
+        };
     }
 
-    async run(elements: { [id: string] : SceneElement; }) {
-        await this.propagate(elements);
-    }
-
-    stop() {
-        for(const k in this.entities) {
-            this.removeEntity(k, true);
+    add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {
+        const system = this.systems[component.type];
+        if (system) {
+            system.add(component, owner);
         }
 
-        this.scene_collisions.clear();
-    }
-
-    async propagate(elements: { [id: string] : SceneElement; }) {
-        const p: Array<Promise<any>> = [];
-
-        for(const id in elements) {
-            const element = elements[id];
-            p.push(this.addElement(element));
-            
-        }
-
-        return Promise.all(p);
-    }
-
-    async addElement(element: SceneElement) : Promise<MapEntity> {
-        const entity = this.entities[element.id] ?? new MapEntity();
-        entity.init(element)
-        
-        this.removeEntity(element.id);
-        return await this.addEntity(entity);
-    }
-
-    async addEntity(entity: MapEntity) : Promise<MapEntity> {
-        const id = entity.id;
-        if (this.entities[id]) {
-            throw new Error(`Entiry ${id} already exists!`)
-        }
-        //this.removeEntity(id);
-
-        this.entities[id] = entity;
-
-        if(entity.components.model) {
-            const properties = entity.components.model.properties;
-            const obj = await this.scene_render.addModel(id, properties);
-            this.updateEntityCollider(id);
-        }
-
-        if (entity.components.tileset) {
-            const properties = entity.components.tileset.properties;
-            const tileset = new MapTileset(this.scene_render.assets, id, properties);
-            this.tilesets[id] = tileset;
-            await tileset.init();
-
-            // preload
-            const p: Array<Promise<any>> = [];
-            for(const k in tileset.models) {
-                p.push(this.scene_render_loader.getModel(k, tileset.models[k]));
+        for(const k in component) {
+            const val = component[k];
+            if (typeof val === "string" && val.startsWith("**")) {
+                this.add(this.matters.get(val.substring(2)) as AssetContentTypeComponent, component);
             }
-            await Promise.all(p);
-
-            // add all tiles
-            // it gonna be managed by external class
-            /*
-            tileset.propagate((modelref: any, id: string, pos_x: number, pos_y: number) => {
-                const entity = new MapEntity(id);
-                const model = Object.setPrototypeOf({pos_x, pos_y}, modelref);
-                entity.components.model = new MapComponent(model);
-                this.addEntity(entity);
-            })
-            */
-
-            // add empty to allow transforms
-            const obj = this.scene_render.addEmptyObject(id);
-            (obj as any).position.x = properties.pos_x ?? 0;
-            (obj as any).position.y = properties.pos_y ?? 0;
         }
 
-        if (entity.components.trigger) {
-            const properties = entity.components.trigger.properties;
-            await this.scene_render.addTriggerElement(id, entity.components.trigger.properties);
-            this.updateEntityCollider(id);
-            /*
-            if (this._drawDebug2dAabb) {
-                this.drawColliderDebug(id, collider);
-            }
-            */
-        }
-
-        return entity;
+        this.components[component.id] = component;
     }
 
-    removeEntity(id: string, fullclear: boolean = false) {
-        const entity = this.entities[id];
-        if (!entity) {
-            return;
+    remove(component: AssetContentTypeComponent) {
+        for(const k in component) {
+            const val = component[k];
+            if (typeof val === "string" && val.startsWith("**")) {
+                this.remove(this.matters.get(val.substring(2)) as AssetContentTypeComponent);
+            }
         }
 
-        if(entity.components.model) {
-            this.scene_render.removeObject(id, fullclear);
+        const system = this.systems[component.type];
+        if (system) {
+            system.remove(component);
         }
 
-        if (entity.components.trigger) {
-            this.scene_render.removeObject(id, fullclear);
+        delete this.components[component.id];
+    }
+
+    cleanup() {
+        for(const k in this.components) {
+            this.remove(this.components[k]);
         }
-
-        if (entity.components.tileset) {
-           const tiles = this.tilesets[id].tiles;
-           for(const k in tiles) {
-                this.removeEntity(tiles[k], fullclear);
-           }
-           const models = this.tilesets[id].models;
-           for(const k in models) {
-                this.scene_render_loader.unloadModel(k, fullclear);
-           }
-           this.scene_render.removeObject(id, fullclear);
-           delete this.tilesets[id];
-        }
-
-
-        this.scene_collisions.removeBody(id);
-        this.scene_collisions.removeCollider(id);
-
-        delete this.entities[id];
     }
 
     updateEntityCollider(id: string) {
@@ -235,5 +128,8 @@ class SceneMap {
     }
 }
 
-export { SceneMap, SceneMapCache, MapEntity, MapComponent };
+class MapEntity {};
+class MapComponent {};
+
+export { SceneMap, MapEntity, MapComponent };
 export default SceneMap;

@@ -81,7 +81,7 @@ class Matters {
         return this;
     }
 
-    get(id: string) {
+    get(id: string) : Matter {
         return this.list[id];
     }
 
