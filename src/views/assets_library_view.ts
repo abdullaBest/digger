@@ -46,12 +46,14 @@ export default class AssetsLibraryView {
             }
         }, this._listeners)
         
-        const res_update_callback = async (success: boolean, res:Response) => {
+        const res_update_callback = async (success: boolean, res:Response): Promise<Array<string>> => {
             const ids = await res.json();
             for(const i in ids) {
                 const id = ids[i];
                 await this.assets.loadAsset(id);
             }
+
+            return ids;
         }
 
         listenClick("#asset-import-images", async (ev) => {
@@ -80,6 +82,17 @@ export default class AssetsLibraryView {
             asset.content[extension] = "**" + link_id;
             this.viewAsset(asset.id);
         }, this._listeners)
+        listenClick("#asset-collider-add", async (ev) => {
+            let link_id = await this._showSelectList("select", {}, "collider", ["create"]);
+            if (link_id == "create") {
+                const res = await this._createComponent("collider", null);
+                const ids = await res_update_callback(res.ok, res);
+                link_id = ids[0];
+            }
+            const asset = this.asset_selected;
+            asset.content["collider"] = "**" + link_id;
+            this.viewAsset(asset.id);
+        }, this._listeners);
         listenClick("#asset-manage-save", async (ev) => {
             const asset = this.asset_selected;
             if (!asset) {
@@ -106,7 +119,7 @@ export default class AssetsLibraryView {
             }, this._listeners)
     }
 
-    async _showSelectList(message: string, filter: any = {}, extension?: string): Promise<string | null> {
+    async _showSelectList(message: string, filter: any = {}, extension?: string, extra?: Array<string>): Promise<string | null> {
         const select = new ListSelect();
         await Popup.instance.show().confirm(message, (container) => {
             const filtered = this.assets.find(filter);
@@ -117,6 +130,16 @@ export default class AssetsLibraryView {
 
                 const btn = this.listAsset(k, container);
                 btn.classList.add("option");
+            }
+
+            if (extra && extra.length) {
+                for(const i in extra) {
+                    const btn = document.createElement("btn");
+                    btn.id = extra[i];
+                    btn.innerHTML = btn.id;
+                    btn.classList.add("option");
+                    container.appendChild(btn);
+                }
             }
            
             select.init(container);
@@ -136,7 +159,7 @@ export default class AssetsLibraryView {
         const file = new File([JSON.stringify(component)], `new.${extension}`, {
             type: "application/json",
         });
-        sendFiles("/assets/upload", [file], callback);
+        return sendFiles("/assets/upload", [file], callback);
     }
 
     listAsset(id: string, container: HTMLElement = this.container_list) {
@@ -191,7 +214,7 @@ export default class AssetsLibraryView {
         this.renderAsset(id);
     }
 
-    renderAsset(id: string) {
+    async renderAsset(id: string) {
         this.scene_map.cleanup();
         this.scene_render.clearCached();
         this.scene_render.reattach(this.container_preview_render as HTMLElement);
@@ -218,7 +241,11 @@ export default class AssetsLibraryView {
 			this.preview_image.src = asset.thumbnail;
 		} else if (matter.inherited_equals("type", "component")) {
             this.container_preview_render.classList.remove('hidden');
-            this.scene_map.add(matter as AssetContentTypeComponent);
+            await this.scene_map.add(matter as AssetContentTypeComponent);
+            const obj = this.scene_render.cache.objects[matter.id];
+            if (obj) {
+                this.scene_render.focusCameraOn(obj);
+            }
         }
     }
 }

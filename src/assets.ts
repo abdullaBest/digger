@@ -120,6 +120,10 @@ interface AssetContentTypeComponent extends Matter {
     type: string;
 }
 
+interface AssetContentTypeCollider extends Matter {
+
+}
+
 interface AssetContentTypeModel extends AssetContentTypeComponent {
     gltf: string, 
     material: string, 
@@ -199,7 +203,12 @@ class Assets {
     matters: Matters;
     events: Events;
 
-    private _base_content_extensions: { model: AssetContentTypeModel, tileset: AssetContentTypeTileset, component: AssetContentTypeComponent }
+    private _base_content_extensions: { 
+        component: AssetContentTypeComponent,
+        model: AssetContentTypeModel, 
+        tileset: AssetContentTypeTileset, 
+        collider: AssetContentTypeCollider
+    }
 
     constructor () {
         this.events = new Events();
@@ -210,6 +219,7 @@ class Assets {
         this.matters.init();
 
         const base_asset_extension_component = { type: "component" };
+        const base_asset_extension_collider = { type: "collider" };
         const base_asset_extension_model = { type: "model", gltf: "toset", material: "standart", texture: "toset", matrix: null }
         const base_asset_extension_tileset = { type: "tileset", guids: 0, texture: "toset", zero_color: "0xffffffff", color_id_prefix: "tile_color_", link_id_prefix: "tile_link_", durability_id_prefix: "tile_durablity_", tilesize_x: 1, tilesize_y: 1, default_tile: null }
 
@@ -217,6 +227,7 @@ class Assets {
             component: this.matters.create(base_asset_extension_component, null, "base_asset_type_component") as AssetContentTypeComponent,
             model: this.matters.create(base_asset_extension_model, "base_asset_type_component", "base_asset_type_model") as AssetContentTypeModel,
             tileset: this.matters.create(base_asset_extension_tileset, "base_asset_type_component", "base_asset_type_tileset") as AssetContentTypeTileset,
+            collider: this.matters.create(base_asset_extension_collider, "base_asset_type_component", "base_asset_type_collider") as AssetContentTypeCollider,
         };
 
     }

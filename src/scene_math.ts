@@ -45,9 +45,41 @@ const AABB_EDGES = [
  */
 export default class SceneMath {
     private cache: SceneMathCache;
-    constructor() {
+    private static _instance: SceneMath;
+    private constructor() {
         this.cache = new SceneMathCache();
     }
+
+    static get instance() : SceneMath {
+        if (!SceneMath._instance) {
+            SceneMath._instance = new SceneMath();
+        }
+
+        return SceneMath._instance;
+    }
+
+    genObject2dAABB(obj: THREE.Object3D, scene_origin: THREE.Vector3, scene_normal: THREE.Vector3) : THREE.Box2 | null {
+        let box: THREE.Box2 | null = null;
+        obj.traverse((o) => {
+            if (!o.isMesh) {
+                return;
+            }
+            const _box = this.intersectAABBPlaneTo2dAabb(o.geometry, obj, scene_origin, scene_normal);
+            if (!box && _box) {
+                box = _box;
+            }
+
+            if (box && _box) {
+                box.min.x = Math.min(box.min.x, _box.min.x)
+                box.min.y = Math.min(box.min.y, _box.min.y)
+                box.max.x = Math.min(box.max.x, _box.max.x)
+                box.max.y = Math.min(box.max.y, _box.max.y)
+            } 
+        });
+
+        return box;
+    }
+
     /**
      * looks kinda not working
      * @param point 

@@ -39,7 +39,7 @@ class SceneRender {
         this.active = false;
         this.cache = new SceneRenderCache();
 
-        this.scene_math = new SceneMath();
+        this.scene_math = SceneMath.instance;
         this._drawDebug2dAabb = false;
         this.loader = new SceneRenderLoader(this.assets, this.cache);
         this.camera_base_fov = 45;
@@ -87,15 +87,15 @@ class SceneRender {
         return this;
     }
 
-    async addModel(id: string, model: any) : Promise<THREE.Object3D> {
+    async addModel(id: string, model: any, parent?: THREE.Object3D | null) : Promise<THREE.Object3D> {
         const object = await this.loader.getModel(id, model);
-        return this.addObject(id, object);
+        return this.addObject(id, object, parent);
     }
 
-    addObject(id: string, object: THREE.Object3D) : THREE.Object3D {
+    addObject(id: string, object: THREE.Object3D, parent: THREE.Object3D | null = this.scene) : THREE.Object3D {
         this.cache.objects[id] = object;
         object.name = id;
-        this.scene.add( object );
+        (parent ?? this.scene).add( object );
 
         return object;
     }
@@ -113,9 +113,9 @@ class SceneRender {
         delete this.cache.gltfs[id];
     }
 
-    addEmptyObject(id: string) : THREE.Object3D {
+    addEmptyObject(id: string, parent?: THREE.Object3D | null) : THREE.Object3D {
         const object = new THREE.Object3D();
-        return this.addObject(id, object);
+        return this.addObject(id, object, parent);
     }
 
     async addTriggerElement(id: string, properties: any) {
@@ -143,27 +143,6 @@ class SceneRender {
         return new THREE.Sprite( await this.getMaterial("sprite", spritepath, true) as THREE.SpriteMaterial);
     }
 
-    genObject2dAABB(id: string, obj: THREE.Object3D, scene_origin: THREE.Vector3, scene_normal: THREE.Vector3) : THREE.Box2 | null {
-        let box: THREE.Box2 | null = null;
-        obj.traverse((o) => {
-            if (!o.isMesh) {
-                return;
-            }
-            const _box = this.scene_math.intersectAABBPlaneTo2dAabb(o.geometry, obj, scene_origin, scene_normal);
-            if (!box && _box) {
-                box = _box;
-            }
-
-            if (box && _box) {
-                box.min.x = Math.min(box.min.x, _box.min.x)
-                box.min.y = Math.min(box.min.y, _box.min.y)
-                box.max.x = Math.min(box.max.x, _box.max.x)
-                box.max.y = Math.min(box.max.y, _box.max.y)
-            } 
-        });
-
-        return box;
-    }
 
     clearCached() {
         for(const k in this.cache.objects) {

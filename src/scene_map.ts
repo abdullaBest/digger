@@ -1,28 +1,117 @@
 import SceneRender from "./render/scene_render";
 import SceneRenderLoader from "./render/scene_render_loader";
-import { SceneCollisions, ColliderType } from './scene_collisions';
+import { SceneCollisions, ColliderType, BoxColliderC } from './scene_collisions';
 import MapTileset from "./map_tileset";
 import { Matter, Matters } from "./matters";
 import { AssetContentTypeComponent, AssetContentTypeModel } from './assets';
+import SceneMath from "./scene_math";
+import { MapSystem } from "./systems";
+import MapDebugRenderCollidersSystem from "./render/map_debug_render_colliders_system";
 
-class MapSystem {
-    add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {}
-    remove(component: AssetContentTypeComponent) {}
+/**
+ * Just creates empties
+ */
+class MapRenderComponentSystem extends MapSystem {
+    private scene_render: SceneRender;
+    constructor(scene_render: SceneRender) {
+        super();
+        this.priority = 0;
+        this.scene_render = scene_render;
+    }
+
+    filter(component: AssetContentTypeComponent) : boolean {
+        return component.type == "component";
+    }
+
+    async add(component: AssetContentTypeModel, owner?: AssetContentTypeComponent) {
+        if (!this.filter(component)) {
+            return;
+        }
+        const parent = (owner && this.scene_render.cache.objects[owner.id]) ?? null
+        const obj = this.scene_render.addEmptyObject(component.id, parent);
+    }
+
+    remove(component: AssetContentTypeModel) {
+        this.scene_render.removeObject(component.id);
+    }
 }
+
 
 class MapRenderModelSystem extends MapSystem {
     private scene_render: SceneRender;
     constructor(scene_render: SceneRender) {
         super();
+        this.priority = 0;
         this.scene_render = scene_render;
     }
 
-    add(component: AssetContentTypeModel, owner?: AssetContentTypeComponent) {
-        const obj = this.scene_render.addModel(component.id, component);
+    filter(component: AssetContentTypeComponent) : boolean {
+        return component.type == "model";
+    }
+
+    async load(component: AssetContentTypeModel) {
+        if (!this.filter(component)) {
+            return;
+        }
+
+        await this.scene_render.loader.getModel(component.id, component);
+    }
+
+    async add(component: AssetContentTypeModel, owner?: AssetContentTypeComponent) {
+        if (!this.filter(component)) {
+            return;
+        }
+        const parent = (owner && this.scene_render.cache.objects[owner.id]) ?? null
+        const obj = await this.scene_render.addModel(component.id, component, parent);
     }
 
     remove(component: AssetContentTypeModel) {
         this.scene_render.removeObject(component.id);
+    }
+}
+
+class MapCollidersSystem extends MapSystem {
+    private scene_render: SceneRender;
+    private scene_collisions: SceneCollisions;
+    private colliders: { [id: string] : string }
+    constructor(scene_collisions: SceneCollisions, scene_render: SceneRender) {
+        super();
+        this.priority = -1;
+        this.scene_collisions = scene_collisions;
+        this.scene_render = scene_render;
+
+        this.colliders = {};
+    }
+
+    filter(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) : boolean {
+        return component.type == "collider" && !!owner;
+    }
+
+    async add(component: AssetContentTypeModel, owner?: AssetContentTypeComponent) {
+        if (!this.filter(component, owner)) {
+            return;
+        }
+
+        if (!owner) {
+            throw new Error("MapCollidersSystem:add error - this component can't be used without owner node.")
+        }
+
+        const box = SceneMath.instance.genObject2dAABB(this.scene_render.cache.objects[owner.id], this.scene_collisions.origin, this.scene_collisions.normal);
+        if (box) {
+            this.scene_collisions.createBoxCollider(owner.id, box);
+            this.colliders[component.id] = owner.id;
+        } 
+
+    }
+
+    remove(component: AssetContentTypeComponent): void {
+        const collider = this.colliders[component.id];
+        if (!collider) {
+            return;
+        }
+        this.scene_collisions.removeBody(collider)
+        this.scene_collisions.removeCollider(collider)
+        delete this.colliders[component.id];
     }
 }
 
@@ -41,21 +130,36 @@ class SceneMap {
         this.components = {};
         this.tilesets = {};
         this.systems = {
-            model: new MapRenderModelSystem(this.scene_render)
+            model: new MapRenderModelSystem(this.scene_render),
+            component: new MapRenderComponentSystem(this.scene_render),
+            collider: new MapCollidersSystem(this.scene_collisions, this.scene_render),
+            debug_colliders: new MapDebugRenderCollidersSystem(this.scene_collisions, this.scene_render)
         };
     }
 
-    add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {
-        const system = this.systems[component.type];
-        if (system) {
-            system.add(component, owner);
+    async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {
+        for(const k in this.systems) {
+            const system = this.systems[k];
+            await system.load(component);
+            await system.add(component, owner);
         }
-
+       
+        const subcomponents: Array<AssetContentTypeComponent> = [];
         for(const k in component) {
             const val = component[k];
             if (typeof val === "string" && val.startsWith("**")) {
-                this.add(this.matters.get(val.substring(2)) as AssetContentTypeComponent, component);
+                subcomponents.push(this.matters.get(val.substring(2)) as AssetContentTypeComponent)
             }
+        }
+
+        subcomponents.sort((a, b) => {
+            const sa = this.systems[a.type];
+            const sb = this.systems[b.type]
+            return (sb?.filter(b, component) ? sb.priority : 0) - (sa?.filter(a, component) ? sa.priority : 0)
+        })
+
+        for(const i in subcomponents) {
+            await this.add(subcomponents[i], component);
         }
 
         this.components[component.id] = component;
@@ -69,8 +173,8 @@ class SceneMap {
             }
         }
 
-        const system = this.systems[component.type];
-        if (system) {
+        for(const k in this.systems) {
+            const system = this.systems[k];
             system.remove(component);
         }
 
@@ -84,22 +188,7 @@ class SceneMap {
     }
 
     updateEntityCollider(id: string) {
-        const entity = this.entities[id];
-
-        // should use setpos/setsize here
-        this.scene_collisions.removeBody(id);
-        this.scene_collisions.removeCollider(id);
-
-        if(entity.components.model) {
-            const properties = entity.components.model.properties;
-            const obj = this.scene_render.cache.objects[id];
-            if (properties.collider) {
-                const box = this.scene_render.genObject2dAABB(id, obj, this.scene_collisions.origin, this.scene_collisions.normal);
-                if (box) {
-                    this.scene_collisions.createBoxCollider(id, box);
-                } 
-            }
-        }
+        const entity = null;
 
         if (entity.components.trigger) {
             const properties = entity.components.trigger.properties;

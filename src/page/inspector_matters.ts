@@ -78,8 +78,8 @@ export default class InspectorMatters {
 
     init_input(matter: Matter, key: string, entry: HTMLElement, onchange?: (m: Matter, key: string) => void) : HTMLInputElement {
         const input_value = document.createElement("input") as HTMLInputElement;
+        input_value.classList.add("width-half");
         input_value.value = matter[key] ?? "none";
-        input_value.size = 10;
 
         const datatype = typeof matter[key];
         if (datatype !== "string" && datatype !== "number") {
