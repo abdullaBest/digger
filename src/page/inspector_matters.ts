@@ -176,7 +176,7 @@ export default class InspectorMatters {
         const value = matter.get(key);
         if (typeof value == "string" && value.startsWith("**")) {
             const subcontainer = this.init_container();
-            const header = querySelector("header", subcontainer);
+            const header = querySelector(".header", subcontainer);
             const content = querySelector("content", subcontainer);
             header.appendChild(entry);
             this.propagate_fields(this.matters.get(value.substring(2)), content);

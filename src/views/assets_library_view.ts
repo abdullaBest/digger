@@ -85,6 +85,17 @@ export default class AssetsLibraryView {
             asset.content["collider"] = "**" + link_id;
             this.viewAsset(asset.id);
         }, this._listeners);
+        listenClick("#asset-tile-add", async (ev) => {
+            let link_id = await this._showSelectList("select", {}, "tile", ["create"]);
+            if (link_id == "create") {
+                const linkid = await this._showSelectList("select component", {}, "component");
+                const ids = await this._createComponent("tile", { link: linkid });
+                link_id = ids[0];
+            }
+            const asset = this.asset_selected;
+            asset.content["tile_" + link_id] = "**" + link_id;
+            this.viewAsset(asset.id);
+        }, this._listeners);
         listenClick("#asset-manage-save", async (ev) => {
             this.saveAsset(this.asset_selected?.id);
         }, this._listeners)
@@ -225,13 +236,7 @@ export default class AssetsLibraryView {
         container.innerHTML = "";
         try {
             if (asset.content) {
-                const mutators = {
-                    texture: this._makePropertySelectBtnCallback({extension: /(png)/}),
-                    gltf: this._makePropertySelectBtnCallback({extension: /(gltf)/})
-                }
-                this.asset_inspector = new InspectorMatters(asset.content, this.assets.matters);
-                container.appendChild(this.asset_inspector.init(mutators));
-                this.asset_inspector.events?.addEventListener("change", () => this.viewAsset(id));
+                this._drawAssetInspector(asset, container);
             }
 
             this.renderAsset(id);
@@ -242,14 +247,44 @@ export default class AssetsLibraryView {
         }
     }
 
-    _makePropertySelectBtnCallback(filter: { [id: string] : string | RegExp}) {
+    _drawAssetInspector(asset: Asset, container: HTMLElement) {
+        // presetted mutators
+        const mutators = {
+            texture: this._makePropertySelectBtnCallback("texture", {extension: /(png)/}),
+            gltf: this._makePropertySelectBtnCallback("gltf", {extension: /(gltf)/}),
+            link: this._makePropertySelectBtnCallback("component", {}, "component"),
+        }
+
+        // dynamic mutators - generated for any link
+        const matter = this.assets.matters.get(asset.id);
+        for(const kk in matter) {
+            const val = matter[kk];
+            if (typeof val === "string" && val.startsWith("**")) {
+                const id = val.substring(2);
+                const link = this.assets.matters.get(id) as AssetContentTypeComponent;
+                if (link && !mutators[kk]) {
+                    mutators[kk] = this._makePropertySelectBtnCallback(link.type, {}, link.type, (val) => { return "**" + val });
+                } 
+            }
+        }
+
+        this.asset_inspector = new InspectorMatters(asset.content, this.assets.matters);
+        container.appendChild(this.asset_inspector.init(mutators));
+        this.asset_inspector.events?.addEventListener("change", () => this.viewAsset(asset.id));
+    }
+
+    _makePropertySelectBtnCallback(name: string, filter: { [id: string] : string | RegExp}, extension?: string, mutator?: (val: any) => any) {
         return (value: string, el?: HTMLElement) => {
             if (!el) {
                 const btn = document.createElement("btn");
                 btn.classList.add("btn-s1", "flex-grow-1", "flex-row", "flex-justify-end");
                 listenClick(btn, async () => {
-                    const textureid = await this._showSelectList("select texture", filter);
-                    btn.dispatchEvent(new CustomEvent("change", { detail : { value: textureid }}));
+                    const linkid = await this._showSelectList(`select ${name}`, filter, extension);
+                    let value = linkid;
+                    if (mutator) {
+                        value = mutator(value);
+                    }
+                    btn.dispatchEvent(new CustomEvent("change", { detail : { value }}));
                 })
                 const img = document.createElement("img");
                 img.classList.add("icon", "fittext");
@@ -264,7 +299,13 @@ export default class AssetsLibraryView {
             }
             const img = el.querySelector("img");
             if (img) {
-                img.src = this.assets.get(value)?.thumbnail;
+                const asset = this.assets.list[value]
+                if (asset) {
+                    img.src = asset.thumbnail;
+                    img.classList.remove("hidden");
+                } else {
+                    img.classList.add("hidden");
+                }
             }
 
             return el;
@@ -302,6 +343,10 @@ export default class AssetsLibraryView {
             const obj = this.scene_render.cache.objects[matter.id];
             if (obj) {
                 this.scene_render.focusCameraOn(obj);
+            }
+            if (!asset.thumbnail) {
+                uploadThumbnail(asset, this.scene_render);
+                this.listAsset(asset.id);
             }
         }
     }

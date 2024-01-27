@@ -146,6 +146,10 @@ interface AssetContentTypeTileset extends AssetContentTypeComponent {
     default_tile: string | null
 }
 
+interface AssetContentTypeTile extends Matter {
+
+}
+
 class Asset {
     status: AssetStatus;
     info: AssetInfo;
@@ -214,7 +218,8 @@ class Assets {
     private _base_content_extensions: { 
         component: AssetContentTypeComponent,
         model: AssetContentTypeModel, 
-        tileset: AssetContentTypeTileset, 
+        tileset: AssetContentTypeTileset,
+        tile: AssetContentTypeTile,
         collider: AssetContentTypeCollider
     }
 
@@ -230,11 +235,13 @@ class Assets {
         const base_asset_extension_collider = { type: "collider", autosize: true };
         const base_asset_extension_model = { type: "model", gltf: "toset", material: "standart", texture: "toset", matrix: null }
         const base_asset_extension_tileset = { type: "tileset", guids: 0, texture: "toset", zero_color: "#ffffffff", tilesize_x: 1, tilesize_y: 1, default_tile: null }
+        const base_asset_extension_tile = { type: "tile", color: "#000", link: "toset" };
 
         this._base_content_extensions = {
             component: this.matters.create(base_asset_extension_component, null, "base_asset_type_component") as AssetContentTypeComponent,
             model: this.matters.create(base_asset_extension_model, "base_asset_type_component", "base_asset_type_model") as AssetContentTypeModel,
             tileset: this.matters.create(base_asset_extension_tileset, "base_asset_type_component", "base_asset_type_tileset") as AssetContentTypeTileset,
+            tile: this.matters.create(base_asset_extension_tile, "base_asset_type_component", "base_asset_type_tile") as AssetContentTypeTile,
             collider: this.matters.create(base_asset_extension_collider, "base_asset_type_component", "base_asset_type_collider") as AssetContentTypeCollider,
         };
 
