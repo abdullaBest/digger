@@ -226,21 +226,12 @@ export default class AssetsLibraryView {
         try {
             if (asset.content) {
                 const mutators = {
-                    texture: (value: string, el?: HTMLElement) => {
-                        if (!el) {
-                            const btn = document.createElement("btn");
-                            btn.innerHTML = `[${value}] change`;
-                            btn.classList.add("btn-s1", "flex-grow-1")
-                            el = btn;
-                        }
-                        return el;
-                    },
-                    gltf: (key: string, el?: HTMLElement) => {
-                        return el;
-                    }
+                    texture: this._makePropertySelectBtnCallback({extension: /(png)/}),
+                    gltf: this._makePropertySelectBtnCallback({extension: /(gltf)/})
                 }
                 this.asset_inspector = new InspectorMatters(asset.content, this.assets.matters);
                 container.appendChild(this.asset_inspector.init(mutators));
+                this.asset_inspector.events?.addEventListener("change", () => this.viewAsset(id));
             }
 
             this.renderAsset(id);
@@ -248,6 +239,35 @@ export default class AssetsLibraryView {
             const errmsg = "AssetsLibraryView::viewAsset error.";
             console.error(errmsg, err);
             container.innerHTML = `<q>${errmsg}</q><q>${err}</q>`
+        }
+    }
+
+    _makePropertySelectBtnCallback(filter: { [id: string] : string | RegExp}) {
+        return (value: string, el?: HTMLElement) => {
+            if (!el) {
+                const btn = document.createElement("btn");
+                btn.classList.add("btn-s1", "flex-grow-1", "flex-row", "flex-justify-end");
+                listenClick(btn, async () => {
+                    const textureid = await this._showSelectList("select texture", filter);
+                    btn.dispatchEvent(new CustomEvent("change", { detail : { value: textureid }}));
+                })
+                const img = document.createElement("img");
+                img.classList.add("icon", "fittext");
+                const label = document.createElement("label");
+                btn.appendChild(label);
+                btn.appendChild(img);
+                el = btn;
+            }
+            const label = el.querySelector("label");
+            if (label) {
+                label.innerHTML = `[${value}]`;
+            }
+            const img = el.querySelector("img");
+            if (img) {
+                img.src = this.assets.get(value)?.thumbnail;
+            }
+
+            return el;
         }
     }
 

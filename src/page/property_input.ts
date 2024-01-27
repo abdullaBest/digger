@@ -35,6 +35,9 @@ class PropertyInput {
             if (input) {
                 this.input = input;
                 container.appendChild(this.input);
+                addEventListener({callback: (ev)=> {
+                    onchange((ev as CustomEvent).detail.value);
+                }, name: "change", node: input}, listeners);
                 return container;
             }
         }
