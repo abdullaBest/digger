@@ -80,10 +80,13 @@ function listenFormSubmit(
     }
 }
 
-async function sendFiles(url, files: Array<File>, callback?: (success: boolean, response: Response) => void) : Promise<Response> {
+async function sendFiles(url, files?: Array<File>, custom?: any, callback?: (success: boolean, response: Response) => void) : Promise<Response> {
     const formData = new FormData();
     for(const i in files) {
         formData.append("files", files[i]);
+    }
+    for(const k in custom) {
+        formData.append(k, custom[k]);
     }
     const res = await fetch(url, {
         method: 'POST',
@@ -120,8 +123,12 @@ interface AssetContentTypeComponent extends Matter {
     type: string;
 }
 
-interface AssetContentTypeCollider extends Matter {
+interface AssetContentTypeCollider extends AssetContentTypeComponent {
 
+}
+
+interface AssetContentTypeTexture extends AssetContentTypeComponent {
+    asset: HTMLImageElement;
 }
 
 interface AssetContentTypeModel extends AssetContentTypeComponent {
@@ -129,9 +136,6 @@ interface AssetContentTypeModel extends AssetContentTypeComponent {
     material: string, 
     texture: string, 
     matrix: Array<number> | null, 
-    collider: boolean, 
-    durability: string, 
-    tags: string
 }
 
 interface AssetContentTypeTileset extends AssetContentTypeComponent {
@@ -142,12 +146,14 @@ interface AssetContentTypeTileset extends AssetContentTypeComponent {
     link_id_prefix: string, 
     durability_id_prefix: string, 
     tilesize_x: number, 
-    tilesize_y: number, 
-    default_tile: string | null
+    tilesize_y: number
+    pos_x: number;
+    pos_y: number;
 }
 
-interface AssetContentTypeTile extends Matter {
-
+interface AssetContentTypeTile extends AssetContentTypeComponent {
+    color: string;
+    link: string;
 }
 
 class Asset {
@@ -188,6 +194,19 @@ class Asset {
 
         if (this.info.type.includes("json")) {
             this.content = await res.json();
+        } else if (this.info.type.includes("image")) {
+            const cache = document.querySelector("db#cache");
+            const elid = "#asset_img-" + id;
+            const img = (cache?.querySelector(elid) ?? document.createElement("img")) as HTMLImageElement;
+            if (!img.parentElement) {
+                cache?.appendChild(img);
+                img.id = elid;
+                img.src = path;
+            }
+
+            this.content = {
+                asset: img
+            }
         }
         this.status = AssetStatus.LOADED;
     }
@@ -217,6 +236,7 @@ class Assets {
 
     private _base_content_extensions: { 
         component: AssetContentTypeComponent,
+        texture: AssetContentTypeTexture,
         model: AssetContentTypeModel, 
         tileset: AssetContentTypeTileset,
         tile: AssetContentTypeTile,
@@ -232,13 +252,15 @@ class Assets {
         this.matters.init();
 
         const base_asset_extension_component = { type: "component" };
+        const base_asset_extension_texture = { type: "texture", asset: null };
         const base_asset_extension_collider = { type: "collider", autosize: true };
         const base_asset_extension_model = { type: "model", gltf: "toset", material: "standart", texture: "toset", matrix: null }
-        const base_asset_extension_tileset = { type: "tileset", guids: 0, texture: "toset", zero_color: "#ffffffff", tilesize_x: 1, tilesize_y: 1, default_tile: null }
-        const base_asset_extension_tile = { type: "tile", color: "#000", link: "toset" };
+        const base_asset_extension_tileset = { type: "tileset", texture: "toset", zero_color: "#ffffffff", tilesize_x: 1, tilesize_y: 1, pos_x: 0, pos_y: 0 }
+        const base_asset_extension_tile = { type: "tile", color: "#000000", link: "toset" };
 
         this._base_content_extensions = {
             component: this.matters.create(base_asset_extension_component, null, "base_asset_type_component") as AssetContentTypeComponent,
+            texture: this.matters.create(base_asset_extension_texture, "base_asset_type_component", "base_asset_type_texture") as AssetContentTypeTexture,
             model: this.matters.create(base_asset_extension_model, "base_asset_type_component", "base_asset_type_model") as AssetContentTypeModel,
             tileset: this.matters.create(base_asset_extension_tileset, "base_asset_type_component", "base_asset_type_tileset") as AssetContentTypeTileset,
             tile: this.matters.create(base_asset_extension_tile, "base_asset_type_component", "base_asset_type_tile") as AssetContentTypeTile,
@@ -319,8 +341,9 @@ class Assets {
 
         const asset = new Asset(info, id);
 
-        if (asset.info.type.includes("json")) {
-            await asset.load();
+        await asset.load();
+
+        if (asset.content) {
             if (this.matters.get(id)) {
                 asset.content = this.matters.replace(asset.content, id);
             } else {
@@ -358,6 +381,11 @@ class Assets {
         }
     }
 
+    async uploadAsset(id: string, files?: Array<File>, custom?: any) {
+        const res = await sendFiles(`/assets/upload/${id}`, files, custom);
+        await this.loadAsset(id);
+    }
+
     async uploadJSON(content: any, id: string, custom?: any) {
         const asset = this.get(id);
 
@@ -365,18 +393,7 @@ class Assets {
             type: "application/json",
         });
 
-        const formData = new FormData();
-        for(const k in custom) {
-            formData.append(k, custom[k]);
-        }
-        formData.append("files", file);
-
-        const res = await fetch(`/assets/upload/${asset.id}`, {
-            method: 'POST',
-            body: formData,
-            headers: {}
-        })
-        await this.loadAsset(asset.id);
+        await this.uploadAsset(id, [file], custom);
     }
 
     async createFiles(files: Array<File>) : Promise<Array<string>> {
@@ -412,4 +429,4 @@ class Assets {
 }
 
 export default Assets;
-export { Assets, Asset, listenFormSubmit, sendFiles, AssetContentTypeComponent, AssetContentTypeModel }
+export { Assets, Asset, listenFormSubmit, sendFiles, AssetContentTypeComponent, AssetContentTypeModel, AssetContentTypeTileset, AssetContentTypeTile, AssetContentTypeTexture }

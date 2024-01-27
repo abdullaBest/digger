@@ -147,7 +147,11 @@ export default class AssetsLibraryView {
             return;
         }
 
-        await this.assets.uploadJSON(content, asset.id, {name: content.name});
+        if (asset.info.type.includes("json")) {
+            await this.assets.uploadJSON(content, asset.id, { name: content.name });
+        } else {
+            await this.assets.uploadAsset(asset.id, [], { name: content.name });
+        }
     }
 
     async _showSelectList(message: string, filter: any = {}, extension?: string, extra?: Array<string>): Promise<string | null> {

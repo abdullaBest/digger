@@ -78,8 +78,6 @@ export default class SceneGame {
     }
 
     async run(elements: { [id: string] : SceneElement; }) {
-        await this.scene_map.run(elements);
-
         this.tileset_render.run();
         this._updateTilesetsDraw();
 

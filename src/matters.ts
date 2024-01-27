@@ -82,7 +82,8 @@ class Matters {
     }
 
     get(id: string) : Matter {
-        return this.list[id];
+        // second case - using by "pointer" id as "**someid"
+        return id.startsWith("**") ? this.list[id.substring(2)] : this.list[id];
     }
 
     /**

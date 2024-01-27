@@ -1,12 +1,12 @@
 import SceneRender from "./render/scene_render";
 import SceneRenderLoader from "./render/scene_render_loader";
 import { SceneCollisions, ColliderType, BoxColliderC } from './scene_collisions';
-import MapTileset from "./map_tileset";
 import { Matter, Matters } from "./matters";
 import { AssetContentTypeComponent, AssetContentTypeModel } from './assets';
 import SceneMath from "./scene_math";
 import { MapSystem } from "./systems";
 import MapDebugRenderCollidersSystem from "./render/map_debug_render_colliders_system";
+import { MapTilesetSystem, MapTileset } from "./map_tileset";
 
 /**
  * Just creates empties
@@ -133,7 +133,8 @@ class SceneMap {
             model: new MapRenderModelSystem(this.scene_render),
             component: new MapRenderComponentSystem(this.scene_render),
             collider: new MapCollidersSystem(this.scene_collisions, this.scene_render),
-            debug_colliders: new MapDebugRenderCollidersSystem(this.scene_collisions, this.scene_render)
+            debug_colliders: new MapDebugRenderCollidersSystem(this.scene_collisions, this.scene_render),
+            tileset: new MapTilesetSystem(this.matters)
         };
     }
 

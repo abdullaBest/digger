@@ -1,106 +1,67 @@
-import Assets from "./assets";
+import Assets, { AssetContentTypeTile } from "./assets";
 import { SceneEditUtils } from "./scene_edit";
 import { querySelector } from "./document";
-import { clamp } from "./math";
+import { MapSystem } from "./systems";
+import { AssetContentTypeComponent, AssetContentTypeModel, AssetContentTypeTileset, AssetContentTypeTexture } from './assets';
+import { Matter, Matters } from "./matters";
 
-export default class MapTileset {
-    models: { [id: string] : any };
-    models_ids: { [id: number] : string };
+class MapTileset {
+    tilerefs: { [id: number] : string };
     colors: { [id: string] : string }
     tiles: Array<string>;
     image: HTMLImageElement | null;
-    tileset: any | null;
-    id: string;
+    tileset: AssetContentTypeTileset;
     canvas: HTMLCanvasElement;
 
-    assets: Assets;
+    matters: Matters;
 
-    constructor(assets: Assets, id: string, tileset: any) {
-        this.assets = assets;
+    constructor(matters: Matters, tileset: AssetContentTypeTileset) {
+        this.matters = matters;
         
-        this.id = id;
         this.tileset = tileset;
-        this.models = {};
         this.colors = {};
-        this.models_ids = {};
+        this.tilerefs = {};
         this.tiles = [];
         this.image = null;
+
+        this.init();
     }
     
-    async init() {
+    private init() {
         const tileset = this.tileset;
-        const id = this.id;
+        const id = this.tileset.id;
         this.canvas = querySelector("db#cache canvas#cache_canvas") as HTMLCanvasElement;
 
-        const color_id_prefix = tileset.color_id_prefix;
-        const link_id_prefix = tileset.link_id_prefix;
-        const durability_id_prefix = tileset.durability_id_prefix;
-
-        let default_tile_data: any = null;
-        if (tileset.default_tile) {
-            default_tile_data = await (await fetch(this.assets.get(tileset.default_tile).info.url)).json();
-        }
-
-        const loadimg = (url) => {
-            const img = document.createElement("img");
-            return new Promise((resolve, reject) => {
-                img.src = url;
-                img.onload = (ev) => resolve(ev.target);
-                img.onerror = reject;
-            })
-        }
-        const img = await loadimg(this.assets.get(tileset.texture).info.url) as HTMLImageElement;
+        const img = (this.matters.get(tileset.texture) as AssetContentTypeTexture).asset as HTMLImageElement;
         this.image = img;
 
         // generate tileset list
-        for (let i = 0; i < tileset.guids; i++) {
-            const color_id = color_id_prefix + i;
-            const link_id = link_id_prefix + i;
-            const durability_id = durability_id_prefix + i;
-            let color = tileset[color_id];
-            const link = tileset[link_id];
-            const durability = tileset[durability_id];
+        for(const k in tileset) {
+            if (!k.startsWith("tile_")) {
+                continue;
+            }
+            const tile = this.matters.get(tileset[k]) as AssetContentTypeTile;
+            let color = tile.color;
 
             if (!color) {
                 console.warn(`SceneRender::addTileset error - no color set. color: (${color})`);
                 continue;
             }
-            if (!link && !tileset.default_tile) {
-                console.warn(`SceneRender::addTileset error - no link or default tile set. link: (${link})`);
-                continue;
+           
+            if (!color.includes("#")) {
+                throw new Error(`SceneRender::addTileset error - wrong color "${color}" format. It should start with "#"`);
             }
-
-            if (!color.includes("0x")) {
-                throw new Error(`SceneRender::addTileset error - wrong color "${color}" format. It should start with "0x"`);
-            }
-            if (color.length != "0x00000000".length) {
+            if (color.length != "#00000000".length) {
                 color += "ff";
             }
-            if (color.length != "0x00000000".length) {
-                throw new Error(`SceneRender::addTileset error - wrong color "${color}" length. It should be like "0x000000" (RGB) or "0x00000000" (RGBA)`);
+            if (color.length != "#00000000".length) {
+                throw new Error(`SceneRender::addTileset error - wrong color "${color}" length. It should be like "#000000" (RGB) or "#00000000" (RGBA)`);
             }
 
-            const linkinfo = this.assets.get(link).info;
-            let model;
-            if (linkinfo.extension == "png") {
-                if (!tileset.default_tile || !default_tile_data) {
-                    console.warn(`SceneRender::addTileset error - using tile texture link without default_tile set`);
-                    continue;
-                }
-                model = SceneEditUtils.constructModelData(default_tile_data.gltf, link);
-                model.matrix = default_tile_data.matrix;
-                model.collider = default_tile_data.collider;
-            } else {
-                model = await (await fetch(linkinfo.url)).json();
-            }
-
-            model.durability = durability;
-
-            const modelid = `${id}-tileref-${i}`;
-            const colorid = parseInt(color)
-            this.models[modelid] = model;
-            this.colors[modelid] = color;
-            this.models_ids[colorid] = modelid;
+            const refid = tile.link;
+            const colorid = parseInt(color.replace("#", "0x"));
+            this.colors[refid] = color;
+            this.tilerefs[colorid] = refid;
         }
     }
 
@@ -171,10 +132,9 @@ export default class MapTileset {
             const a = imgdata[i + 3] & 0xFF;
             const color = (r<< 24 >>>0) + (g<<16) + (b<<8) + (a<<0);
 
-            const cache_id = this.models_ids[color];
-            const modelref = this.models[cache_id];
-            if (!modelref) {
-                if (parseInt(tileset.zero_color) != color && !unused_colors.find((c) => c != color)) {
+            const cache_id = this.tilerefs[color];
+            if (!cache_id) {
+                if (parseInt(tileset.zero_color.replace("#", "0x")) != color && !unused_colors.find((c) => c == color)) {
                     unused_colors.push(color);
                 }
                 continue;
@@ -187,19 +147,19 @@ export default class MapTileset {
             const ly = -Math.floor((i / 4) / canvas.width) * tileset.tilesize_y;
             const pos_x = ox + lx;
             const pos_y = oy + ly;
-            const modelid = this.makeTileId(pos_x, pos_y);
-            this.tiles.push(modelid);
+            const tileid = this.makeTileId(pos_x, pos_y);
+            this.tiles.push(tileid);
 
-            ontile(cache_id, modelid, origin_x + pos_x, origin_y + pos_y);
+            ontile(cache_id, tileid, origin_x + pos_x, origin_y + pos_y);
         }
 
         for(const i in unused_colors) {
-            console.warn(`SceneRender::addTileset ref texture has color 0x${unused_colors[i].toString(16).padStart(8, "0")} which does not have tile for that.`);
+            console.warn(`SceneRender::addTileset ref texture has color #${unused_colors[i].toString(16).padStart(8, "0")} which does not have tile for that.`);
         }
     }
 
     makeTileId(pos_x: number, pos_y: number): string {
-        return `${this.id}-tile-x${pos_x}_y${pos_y}`;
+        return `${this.tileset.id}-tile-x${pos_x}_y${pos_y}`;
     }
 
     get pos_x() {
@@ -210,3 +170,35 @@ export default class MapTileset {
         return this.tileset.pos_y ?? 0;
     }
 }
+
+class MapTilesetSystem extends MapSystem {
+    tilesets: { [id: string] : MapTileset }
+    matters: Matters;
+
+    constructor(matters: Matters) {
+        super();
+        this.priority = 0;
+        this.matters = matters;
+        this.tilesets = {};
+    }
+
+    filter(component: AssetContentTypeTileset) : boolean {
+        return component.type == "tileset";
+    }
+
+    async add(component: AssetContentTypeTileset, owner?: AssetContentTypeComponent) {
+        if (!this.filter(component)) {
+            return;
+        }
+       
+        const tileset = new MapTileset(this.matters, component);
+        tileset.propagate((ref_id, id, pos_x, pos_y) => {console.log(ref_id, id, pos_x, pos_y)});
+        this.tilesets[component.id] = tileset;
+    }
+
+    remove(component: AssetContentTypeTileset) {
+    }
+}
+
+export default MapTileset
+export { MapTileset, MapTilesetSystem }
