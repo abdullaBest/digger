@@ -6,6 +6,7 @@ import SceneRender from "../render/scene_render";
 import SceneMap from "../scene_map";
 import { Popup } from "../page/popup";
 import ListSelect from "../page/list_select";
+import { Matter } from "../matters";
 /**
  * Second assets viewer implementation 
  */
@@ -16,7 +17,6 @@ export default class AssetsLibraryView {
     container_preview_render: HTMLElement;
     preview_image: HTMLImageElement;
     asset_inspector: InspectorMatters;
-    asset_info_inspector: InspectorMatters;
     scene_render: SceneRender;
     scene_map: SceneMap;
     private _listeners: Array<EventListenerDetails>;
@@ -59,11 +59,11 @@ export default class AssetsLibraryView {
         listenClick("#assets-create-model", async (ev) => {
             const gltfid = await this._showSelectList("select gltf", {extension: /gltf/});
             const textureid = await this._showSelectList("select texture", {extension: /(png|jpg)/});
-            await this._createComponent("model", { gltf: gltfid, texture: textureid });
+            await this._createComponent("model", { gltf: "**" + gltfid, texture: "**" + textureid });
         }, this._listeners)
         listenClick("#assets-create-tileset", async (ev) => {
             const textureid = await this._showSelectList("select texture", {extension: /(png)/});
-            await this._createComponent("tileset", { texture: textureid });
+            await this._createComponent("tileset", { texture: "**" + textureid });
         }, this._listeners);
         listenClick("#asset-component-add", async (ev) => {
             const link_id = await this._showSelectList("select", {}, "component");
@@ -89,7 +89,7 @@ export default class AssetsLibraryView {
             let link_id = await this._showSelectList("select", {}, "tile", ["create"]);
             if (link_id == "create") {
                 const linkid = await this._showSelectList("select component", {}, "component");
-                const ids = await this._createComponent("tile", { link: linkid });
+                const ids = await this._createComponent("tile", { link: "**" + linkid });
                 link_id = ids[0];
             }
             const asset = this.asset_selected;
@@ -102,32 +102,7 @@ export default class AssetsLibraryView {
         listenClick("#asset-manage-wipe", async (ev) => {
             const asset = this.asset_selected;
             const matter = this.assets.matters.get(asset.id)
-            if (matter && matter.dependents) {
-                Popup.instance.show().message("wipe error", `Asset ${asset.id} has ${matter.dependents} dependents. Could not delete`);
-                return;
-            }
-
-            const links: Array<string> = [];
-            for(const k in this.assets.matters.list) {
-                const m = this.assets.matters.list[k];
-                for(const kk in m) {
-                    const val = m[kk];
-                    if (typeof val === "string" && val.startsWith("**") && val.substring(2) === asset.id) {
-                        links.push(m.id);
-                    }
-                }
-            }
-            if (links.length) {
-                let message = `<q>Asset ${asset.id} referensed in [${links}] assets. Could not delete.</q>`;
-               
-                Popup.instance.show().message("wipe error", message);
-                return;
-            }
-            await this.assets.wipeAsset(asset.id);
-            const el = this.container_list.querySelector("#" + asset.id) as HTMLElement;
-            if (el) {
-                el.parentElement?.removeChild(el);
-            }
+            this._wipeComponent(matter as AssetContentTypeComponent);
             
         }, this._listeners)
     }
@@ -232,9 +207,6 @@ export default class AssetsLibraryView {
         if (this.asset_inspector) {
             this.asset_inspector.dispose();
         }
-        if (this.asset_info_inspector) {
-            this.asset_info_inspector.dispose();
-        }
 
         const container = querySelector("#assets-library-details content")
         container.innerHTML = "";
@@ -267,7 +239,7 @@ export default class AssetsLibraryView {
                 const id = val.substring(2);
                 const link = this.assets.matters.get(id) as AssetContentTypeComponent;
                 if (link && !mutators[kk]) {
-                    mutators[kk] = this._makePropertySelectBtnCallback(link.type, {}, link.type, (val) => { return "**" + val });
+                    mutators[kk] = this._makePropertySelectBtnCallback(link.type, {}, link.type);
                 } 
             }
         }
@@ -275,19 +247,68 @@ export default class AssetsLibraryView {
         this.asset_inspector = new InspectorMatters(asset.content, this.assets.matters);
         container.appendChild(this.asset_inspector.init(mutators));
         this.asset_inspector.events?.addEventListener("change", () => this.viewAsset(asset.id));
+        this.asset_inspector.events?.addEventListener("clone", () => {
+            this._createCloneComponent(this.asset_inspector.matter as AssetContentTypeComponent);
+        });
+        this.asset_inspector.events?.addEventListener("link", () => {
+            this._createInheriteComponent(this.asset_inspector.matter as AssetContentTypeComponent);
+        });
+        this.asset_inspector.events?.addEventListener("delete", () => {
+            this._wipeComponent(this.asset_inspector.matter as AssetContentTypeComponent);
+        });
     }
 
-    _makePropertySelectBtnCallback(name: string, filter: { [id: string] : string | RegExp}, extension?: string, mutator?: (val: any) => any) {
+    async _createCloneComponent(component: AssetContentTypeComponent) {
+        let name = component.name;
+        name = name.split(".").shift() || name;
+        const ids = await this.assets.createJSON(component, component.type, name + "-clone");
+        this.viewAsset(ids[0]);
+    }
+
+    async _createInheriteComponent(component: AssetContentTypeComponent) {
+        let name = component.name;
+        name = name.split(".").shift() || name;
+        const ids = await this.assets.createJSON({ inherites: component.id }, component.type, name + "-inherite");
+        this.viewAsset(ids[0]);
+    }
+
+    async _wipeComponent(component: AssetContentTypeComponent) {
+        if (component && component.dependents) {
+            Popup.instance.show().message("wipe error", `Asset ${component.id} has ${component.dependents} dependents. Could not delete`);
+            return;
+        }
+
+        const links: Array<string> = [];
+        for(const k in this.assets.matters.list) {
+            const m = this.assets.matters.list[k];
+            for(const kk in m) {
+                const val = m[kk];
+                if (typeof val === "string" && val.startsWith("**") && val.substring(2) === component.id) {
+                    links.push(m.id);
+                }
+            }
+        }
+        if (links.length) {
+            let message = `<q>Asset ${component.id} referensed in [${links}] assets. Could not delete.</q>`;
+           
+            Popup.instance.show().message("wipe error", message);
+            return;
+        }
+        await this.assets.wipeAsset(component.id);
+        const el = this.container_list.querySelector("#" + component.id) as HTMLElement;
+        if (el) {
+            el.parentElement?.removeChild(el);
+        }
+    }
+
+    _makePropertySelectBtnCallback(name: string, filter: { [id: string] : string | RegExp}, extension?: string) {
         return (value: string, el?: HTMLElement) => {
             if (!el) {
                 const btn = document.createElement("btn");
                 btn.classList.add("btn-s1", "flex-grow-1", "flex-row", "flex-justify-end");
                 listenClick(btn, async () => {
                     const linkid = await this._showSelectList(`select ${name}`, filter, extension);
-                    let value = linkid;
-                    if (mutator) {
-                        value = mutator(value);
-                    }
+                    let value = "**" + linkid;
                     btn.dispatchEvent(new CustomEvent("change", { detail : { value }}));
                 })
                 const img = document.createElement("img");
@@ -303,7 +324,8 @@ export default class AssetsLibraryView {
             }
             const img = el.querySelector("img");
             if (img) {
-                const asset = this.assets.list[value]
+                const id = this.assets.matters.get(value)?.id;
+                const asset = this.assets.list[id];
                 if (asset) {
                     img.src = asset.thumbnail;
                     img.classList.remove("hidden");
@@ -330,14 +352,17 @@ export default class AssetsLibraryView {
         const asset = this.assets.get(id);
         const matter = this.assets.matters.get(id);
 
+        const thumbnailUpd = async () => {
+            if (!asset.thumbnail) {
+                await uploadThumbnail(asset, this.scene_render);
+                this.listAsset(asset.id);
+            }
+        }
+
         if (asset.info.extension == "gltf") {
             this.container_preview_render.classList.remove('hidden');
 
-            this.scene_render.viewGLTF(asset.info.url).then(() => {
-                if (!asset.thumbnail) {
-                    uploadThumbnail(asset, this.scene_render);
-                }
-            });
+            this.scene_render.viewGLTF(asset.info.url).then(thumbnailUpd);
         } else if (asset.info.type.includes("image")) {
             this.preview_image.classList.remove('hidden');
 			this.preview_image.src = asset.thumbnail;
@@ -348,10 +373,7 @@ export default class AssetsLibraryView {
             if (obj) {
                 this.scene_render.focusCameraOn(obj);
             }
-            if (!asset.thumbnail) {
-                uploadThumbnail(asset, this.scene_render);
-                this.listAsset(asset.id);
-            }
+            thumbnailUpd();
         }
     }
 }

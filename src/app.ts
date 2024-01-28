@@ -10,9 +10,10 @@ import SceneGame from "./scene_game";
 import SceneMediator from "./scene_mediator";
 import SceneCollisions from "./scene_collisions";
 import { lerp } from "./math";
-import SceneMap from "./scene_map";
+import SceneCore from "./scene_core";
 import AppDebug from "./app_debug";
 import SceneEditTools from "./render/scene_edit_tools";
+import SceneMap from "./scene_map";
 
 import Tabs from "./page/tabs";
 import ControlsContainerCollapse from "./page/controls_container_collapse";
@@ -32,12 +33,13 @@ class App {
         this.scene_edit = new SceneEdit(this.assets);
         this.scene_collisions = new SceneCollisions();
         this.scene_render = new SceneRender(this.assets);
-        this.scene_map = new SceneMap(this.assets.matters, this.scene_collisions, this.scene_render)
-        this.scene_edit_tools = new SceneEditTools(this.scene_render, this.scene_collisions, this.scene_map);
-        this.scene_game = new SceneGame(this.scene_collisions, this.scene_render, this.scene_map);
-        this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_game, this.scene_map);
+        this.scene_core = new SceneCore(this.assets.matters, this.scene_collisions, this.scene_render);
+        this.scene_map = new SceneMap(this.scene_core);
+        this.scene_edit_tools = new SceneEditTools(this.scene_render, this.scene_collisions, this.scene_core);
+        this.scene_game = new SceneGame(this.scene_collisions, this.scene_render, this.scene_core);
+        this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_game, this.scene_core);
         this.assets_view = new AssetsView(this.assets, this.scene_render, this.scene_mediator);
-        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_edit_tools, this.scene_mediator, this.scene_map);
+        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_edit_tools, this.scene_mediator, this.scene_core);
         this.assets_library_view = new AssetsLibraryView(this.assets, this.scene_render, this.scene_map);
 
         this.active = false;
@@ -60,6 +62,7 @@ class App {
         this.scene_render.init(canvas as HTMLCanvasElement);
         this.scene_edit_tools.init();
         this.scene_game.init();
+        this.scene_map.init();
 
         this.initPages();
 
@@ -220,6 +223,7 @@ class App {
     private scene_edit_view: SceneEditView;
     private scene_mediator: SceneMediator;
     private scene_collisions: SceneCollisions;
+    private scene_core: SceneCore;
     private scene_map: SceneMap;
     private scene_game: SceneGame;
     private assets_library_view: AssetsLibraryView;

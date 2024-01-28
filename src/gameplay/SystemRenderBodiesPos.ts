@@ -1,4 +1,4 @@
-import SceneMap from "../scene_map";
+import SceneCore from "../scene_core";
 import SceneRender from "../render/scene_render";
 import { SceneCollisions, BoxColliderC } from "../scene_collisions";
 import { lerp, distlerp } from "../math";
@@ -29,17 +29,17 @@ class BodiesPosStepInfo {
 }
 
 export default class SystemRenderBodiesPos {
-    scene_map: SceneMap;
+    scene_core: SceneCore;
     scene_render: SceneRender;
     scene_collisions: SceneCollisions;
     stepinfos: { [id: string] : BodiesPosStepInfo }
     step_number: number;
     elapsed: number;
 
-    constructor(scene_map: SceneMap, scene_render: SceneRender) {
-        this.scene_map = scene_map;
+    constructor(scene_core: SceneCore, scene_render: SceneRender) {
+        this.scene_core = scene_core;
         this.scene_render = scene_render;
-        this.scene_collisions = scene_map.scene_collisions;
+        this.scene_collisions = scene_core.scene_collisions;
     }
 
     run() {

@@ -1,4 +1,4 @@
-import SceneMap from "../scene_map";
+import SceneCore from "../scene_core";
 import SceneRender from "../render/scene_render";
 import SceneCollisions from "../scene_collisions";
 
@@ -8,15 +8,15 @@ interface FallingBlockData {
 }
 
 export default class SystemObjectsFall {
-    scene_map: SceneMap;
+    scene_core: SceneCore;
     falling_objects: { [id: string] : FallingBlockData };
     scene_render: SceneRender;
     scene_collisions: SceneCollisions;
 
-    constructor(scene_map: SceneMap, scene_render: SceneRender) {
-        this.scene_map = scene_map;
+    constructor(scene_core: SceneCore, scene_render: SceneRender) {
+        this.scene_core = scene_core;
         this.scene_render = scene_render;
-        this.scene_collisions = scene_map.scene_collisions;
+        this.scene_collisions = scene_core.scene_collisions;
     }
 
     run() {
@@ -74,7 +74,7 @@ export default class SystemObjectsFall {
                 }
 
                 
-                const entity = this.scene_map.entities[k];
+                const entity = this.scene_core.entities[k];
                 const model = entity?.components.model?.properties;
                 if (model) {
                     model.pos_x = collider.x;
@@ -128,7 +128,7 @@ export default class SystemObjectsFall {
                 continue;
             }
 
-            const model = this.scene_map.entities[k]?.components.model?.properties;
+            const model = this.scene_core.entities[k]?.components.model?.properties;
             if (model && model.tags && model.tags.includes("falling")) {
                 activate(k);
             }

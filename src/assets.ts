@@ -129,6 +129,7 @@ interface AssetContentTypeCollider extends AssetContentTypeComponent {
 
 interface AssetContentTypeTexture extends AssetContentTypeComponent {
     asset: HTMLImageElement;
+    url: string;
 }
 
 interface AssetContentTypeModel extends AssetContentTypeComponent {
@@ -205,9 +206,16 @@ class Asset {
             }
 
             this.content = {
-                asset: img
+                asset: img,
+                url: this.info.url
             }
         }
+
+        if (this.info.extension == "gltf") {
+            this.content = this.content || {};
+            this.content.url = this.info.url;
+        }
+
         this.status = AssetStatus.LOADED;
     }
 
@@ -407,8 +415,8 @@ class Assets {
         return ids;
     }
 
-    async createJSON(content: any, extension: string) : Promise<Array<string>> {
-        const file = new File([JSON.stringify(content)], `new.${extension}`, {
+    async createJSON(content: any, extension: string, name: string = `new`) : Promise<Array<string>> {
+        const file = new File([JSON.stringify(content)], name + "." + extension, {
             type: "application/json",
         });
        return this.createFiles([file]);

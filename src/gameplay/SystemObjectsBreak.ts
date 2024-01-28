@@ -1,12 +1,12 @@
-import SceneMap from "../scene_map";
+import SceneCore from "../scene_core";
 import Character from "../character";
 import { BoxColliderC } from "../scene_collisions";
 
 export default class SystemObjectsBreak {
-    scene_map: SceneMap;
+    scene_core: SceneCore;
     breakable_objects: { [id: string]: number }
-    constructor(scene_map: SceneMap) {
-        this.scene_map = scene_map;
+    constructor(scene_core: SceneCore) {
+        this.scene_core = scene_core;
     }
 
     run() {
@@ -23,7 +23,7 @@ export default class SystemObjectsBreak {
         const hit_damage = 1;
         const hit_strength = 1;
 
-        const durability = this.breakable_objects[id] ?? this.scene_map.entities[id]?.components.model?.properties.durability;
+        const durability = this.breakable_objects[id] ?? this.scene_core.entities[id]?.components.model?.properties.durability;
         if (!durability) {
             return false;
         }

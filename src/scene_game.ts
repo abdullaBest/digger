@@ -7,11 +7,11 @@ import SceneRender from "./render/scene_render";
 import { distlerp, lerp } from "./math";
 import { SceneElement } from "./scene_edit";
 import SceneDebug from "./scene_debug";
-import { SceneMap, MapEntity, MapComponent } from "./scene_map";
+import { SceneCore, MapEntity, MapComponent } from "./scene_core";
 import SystemObjectsBreak from "./gameplay/SystemObjectsBreak";
 import SystemObjectsFall from "./gameplay/SystemObjectsFall";
 import SystemRenderBodiesPos from "./gameplay/SystemRenderBodiesPos";
-import TilesetRender from "./render/tileset_render";
+import TilesetRender from "./render/tileset_render_system";
 
 export default class SceneGame {
     player_character: Character;
@@ -19,7 +19,7 @@ export default class SceneGame {
     private scene_render: SceneRender;
     scene_collisions: SceneCollisions;
     scene_debug: SceneDebug;
-    scene_map: SceneMap;
+    scene_core: SceneCore;
 
     system_objects_break: SystemObjectsBreak;
     system_objects_fall: SystemObjectsFall;
@@ -41,16 +41,16 @@ export default class SceneGame {
     gravity_x: number;
     gravity_y: number;
 
-    constructor(scene_collisions: SceneCollisions, scene_render: SceneRender, scene_map: SceneMap) {
+    constructor(scene_collisions: SceneCollisions, scene_render: SceneRender, scene_core: SceneCore) {
         this.scene_collisions = scene_collisions;
         this.scene_render = scene_render;
-        this.scene_map = scene_map;
+        this.scene_core = scene_core;
 
         this.player_character_render = new CharacterRender();
-        this.system_objects_break = new SystemObjectsBreak(this.scene_map);
-        this.system_objects_fall = new SystemObjectsFall(this.scene_map, this.scene_render);
-        this.system_render_bodiespos = new SystemRenderBodiesPos(this.scene_map, this.scene_render);
-        this.tileset_render = new TilesetRender(this.scene_map);
+        this.system_objects_break = new SystemObjectsBreak(this.scene_core);
+        this.system_objects_fall = new SystemObjectsFall(this.scene_core, this.scene_render);
+        this.system_render_bodiespos = new SystemRenderBodiesPos(this.scene_core, this.scene_render);
+        this.tileset_render = new TilesetRender(this.scene_core);
 
         this.active = false;
         this.inplay = false;
@@ -170,7 +170,7 @@ export default class SceneGame {
 
     stop() {
         this.stopPlay();
-        this.scene_map.stop();
+        this.scene_core.stop();
 
         this.active = false;
         this.requested_map_switch = null;
@@ -256,7 +256,7 @@ export default class SceneGame {
             if (!cid) {
                 continue;
             }
-            const el = this.scene_map.entities[cid];
+            const el = this.scene_core.entities[cid];
             const props = el?.components.trigger?.properties;
             if (props && props.type == "mapexit") {
                 interacts = true;
@@ -295,7 +295,7 @@ export default class SceneGame {
             // falling block activate
             this.system_objects_fall.touchFallingBlock(hit_result);
             // remove breakable block
-            this.scene_map.removeEntity(hit_result);
+            this.scene_core.removeEntity(hit_result);
         }
     }
 

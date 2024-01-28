@@ -5,7 +5,7 @@ import SceneRender from './scene_render.js';
 import TilesetEditor from './tileset_editor.js';
 import { setObjectPos } from './render_utils.js';
 import { snap } from '../math.js';
-import { SceneMap, MapComponent, MapEntity } from '../scene_map.js';
+import { SceneCore, MapComponent, MapEntity } from '../scene_core.js';
 
 enum SceneEditToolMode {
     DEFAULT = 0,
@@ -35,16 +35,16 @@ class SceneEditTools {
     scene_render: SceneRender;
     tileset_editor: TilesetEditor;
     scene_collisions: SceneCollisions;
-    scene_map: SceneMap;
+    scene_core: SceneCore;
 
     editmode: SceneEditToolMode;
 
     private cube: THREE.Mesh;
 
-    constructor(scene_render: SceneRender, scene_collisions: SceneCollisions, scene_map: SceneMap) {
+    constructor(scene_render: SceneRender, scene_collisions: SceneCollisions, scene_core: SceneCore) {
         this.scene_render = scene_render;
         this.scene_collisions = scene_collisions;
-        this.scene_map = scene_map;
+        this.scene_core = scene_core;
 
         this.mousepos = new THREE.Vector2();
         this.mousepos_world = new THREE.Vector3();
@@ -138,7 +138,7 @@ class SceneEditTools {
             pos.y = snap(pos.y, this.tileset_editor.tilesize_y);
 
             if (this.tileset_editor.selected_tileset) {
-                const tileset = this.scene_map.tilesets[this.tileset_editor.selected_tileset];
+                const tileset = this.scene_core.tilesets[this.tileset_editor.selected_tileset];
                 pos.x += tileset.pos_x % 1;
                 pos.y += tileset.pos_y % 1;
             }
@@ -199,7 +199,7 @@ class SceneEditTools {
         }
 
         const tileset_id = this.tileset_editor.selected_tileset;
-        const tileset = this.scene_map.tilesets[tileset_id];
+        const tileset = this.scene_core.tilesets[tileset_id];
 
         const canvas = tileset.canvas;
         const image = tileset.image;
@@ -229,9 +229,9 @@ class SceneEditTools {
             entity.inherits = drawid;
             const model = Object.setPrototypeOf({ pos_x, pos_y }, drawmodel);
             entity.components.model = new MapComponent(model);
-            this.scene_map.addEntity(entity);
+            this.scene_core.addEntity(entity);
         } else if (this.editmode == SceneEditToolMode.TILE_ERASE) {
-            this.scene_map.removeEntity(newid);
+            this.scene_core.removeEntity(newid);
         }
 
         const ctx = canvas.getContext("2d");

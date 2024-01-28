@@ -2,6 +2,7 @@ import { Popup } from "./page/popup";
 import { sendFiles, Asset } from "./assets";
 import SceneRender from "./render/scene_render";
 import Assets from "./assets";
+import { rejects } from "assert";
 
 function blobToBase64(blob : Blob) : Promise<string | ArrayBuffer | null> {
     const reader = new FileReader();
@@ -138,16 +139,19 @@ export async function importGltfSequence(assets: Assets) {
 }
 
 
-export function uploadThumbnail(asset: Asset, scene_render: SceneRender, callback?: () => void) {
-    scene_render.render();
-    scene_render.canvas.toBlob((blob) => {
-        if (!blob || !asset) {
-            return;
-        }
-        const file = new File([blob], `tumb_${asset.info.id}`, {
-            type: "image/jpeg",
-        });
-
-        sendFiles("/assets/upload/thumbnail/" + asset.info.id, [file], callback);
+export function uploadThumbnail(asset: Asset, scene_render: SceneRender) {
+    return new Promise((resolve, rejects) => {
+        scene_render.render();
+        scene_render.canvas.toBlob((blob) => {
+            if (!blob || !asset) {
+                rejects();
+                return;
+            }
+            const file = new File([blob], `tumb_${asset.info.id}`, {
+                type: "image/jpeg",
+            });
+    
+            sendFiles("/assets/upload/thumbnail/" + asset.info.id, [file], resolve);
+        })
     });
 }

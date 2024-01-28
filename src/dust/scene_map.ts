@@ -4,7 +4,7 @@ import { SceneCollisions, ColliderType } from './scene_collisions';
 import { SceneElement, OverridedAssetLink } from "./scene_edit";
 import MapTileset from "./map_tileset";
 
-class SceneMapCache {
+class SceneCoreCache {
 
 }
 
@@ -49,7 +49,7 @@ class MapEntity {
     }
 }
 
-class SceneMap {
+class SceneCore {
     private scene_render: SceneRender;
     private scene_render_loader: SceneRenderLoader;
 
@@ -235,5 +235,5 @@ class SceneMap {
     }
 }
 
-export { SceneMap, SceneMapCache, MapEntity, MapComponent };
-export default SceneMap;
+export { SceneCore, SceneCoreCache, MapEntity, MapComponent };
+export default SceneCore;

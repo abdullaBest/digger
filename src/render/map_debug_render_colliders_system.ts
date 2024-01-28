@@ -26,7 +26,7 @@ export default class MapDebugRenderCollidersSystem extends MapSystem {
         }
 
         if (!owner) {
-            throw new Error("MapCollidersSystem:add error - this component can't be used without owner node.")
+            throw new Error("SceneCollidersSystem:add error - this component can't be used without owner node.")
         }
 
         const collider = this.scene_collisions.colliders[owner.id];

@@ -1,4 +1,4 @@
-import { Assets, AssetContentTypeModel } from '../assets.js'
+import { Assets, AssetContentTypeModel, AssetContentTypeTexture } from '../assets.js'
 import SceneRenderCache from './scene_render_cache.js'
 import * as THREE from '../lib/three.module.js';
 import { GLTFLoader } from '../lib/GLTFLoader.js';
@@ -18,9 +18,8 @@ export default class SceneRenderLoader {
      * @returns gltf data
      */
     async getModel(id: string, model: any) : Promise<any> {
-        const gltfurl = this.assets.get(model.gltf).info.url
-        const textureurl = this.assets.get(model.texture).info.url
-
+        const gltfurl = (this.assets.matters.get(model.gltf) as AssetContentTypeTexture).url
+        const textureurl = (this.assets.matters.get(model.texture) as AssetContentTypeTexture).url;
         if (!gltfurl || !textureurl) {
             throw new Error(
                 `Load model errors: wrong ids 

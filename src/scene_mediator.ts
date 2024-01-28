@@ -1,21 +1,21 @@
 import SceneEdit from "./scene_edit";
 import SceneGame from "./scene_game";
-import SceneMap from "./scene_map";
+import SceneCore from "./scene_core";
 
 class SceneMediator {
     scene_edit: SceneEdit;
     scene_game: SceneGame;
-    scene_map: SceneMap;
+    scene_core: SceneCore;
     events: HTMLElement;
 
     active_scene: string | null;
 
-    constructor(scene_edit: SceneEdit, scene_game: SceneGame, scene_map: SceneMap) {
+    constructor(scene_edit: SceneEdit, scene_game: SceneGame, scene_core: SceneCore) {
         this.scene_edit = scene_edit;
         this.scene_game = scene_game;
         this.active_scene = null;
         this.events = document.createElement("event");
-        this.scene_map = scene_map;
+        this.scene_core = scene_core;
     }
 
     step() {

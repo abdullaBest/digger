@@ -1,14 +1,12 @@
-import Assets, { AssetContentTypeTile } from "./assets";
-import { SceneEditUtils } from "./scene_edit";
-import { querySelector } from "./document";
-import { MapSystem } from "./systems";
-import { AssetContentTypeComponent, AssetContentTypeModel, AssetContentTypeTileset, AssetContentTypeTexture } from './assets';
-import { Matter, Matters } from "./matters";
+import { AssetContentTypeTile } from "../assets";
+import { querySelector } from "../document";
+import MapSystem from "./map_system";
+import { AssetContentTypeComponent, AssetContentTypeTileset, AssetContentTypeTexture } from '../assets';
+import { Matters } from "../matters";
 
 class MapTileset {
     tilerefs: { [id: number] : string };
-    colors: { [id: string] : string }
-    tiles: Array<string>;
+    components: { [id: string] : string }
     image: HTMLImageElement | null;
     tileset: AssetContentTypeTileset;
     canvas: HTMLCanvasElement;
@@ -19,9 +17,8 @@ class MapTileset {
         this.matters = matters;
         
         this.tileset = tileset;
-        this.colors = {};
+        this.components = {};
         this.tilerefs = {};
-        this.tiles = [];
         this.image = null;
 
         this.init();
@@ -60,7 +57,7 @@ class MapTileset {
 
             const refid = tile.link;
             const colorid = parseInt(color.replace("#", "0x"));
-            this.colors[refid] = color;
+            this.components[refid] = refid;
             this.tilerefs[colorid] = refid;
         }
     }
@@ -114,7 +111,7 @@ class MapTileset {
 
         canvas.width = clip_w;
         canvas.height = clip_h;
-        const ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d"); // , { willReadFrequently: true } // has to be callen at first getContext
         ctx?.clearRect(0, 0, canvas.width, canvas.height);
         ctx?.drawImage(img, clip_x, clip_y, clip_w, clip_h, 0, 0, clip_w, clip_h);
         const imgdata = ctx?.getImageData(0, 0, clip_w,  clip_h).data;
@@ -148,7 +145,6 @@ class MapTileset {
             const pos_x = ox + lx;
             const pos_y = oy + ly;
             const tileid = this.makeTileId(pos_x, pos_y);
-            this.tiles.push(tileid);
 
             ontile(cache_id, tileid, origin_x + pos_x, origin_y + pos_y);
         }
@@ -192,11 +188,12 @@ class MapTilesetSystem extends MapSystem {
         }
        
         const tileset = new MapTileset(this.matters, component);
-        tileset.propagate((ref_id, id, pos_x, pos_y) => {console.log(ref_id, id, pos_x, pos_y)});
+        //tileset.propagate((ref_id, id, pos_x, pos_y) => {console.log(ref_id, id, pos_x, pos_y)});
         this.tilesets[component.id] = tileset;
     }
 
     remove(component: AssetContentTypeTileset) {
+        delete this.tilesets[component.id];
     }
 }
 

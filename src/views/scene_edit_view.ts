@@ -4,7 +4,7 @@ import SceneEdit, { SceneElement } from "../scene_edit";
 import { AssetsView, AssetPropertyEdit } from "./assets_view";
 import SceneRender from "../render/scene_render";
 import SceneMediator from "../scene_mediator";
-import SceneMap from "../scene_map";
+import SceneCore from "../scene_core";
 import { SceneEditTools, SceneEditToolMode } from "../render/scene_edit_tools";
 import { sendFiles } from "../assets";
 
@@ -15,14 +15,14 @@ export default class SceneEditView {
     scene_render: SceneRender;
     scene_edit_tools: SceneEditTools;
     scene_mediator: SceneMediator;
-    scene_map: SceneMap;
+    scene_core: SceneCore;
     private _listeners: Array<EventListenerDetails>;
 
-    constructor(scene_edit: SceneEdit, scene_render: SceneRender, scene_edit_tools: SceneEditTools, scene_mediator: SceneMediator, scene_map: SceneMap){
+    constructor(scene_edit: SceneEdit, scene_render: SceneRender, scene_edit_tools: SceneEditTools, scene_mediator: SceneMediator, scene_core: SceneCore){
         this.scene_edit = scene_edit;
         this.scene_render = scene_render;
         this.scene_mediator = scene_mediator;
-        this.scene_map = scene_map;
+        this.scene_core = scene_core;
         this.scene_edit_tools = scene_edit_tools;
     }
 
@@ -69,7 +69,7 @@ export default class SceneEditView {
                 this.scene_edit_tools.attachTransformControls(el.id);
                 if (scene_element.components.tileset) {
                     
-                    this.scene_edit_tools.tileset_editor.drawPalette(this.scene_map.tilesets[el.id]);
+                    this.scene_edit_tools.tileset_editor.drawPalette(this.scene_core.tilesets[el.id]);
                 }
             } else {
                 // element actions
@@ -118,12 +118,12 @@ export default class SceneEditView {
             this.draw(el.id);
         }, this._listeners)
 
-        listenClick("#add_scene_mapentry_btn",  async (ev) => {
+        listenClick("#add_scene_coreentry_btn",  async (ev) => {
             const el = await this.scene_edit.addElement({trigger: { type: "mapentry", signal: "unset", width: 1, height: 1 }});
             this.draw(el.id);
         }, this._listeners)
 
-        listenClick("#add_scene_mapexit_btn",  async (ev) => {
+        listenClick("#add_scene_coreexit_btn",  async (ev) => {
             const el = await this.scene_edit.addElement({trigger: { type: "mapexit", signal: "unset", width: 1, height: 1 }});
             this.draw(el.id);
         }, this._listeners)
@@ -207,7 +207,7 @@ export default class SceneEditView {
         tcontrols.addEventListener( 'objectChange', (e) => {
             const object = e.target.object;
             const id = object.name;
-            this.scene_map.updateEntityCollider(id);
+            this.scene_core.updateEntityCollider(id);
             const el = this.scene_edit.elements && this.scene_edit.elements[id];
 
             // only works with scene edit elements
@@ -233,7 +233,7 @@ export default class SceneEditView {
                 return;
             }
             const id = object.name;
-            const entity = this.scene_map.entities[id];
+            const entity = this.scene_core.entities[id];
             if (id) {
                 console.log("selected entity " + id, entity);
             }
@@ -242,7 +242,7 @@ export default class SceneEditView {
         tcontrols.addEventListener( 'mouseUp',  ( e ) => {
             const object = e.target.object;
             const id = object.name;
-            this.scene_map.updateEntityCollider(id);
+            this.scene_core.updateEntityCollider(id);
             const el = this.scene_edit.elements && this.scene_edit.elements[id];
             if (!el) {
                 return;
@@ -268,7 +268,7 @@ export default class SceneEditView {
      * @param id tileset id
      */
     saveTileset(id: string) {
-        const tileset = this.scene_map.tilesets[id];
+        const tileset = this.scene_core.tilesets[id];
         const image_asset = this.scene_edit.assets.get(tileset.tileset.texture);
         const image_file = tileset.image;
         if (!image_file) {
@@ -312,7 +312,7 @@ export default class SceneEditView {
 
     removeElement(id: string) {
         this.scene_edit.removeElement(id);
-        this.scene_map.removeEntity(id);
+        this.scene_core.removeEntity(id);
         const htmlelement = this.props_container.querySelector('#' + id);
         if (htmlelement) {
             htmlelement.parentElement?.removeChild(htmlelement);
@@ -325,12 +325,12 @@ export default class SceneEditView {
     }
 
     async redrawElement(element: SceneElement) {
-        await this.scene_map.addElement(element);
+        await this.scene_core.addElement(element);
 
         if (element.components.tileset) {
             this.scene_mediator.scene_game.tileset_render.cleanup();
             this.scene_mediator.scene_game.tileset_render.update(0, 0);
-            this.scene_edit_tools.tileset_editor.drawPalette(this.scene_map.tilesets[element.id]);
+            this.scene_edit_tools.tileset_editor.drawPalette(this.scene_core.tilesets[element.id]);
         }
     }
 

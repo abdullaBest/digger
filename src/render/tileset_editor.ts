@@ -1,7 +1,7 @@
 
 import * as THREE from '../lib/three.module.js';
 import SceneRenderLoader from './scene_render_loader.js';
-import MapTileset from '../map_tileset.js';
+import MapTileset from '../systems/map_tileset_system.js';
 import { focusCameraOn } from './render_utils.js';
 
 export default class TilesetEditor {
