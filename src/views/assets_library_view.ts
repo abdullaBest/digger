@@ -78,8 +78,11 @@ export default class AssetsLibraryView {
         listenClick("#asset-collider-add", async (ev) => {
             let link_id = await this._showSelectList("select", {}, "collider", ["create"]);
             if (link_id == "create") {
-                const ids = await this._createComponent("collider", null);
-                link_id = ids[0];
+                const id = await this._createComponent("collider", null);
+                link_id = id;
+            }
+            if (!link_id) {
+                return;
             }
             const asset = this.asset_selected;
             asset.content["collider"] = "**" + link_id;
@@ -92,6 +95,9 @@ export default class AssetsLibraryView {
                 const ids = await this._createComponent("tile", { link: "**" + linkid });
                 link_id = ids[0];
             }
+            if (!link_id) {
+                return;
+            }
             const asset = this.asset_selected;
             asset.content["tile_" + link_id] = "**" + link_id;
             this.viewAsset(asset.id);
@@ -102,12 +108,12 @@ export default class AssetsLibraryView {
         listenClick("#asset-manage-wipe", async (ev) => {
             await Popup.instance.show().message("Do not use this. Use delete.", "");
             await Popup.instance.show().message("Really?", "Use delete.");
-            await this.assets.wipeAsset(this.asset_selected.id);
+            return this._wipeAsset(this.asset_selected.id);
         }, this._listeners)
         listenClick("#asset-manage-delete", async (ev) => {
             const asset = this.asset_selected;
             const matter = this.assets.matters.get(asset.id)
-            this._deleteComponent(matter as AssetContentTypeComponent);
+            this._deleteComponentSequence(matter as AssetContentTypeComponent);
             
         }, this._listeners)
     }
@@ -168,12 +174,69 @@ export default class AssetsLibraryView {
     }
 
     async _createComponent(extension: string, content?: any | null) : Promise<string> {
-        const inherites = await this._showSelectList("inherite", {}, extension);
-        const component = { inherites } as Matter;
+        const inherite_id = await this._showSelectList("inherite", {}, extension);
+        const component = { inherites: inherite_id } as Matter;
         if (content) {
             Object.assign(component, content);
         }
+        if (inherite_id) {
+            const inherite = this.assets.matters.get(inherite_id);
+            extension = inherite.get("type") ?? extension;
+        }
         return this.assets.uploadComponent(component, extension);
+    }
+
+    
+    async _createCloneComponent(component: AssetContentTypeComponent) {
+        let name = component.name;
+        name = name.split(".").shift() || name;
+        const id = await this.assets.uploadComponent(component, component.type, null, name + "-clone");
+        this.viewAsset(id);
+
+        return id;
+    }
+
+    async _createInheriteComponent(inherite: AssetContentTypeComponent, content: object = {}) {
+        let name = inherite.name;
+        name = name.split(".").shift() || name;
+        const id = await this.assets.uploadComponent(Object.assign({ inherites: inherite.id }, content), inherite.type, null, name + "-inherite");
+        this.viewAsset(id);
+
+        return id;
+    }
+
+    async _wipeAsset(id: string) {
+        await this.assets.wipeAsset(id);
+        const el = this.container_list.querySelector("#" + id) as HTMLElement;
+        if (el) {
+            el.parentElement?.removeChild(el);
+        }
+    }
+
+    async _deleteComponentSequence(component: AssetContentTypeComponent) {
+        if (component && component.dependents) {
+            Popup.instance.show().message("delete error", `Asset ${component.id} has ${component.dependents} dependents. Could not delete`);
+            return;
+        }
+
+        const links: Array<string> = [];
+        for(const k in this.assets.matters.list) {
+            const m = this.assets.matters.list[k];
+            for(const kk in m) {
+                const val = m[kk];
+                if (typeof val === "string" && val.startsWith("**") && val.substring(2) === component.id) {
+                    links.push(m.id);
+                }
+            }
+        }
+        if (links.length) {
+            let message = `<q>Asset ${component.id} referensed in [${links}] assets. Could not delete.</q>`;
+           
+            Popup.instance.show().message("delete error", message);
+            return;
+        }
+        await Popup.instance.show().message("delete?", "");
+        return this._wipeAsset(component.id);
     }
 
     listAsset(id: string, container: HTMLElement = this.container_list) {
@@ -204,7 +267,8 @@ export default class AssetsLibraryView {
 
         name_label.innerHTML = asset.info.name;
 
-        if (!this.assets.matters.get(id)) {
+        const matter = this.assets.matters.get(id);
+        if (!matter || matter.get("owner")) {
             entry.classList.add("disabled");
         }
 
@@ -212,6 +276,20 @@ export default class AssetsLibraryView {
     }
 
     viewAsset(id: string) {
+        const matter = this.assets.matters.get(id);
+        if (matter) {
+
+            // fix link ids
+            id = matter.id;
+
+            // always show asset top tree
+            const owner = matter.get("owner")
+            if (owner) {
+                //this.viewAsset(owner);
+                //return;
+            }
+        }
+        
         const asset = this.assets.get(id);
         this.asset_selected = asset;
         if (this.asset_inspector) {
@@ -236,23 +314,21 @@ export default class AssetsLibraryView {
     _drawAssetInspector(asset: Asset, container: HTMLElement) {
         // presetted mutators
         const mutators = {
-            texture: this._makePropertySelectBtnCallback("texture", {extension: /(png)/}),
-            gltf: this._makePropertySelectBtnCallback("gltf", {extension: /(gltf)/}),
-            link: this._makePropertySelectBtnCallback("component", {}, "component"),
+            texture: this._makePropertySelectBtnCallback(asset.id, "texture", {extension: /(png)/}),
+            gltf: this._makePropertySelectBtnCallback(asset.id, "gltf", {extension: /(gltf)/}),
+            link: this._makePropertySelectBtnCallback(asset.id, "component", {}, "component"),
         }
 
         // dynamic mutators - generated for any link
-        const matter = this.assets.matters.get(asset.id);
-        for(const kk in matter) {
-            const val = matter[kk];
-            if (typeof val === "string" && val.startsWith("**")) {
-                const id = val.substring(2);
+        this.assets.matters.traverse(asset.id, (matter, key, value) => {
+            if (typeof value === "string" && value.startsWith("**")) {
+                const id = value.substring(2);
                 const link = this.assets.matters.get(id) as AssetContentTypeComponent;
-                if (link && !mutators[kk]) {
-                    mutators[kk] = this._makePropertySelectBtnCallback(link.type, {}, link.type);
+                if (link && !mutators[key]) {
+                    mutators[key] = this._makePropertySelectBtnCallback(matter.id, link.type, {}, link.type);
                 } 
             }
-        }
+        })
 
         this.asset_inspector = new InspectorMatters(asset.content, this.assets.matters);
         container.appendChild(this.asset_inspector.init(mutators));
@@ -264,62 +340,36 @@ export default class AssetsLibraryView {
             this._createInheriteComponent(this.asset_inspector.matter as AssetContentTypeComponent);
         });
         this.asset_inspector.events?.addEventListener("delete", () => {
-            this._deleteComponent(this.asset_inspector.matter as AssetContentTypeComponent);
+            this._deleteComponentSequence(this.asset_inspector.matter as AssetContentTypeComponent);
         });
+        this.asset_inspector.events?.addEventListener("external", (async ({detail}) => {
+            this.viewAsset(detail.value);
+        }) as any);
+        this.asset_inspector.events?.addEventListener("plug", (async ({detail}) => {
+            const key = detail.key;
+            const value = detail.value;
+            const matter = detail.matter;
+            const id = await this._createInheriteComponent(this.assets.matters.get(value) as AssetContentTypeComponent, { owner: matter.id });
+            matter.set_link(key, id);
+        }) as any);
     }
 
-    async _createCloneComponent(component: AssetContentTypeComponent) {
-        let name = component.name;
-        name = name.split(".").shift() || name;
-        const ids = await this.assets.createJSON(component, component.type, name + "-clone");
-        this.viewAsset(ids[0]);
-    }
-
-    async _createInheriteComponent(component: AssetContentTypeComponent) {
-        let name = component.name;
-        name = name.split(".").shift() || name;
-        const ids = await this.assets.createJSON({ inherites: component.id }, component.type, name + "-inherite");
-        this.viewAsset(ids[0]);
-    }
-
-    async _deleteComponent(component: AssetContentTypeComponent) {
-        if (component && component.dependents) {
-            Popup.instance.show().message("delete error", `Asset ${component.id} has ${component.dependents} dependents. Could not delete`);
-            return;
-        }
-
-        const links: Array<string> = [];
-        for(const k in this.assets.matters.list) {
-            const m = this.assets.matters.list[k];
-            for(const kk in m) {
-                const val = m[kk];
-                if (typeof val === "string" && val.startsWith("**") && val.substring(2) === component.id) {
-                    links.push(m.id);
-                }
-            }
-        }
-        if (links.length) {
-            let message = `<q>Asset ${component.id} referensed in [${links}] assets. Could not delete.</q>`;
-           
-            Popup.instance.show().message("delete error", message);
-            return;
-        }
-        await Popup.instance.show().message("delete?", "");
-        await this.assets.wipeAsset(component.id);
-        const el = this.container_list.querySelector("#" + component.id) as HTMLElement;
-        if (el) {
-            el.parentElement?.removeChild(el);
-        }
-    }
-
-    _makePropertySelectBtnCallback(name: string, filter: { [id: string] : string | RegExp}, extension?: string) {
+    _makePropertySelectBtnCallback(id: string, name: string, filter: { [id: string] : string | RegExp}, extension?: string) {
         return (value: string, el?: HTMLElement) => {
+            const ref = this.assets.matters.get(value);
             if (!el) {
                 const btn = document.createElement("btn");
                 btn.classList.add("btn-s1", "flex-grow-1", "flex-row", "flex-justify-end");
-                listenClick(btn, async () => {
-                    const linkid = await this._showSelectList(`select ${name}`, filter, extension);
-                    let value = "**" + linkid;
+                listenClick(btn, async (ev) => {
+                    ev.stopPropagation();
+                    const link_id = await this._showSelectList(`select ${name}`, filter, extension);
+                    if (!link_id) {
+                        return;
+                    }
+                    if (ref && ref.get("owner") == id) {
+                        this._wipeAsset(this.asset_selected.id);
+                    }
+                    let value = "**" + link_id;
                     btn.dispatchEvent(new CustomEvent("change", { detail : { value }}));
                 })
                 const img = document.createElement("img");
@@ -334,9 +384,8 @@ export default class AssetsLibraryView {
                 label.innerHTML = `[${value}]`;
             }
             const img = el.querySelector("img");
-            if (img) {
-                const id = this.assets.matters.get(value)?.id;
-                const asset = this.assets.list[id];
+            if (img && ref) {
+                const asset = this.assets.list[ref.id];
                 if (asset) {
                     img.src = asset.thumbnail;
                     img.classList.remove("hidden");

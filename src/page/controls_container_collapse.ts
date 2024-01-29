@@ -12,7 +12,7 @@ export default class ControlsContainerCollapse {
         const content = querySelector("content", container);
 
         listenClick(header, () => {
-            container.classList.toggle("colapsed");
+            container.classList.toggle("collapsed");
         }, this._listeners)
 
         return this;

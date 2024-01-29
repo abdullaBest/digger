@@ -474,7 +474,8 @@ class Assets {
        return this.createFiles([file]);
     }
 
-    async uploadComponent(content: Matter, extension: string, bundle_name: string = "base_bundle", name?: string) : Promise<string> {
+    async uploadComponent(content: any, extension: string, bundle_name?: string | null, name?: string) : Promise<string> {
+        bundle_name = bundle_name ??  "base_bundle";
         if (!this.bundles[bundle_name]) {
             const bundle = {
                 guids: 0,

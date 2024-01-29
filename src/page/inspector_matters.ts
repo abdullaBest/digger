@@ -32,7 +32,7 @@ export default class InspectorMatters {
 
         const container = this.init_container();
         this.container = container;
-        //this.container.classList.add("colapsed");
+        //this.container.classList.add("collapsed");
         const header = querySelector(".header", container);
         const content = querySelector("content", container);
     
@@ -116,11 +116,14 @@ export default class InspectorMatters {
         btn_discard.classList.add("img-discard", "fittext");
         const btn_remove = document.createElement("btn");
         btn_remove.classList.add("img-remove", "fittext");
+        const btn_plug = document.createElement("btn");
+        btn_plug.classList.add("img-plug", "fittext");
 
         controls.appendChild(icon_external_code);
         controls.appendChild(btn_external_ref);
         controls.appendChild(btn_discard);
         controls.appendChild(btn_remove);
+        controls.appendChild(btn_plug);
         entry.appendChild(controls);
 
         if (onchange) {
@@ -136,6 +139,12 @@ export default class InspectorMatters {
                 el.parentElement?.removeChild(el)
                 onchange(matter, key);
             }, name: "click", node: btn_remove}, this._listeners);
+            addEventListener({callback: ()=> {
+                this.events?.dispatchEvent(new CustomEvent("external", { detail : { key, value: matter.get(key) }}));
+            }, name: "click", node: btn_external_ref}, this._listeners);
+            addEventListener({callback: ()=> {
+                this.events?.dispatchEvent(new CustomEvent("plug", { detail : { key, value: matter.get(key), matter }}));
+            }, name: "click", node: btn_plug}, this._listeners);
         } else {
             controls.classList.add("disabled");
         }
@@ -171,20 +180,19 @@ export default class InspectorMatters {
 
         this.draw_field(key, matter, entry);
 
-        /*
         // reqursive fields draw
         const value = matter.get(key);
-        if (typeof value == "string" && value.startsWith("**")) {
+        if (typeof value == "string" && value.startsWith("**") && this.matters.get(value)?.get("owner") == matter.id) {
             const subcontainer = this.init_container();
             const header = querySelector(".header", subcontainer);
             const content = querySelector("content", subcontainer);
             header.appendChild(entry);
-            this.propagate_fields(this.matters.get(value.substring(2)), content);
+            this.propagate_fields(this.matters.get(value), content, onchange);
             new ControlsContainerCollapse(this._listeners).init(subcontainer);
+            subcontainer.classList.add("collapsed");
 
             return subcontainer;
         }
-        */
 
         return entry;
     }
@@ -194,6 +202,7 @@ export default class InspectorMatters {
         const btn_external_ref = querySelector(".img-external", entry);
         const btn_discard = querySelector(".img-discard", entry);
         const btn_remove = querySelector(".img-remove", entry);
+        const btn_plug = querySelector(".img-plug", entry);
 
         this.inputs[key].draw(matter.get(key));
 
@@ -201,6 +210,7 @@ export default class InspectorMatters {
         btn_external_ref.classList.add("hidden");
         btn_discard.classList.add("hidden");
         btn_remove.classList.add("hidden");
+        btn_plug.classList.add("hidden");
 
         if (entry.classList.contains("disabled")) {
             return;
@@ -215,11 +225,12 @@ export default class InspectorMatters {
         }
 
         const value =  matter.get(key);
-        if ((typeof value == "string" && value.startsWith("**"))) {
+        if ((typeof value == "string" && value.startsWith("**") && (this.matters.get(value) as any)?.owner !== matter.id)) {
             btn_external_ref.classList.remove("hidden");
+            btn_plug.classList.remove("hidden");
         }
 
-        if (key == "name" && this.container) {
+        if (matter == this.matter && key == "name" && this.container) {
             querySelector(".header label", this.container).innerHTML = value;
         }
     }

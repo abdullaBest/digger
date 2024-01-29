@@ -17,6 +17,16 @@ class Matter {
         this[key] = value;
     }
 
+    set_link(key: string, value: string) {
+        if (!value.startsWith("**")) {
+            value = "**" + value;
+        }
+
+        this.set(key, value);
+
+        return value;
+    }
+
     get(key: string) {
         return this[key];
     }
@@ -84,6 +94,20 @@ class Matters {
     get(id: string) : Matter {
         // second case - using by "pointer" id as "**someid"
         return id.startsWith("**") ? this.list[id.substring(2)] : this.list[id];
+    }
+
+    traverse(id: string, callback: (matter: Matter, key: string, value: any) => void) {
+        const matter = this.get(id);
+        if (!matter) {
+            return;
+        }
+        for(const k in matter) {
+            const value = matter.get(k);
+            callback(matter, k, value);
+            if (typeof value == "string" && value.startsWith("**")) {
+                this.traverse(value, callback);
+            }
+        }
     }
 
     /**
