@@ -106,7 +106,11 @@ export default class AssetsLibraryView {
             this.viewAsset(asset.id);
         }, this._listeners);
         listenClick("#asset-manage-save", async (ev) => {
-            this.saveAsset(this.asset_selected?.id);
+            if (this.asset_selected) {
+                this.saveAsset(this.asset_selected.id);
+                await uploadThumbnail(this.asset_selected, this.scene_render);
+                this.listAsset(this.asset_selected.id);
+            }
         }, this._listeners)
         listenClick("#asset-manage-wipe", async (ev) => {
             await Popup.instance.show().message("Do not use this. Use delete.", "");
@@ -424,17 +428,10 @@ export default class AssetsLibraryView {
         const asset = this.assets.get(id);
         const matter = this.assets.matters.get(id);
 
-        const thumbnailUpd = async () => {
-            if (!asset.thumbnail) {
-                //await uploadThumbnail(asset, this.scene_render);
-                //this.listAsset(asset.id);
-            }
-        }
-
         if (asset.info.extension == "gltf") {
             this.container_preview_render.classList.remove('hidden');
 
-            this.scene_render.viewGLTF(asset.info.url).then(thumbnailUpd);
+            this.scene_render.viewGLTF(asset.info.url);
         } else if (asset.info.type.includes("image")) {
             this.preview_image.classList.remove('hidden');
 			this.preview_image.src = asset.thumbnail;
@@ -445,7 +442,6 @@ export default class AssetsLibraryView {
             if (obj) {
                 this.scene_render.focusCameraOn(obj);
             }
-            thumbnailUpd();
         }
     }
 }

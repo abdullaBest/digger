@@ -115,7 +115,6 @@ interface AssetInfo {
     type: string;
     extension: string;
     revision: number;
-    thumbnail: string | null;
 }
 
 
@@ -236,12 +235,12 @@ class Asset {
         }
 
         let url = ""
-        if (this.info.thumbnail) {
-            url = this.info.thumbnail;
-        } else if (this.info.type.includes("image")) {
+        if (this.info.type.includes("image")) {
             url = this.info.url;
+        } else {
+            url = "/assets/load/thumbnail/" + this.id;
         }
-
+       
         this._thumbnail = url;
 
         return this._thumbnail;
@@ -365,7 +364,6 @@ class Assets {
             extension: info.extension,
             revision: info.revision,
             tags: info.tags ?? "",
-            thumbnail: info.thumbnail
         } as AssetInfo;
 
         const asset = new Asset(_info, _info.id);
@@ -509,8 +507,7 @@ class Assets {
                 type: bundle.info.type,
                 extension: extension,
                 revision: -1,
-                tags: bundle.info.tags ?? "",
-                thumbnail: null
+                tags: bundle.info.tags ?? ""
             } as AssetInfo;
             bundle.content.infos[id] = _info;
         }

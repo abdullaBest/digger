@@ -35,13 +35,6 @@ app.post("/assets/upload", upload.array("files"), uploadFiles);
 
 function updateThumbnail(req, res) {
   const id = req.params.id;
-  const asset = assets.get(id);
-  if (!asset) {
-    res.statusCode = 500;
-    res.send(`Asset ${id} wasn't found. Cant update`);
-  }
-
-  assets.save();
 
   res.send();
 }
@@ -111,9 +104,9 @@ app.get('/assets/get/:id', async (req, res) => {
   }
   
   const revision = asset.revision;
-  const thumbnail = existsSync(path_uploads + path_uploads_thumbnails + id) ? "/assets/load/thumbnail/" + id : null
+  //const thumbnail = existsSync(path_uploads + path_uploads_thumbnails + id) ?  + id : null
   const info = Object.assign(
-    { url: `/assets/load/${id}/${revision}`, thumbnail }, 
+    { url: `/assets/load/${id}/${revision}` }, 
     asset);
   res.json(info);
 })
@@ -183,12 +176,17 @@ app.post('/assets/wipe/:id', async (req, res, next) => {
 
 app.get('/assets/load/thumbnail/:id', async (req, res, next) => {
   const id = req.params.id;
-  const filename = path_uploads_thumbnails + id; 
-  sendFile(filename, "image/jpeg", res).catch((err)=>{
+  //const filename = path_uploads_thumbnails + id; 
+  
+  let filename = path_uploads + path_uploads_thumbnails + id;
+  if (!existsSync(filename)) {
+    filename = "res/system/unknown_asset.png";
+  }
+  sendFile(filename, "image/jpeg", res, "./").catch((err)=>{
     if (err.status !== 404) return next(err); // non-404 error
       // file for download not found
       res.statusCode = 404;
-      res.send(`File ${id}  rev ${revision} not found`);
+      res.send(`File ${path_uploads_thumbnails + id}  not found`);
   })
 });
 
@@ -207,10 +205,10 @@ app.get('/assets/load/:id/:revision', async (req, res, next) => {
   })
 })
 
-function sendFile(filename, type,  res) {
+function sendFile(filename, type,  res, root = assets.directory) {
   return new Promise((resolve, reject) => {
     const options = {
-      root: assets.directory,
+      root,
       headers: {
         'Content-Type': type
       }
