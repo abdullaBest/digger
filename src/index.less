@@ -123,6 +123,11 @@ body,
     width: var(--size-medium-x4);
 }
 
+.appcore .size-square-medium {
+    width: var(--size-medium);
+    height: var(--size-medium);
+}
+
 .appcore .size-square-medium-x4 {
     width: var(--size-medium-x4);
     height: var(--size-medium-x4);
@@ -254,13 +259,17 @@ body,
 .appcore  {
     .buttons-list-s1 btn, .btn-s1 {
         border-bottom: 2px var(--border-color-a) solid;
-
+        transition: 70ms;
         label {
             pointer-events: none;
         }
 
         &.highlighted {
             border-bottom: 2px var(--highlight-color-a) solid;
+        }
+
+        &:hover {
+            padding-left: var(--padding-minimum);
         }
     }
 }
@@ -326,6 +335,53 @@ body,
 
 #approot {
 
+}
+
+// decor 
+
+.style-d1 {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+
+  .fontsize-bigger {
+    font-size: 1.2em;
+  }
+
+  .border-s1 {
+    background-color: var(--background-color-b);
+    box-shadow: 0px 0px 2px 0px #3333;
+    border: 1px solid var(--border-color-a);
+    border-radius: 4px;
+    transition: 70ms;
+
+    &.interactive {
+        &:hover {
+            cursor: pointer;
+            box-shadow: 0px 0px 4px 0px #3331;
+            transform: scale(1.01);
+        }
+    }
+  }
+}
+
+
+
+.appcore .splitter {
+    margin: 2px;
+    display: flex;
+    gap: 8px;
+    color: var(--border-color-a);
+    &::before, &::after {
+      background-color: var(--border-color-a);
+      content: '';
+      flex-grow: 1;
+      height: 2px;
+      border-radius: 2px;
+      margin: auto;
+    }
+}
+
+.appcore .border-s1-right {
+    border-right: 1px solid var(--border-color-a);
 }
 
 // dust

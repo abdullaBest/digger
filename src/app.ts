@@ -93,6 +93,7 @@ class App {
                     break;
             }
         });
+        new Tabs().init(querySelector("#docs-sidebar"), querySelector("#docs-tabs"));
     }
 
     dispose() {
