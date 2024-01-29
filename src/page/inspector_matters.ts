@@ -3,6 +3,8 @@ import ControlsContainerCollapse from "./controls_container_collapse";
 import { EventListenerDetails, querySelector, listenClick, addEventListener, removeEventListeners } from "../document";
 import { PropertyInput, PropertyInputMutator } from "./property_input";
 
+type InspectorMattersOnchangeCallback = (matter: Matter, key: string, value_old: any, value_new: any) => void;
+
 export default class InspectorMatters {
     matter: Matter;
     matters: Matters;
@@ -50,8 +52,8 @@ export default class InspectorMatters {
         new ControlsContainerCollapse(this._listeners).init(container);
         
         const id = matter.id;
-        const onchange = (matter: Matter, key: string) => {
-            this.events?.dispatchEvent(new CustomEvent("change", { detail : { id: matter.id, key }}));
+        const onchange = (matter: Matter, key: string, value_old: any, value_new: any) => {
+            this.events?.dispatchEvent(new CustomEvent("change", { detail : { id: matter.id, key, value_old, value_new }}));
         }
         listenClick(btn_copy, (ev) => { 
             ev.stopPropagation();
@@ -84,14 +86,15 @@ export default class InspectorMatters {
         return container;
     }
 
-    init_input(matter: Matter, key: string, entry: HTMLElement, onchange?: (m: Matter, key: string) => void) : HTMLElement {
+    init_input(matter: Matter, key: string, entry: HTMLElement, onchange?: InspectorMattersOnchangeCallback) : HTMLElement {
         const input = new PropertyInput(this.mutators[key] ?? null);
         this.inputs[key] = input;
         const input_container = input.init(matter[key], (value) => {
+            const value_old = matter.get(key);
             matter.set(key, value);
             this.draw_field(key, matter, entry);
             if (onchange) {
-                onchange(matter, key);
+                onchange(matter, key, value_old, value);
             }
         }, this._listeners);
         input_container.classList.add("width-half");
@@ -104,7 +107,7 @@ export default class InspectorMatters {
         return input_container;
     }
 
-    init_field_controls(matter: Matter, key: string, entry: HTMLElement, onchange?: (m: Matter, key: string) => void) : HTMLElement {
+    init_field_controls(matter: Matter, key: string, entry: HTMLElement, onchange?: InspectorMattersOnchangeCallback) : HTMLElement {
         const controls = document.createElement("controls");
         controls.classList.add('flex-row');
 
@@ -128,16 +131,20 @@ export default class InspectorMatters {
 
         if (onchange) {
             addEventListener({callback: ()=> {
+                const value_old = matter.get(key);
                 matter.reset(key);
+                const value_new = matter.get(key);
                 this.draw_field(key, matter, entry);
-                onchange(matter, key);
+                onchange(matter, key, value_old, value_new);
             }, name: "click", node: btn_discard}, this._listeners);
             addEventListener({callback: ()=> {
+                const value_old = matter.get(key);
                 matter.reset(key);
                 const el = this.entries[key];
+                const value_new = matter.get(key);
                 delete this.inputs[key];
                 el.parentElement?.removeChild(el)
-                onchange(matter, key);
+                onchange(matter, key, value_old, value_new);
             }, name: "click", node: btn_remove}, this._listeners);
             addEventListener({callback: ()=> {
                 this.events?.dispatchEvent(new CustomEvent("external", { detail : { key, value: matter.get(key) }}));
@@ -152,14 +159,14 @@ export default class InspectorMatters {
         return controls;
     }
 
-    propagate_fields(matter: Matter, container: HTMLElement, onchange?: (m: Matter, key: string) => void) {
+    propagate_fields(matter: Matter, container: HTMLElement, onchange?: InspectorMattersOnchangeCallback) {
         for (const k in matter) {
             const entry = this.init_field(matter, container, k, onchange);
             container.appendChild(entry);
         }
     }
 
-    init_field(matter: Matter, container: HTMLElement, key: string, onchange?: (m: Matter, key: string) => void) : HTMLElement {
+    init_field(matter: Matter, container: HTMLElement, key: string, onchange?: InspectorMattersOnchangeCallback) : HTMLElement {
         const entry = document.createElement("entry");
         entry.classList.add('flex-grow-1', 'flex-row');
         const label_name = document.createElement("label");

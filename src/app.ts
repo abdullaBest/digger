@@ -82,6 +82,7 @@ class App {
         });
         maintabs.click("library-tab");
         const debugWindows = ControlsContainerCollapse.construct(querySelector("#debug-tab"));
+        const libraryWindows = ControlsContainerCollapse.construct(querySelector("#library-tab"));
         const test_tabls = new Tabs().init(querySelector("#testcases-select-window"), querySelector("#debug-tab"), (id: string) => {
             switch (id) {
                 case "testcase-matters-tab":

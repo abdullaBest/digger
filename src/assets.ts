@@ -125,6 +125,11 @@ interface AssetContentTypeComponent extends Matter {
      * Used to indicate that componet attached to another component and should not be listed in global scope
      */
     owner?: string | null;
+
+    /**
+     * Indicates that component should not be added into scene tree
+     */
+    abstract?: boolean | null;
 }
 
 interface AssetContentTypeCollider extends AssetContentTypeComponent {
@@ -274,7 +279,7 @@ class Assets {
         const base_asset_extension_collider = { type: "collider", autosize: true };
         const base_asset_extension_model = { type: "model", gltf: "toset", material: "standart", texture: "toset", matrix: null }
         const base_asset_extension_tileset = { type: "tileset", texture: "toset", zero_color: "#ffffffff", tilesize_x: 1, tilesize_y: 1, pos_x: 0, pos_y: 0 }
-        const base_asset_extension_tile = { type: "tile", color: "#000000", link: "toset" };
+        const base_asset_extension_tile = { type: "tile", color: "#000000", link: "toset", abstract: true };
 
         this._base_content_extensions = {
             component: this.matters.create(base_asset_extension_component, null, "base_asset_type_component") as AssetContentTypeComponent,

@@ -56,6 +56,9 @@ export default class AssetsLibraryView {
         listenClick("#assets-create-component", async (ev) => {
             await this._createComponent("component", null);
         }, this._listeners);
+        listenClick("#assets-create-collider", async (ev) => {
+            await this._createComponent("collider", null);
+        }, this._listeners);
         listenClick("#assets-create-model", async (ev) => {
             const gltfid = await this._showSelectList("select gltf", {extension: /gltf/});
             const textureid = await this._showSelectList("select texture", {extension: /(png|jpg)/});
@@ -78,7 +81,7 @@ export default class AssetsLibraryView {
         listenClick("#asset-collider-add", async (ev) => {
             let link_id = await this._showSelectList("select", {}, "collider", ["create"]);
             if (link_id == "create") {
-                const id = await this._createComponent("collider", null);
+                const id = await this._createComponent("collider", { owner: this.asset_selected.id });
                 link_id = id;
             }
             if (!link_id) {
@@ -92,8 +95,8 @@ export default class AssetsLibraryView {
             let link_id = await this._showSelectList("select", {}, "tile", ["create"]);
             if (link_id == "create") {
                 const linkid = await this._showSelectList("select component", {}, "component");
-                const ids = await this._createComponent("tile", { link: "**" + linkid });
-                link_id = ids[0];
+                const id = await this._createComponent("tile", { link: "**" + linkid, owner: this.asset_selected.id });
+                link_id = id;
             }
             if (!link_id) {
                 return;
@@ -190,7 +193,9 @@ export default class AssetsLibraryView {
     async _createCloneComponent(component: AssetContentTypeComponent) {
         let name = component.name;
         name = name.split(".").shift() || name;
-        const id = await this.assets.uploadComponent(component, component.type, null, name + "-clone");
+        const _component = Object.assign({}, component);
+        (_component as any).id = null;
+        const id = await this.assets.uploadComponent(_component, component.type, null, name + "-clone");
         this.viewAsset(id);
 
         return id;
@@ -269,7 +274,7 @@ export default class AssetsLibraryView {
 
         const matter = this.assets.matters.get(id);
         if (!matter || matter.get("owner")) {
-            entry.classList.add("disabled");
+            entry.classList.add("disabled-optional");
         }
 
         return entry;
@@ -332,7 +337,17 @@ export default class AssetsLibraryView {
 
         this.asset_inspector = new InspectorMatters(asset.content, this.assets.matters);
         container.appendChild(this.asset_inspector.init(mutators));
-        this.asset_inspector.events?.addEventListener("change", () => this.viewAsset(asset.id));
+        this.asset_inspector.events?.addEventListener("change", (({detail}) => {
+            const id = detail.id;
+            const key = detail.key;
+            const value_old = detail.value_old;
+            const value_new = detail.value_new;
+            const ref = this.assets.matters.get(value_old);
+            if (ref && ref.get("owner") == id) {
+                this._wipeAsset(ref.id);
+            }
+            this.viewAsset(asset.id)
+        }) as any);
         this.asset_inspector.events?.addEventListener("clone", () => {
             this._createCloneComponent(this.asset_inspector.matter as AssetContentTypeComponent);
         });
@@ -365,9 +380,6 @@ export default class AssetsLibraryView {
                     const link_id = await this._showSelectList(`select ${name}`, filter, extension);
                     if (!link_id) {
                         return;
-                    }
-                    if (ref && ref.get("owner") == id) {
-                        this._wipeAsset(this.asset_selected.id);
                     }
                     let value = "**" + link_id;
                     btn.dispatchEvent(new CustomEvent("change", { detail : { value }}));

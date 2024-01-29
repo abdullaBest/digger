@@ -99,7 +99,6 @@ class SceneCollidersSystem extends MapSystem {
         if (!owner) {
             throw new Error("SceneCollidersSystem:add error - this component can't be used without owner node.")
         }
-
         const box = SceneMath.instance.genObject2dAABB(this.scene_render.cache.objects[owner.id], this.scene_collisions.origin, this.scene_collisions.normal);
         if (box) {
             this.scene_collisions.createBoxCollider(owner.id, box);
@@ -142,6 +141,10 @@ class SceneCore {
     }
 
     async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {
+        if (component.abstract) {
+            return;
+        }
+        
         for(const k in this.systems) {
             const system = this.systems[k];
             //await system.load(component);
