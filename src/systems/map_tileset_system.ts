@@ -131,7 +131,7 @@ class MapTileset {
 
             const cache_id = this.tilerefs[color];
             if (!cache_id) {
-                if (parseInt(tileset.zero_color.replace("#", "0x")) != color && !unused_colors.find((c) => c == color)) {
+                if (parseInt(tileset.zero_color.replace("#", "0x")) != color && unused_colors.indexOf(color) < 0) {
                     unused_colors.push(color);
                 }
                 continue;

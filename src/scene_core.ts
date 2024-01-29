@@ -22,12 +22,17 @@ class SceneRenderComponentSystem extends MapSystem {
         return component.type == "component";
     }
 
-    async add(component: AssetContentTypeModel, owner?: AssetContentTypeComponent) {
+    async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {
         if (!this.filter(component)) {
             return;
         }
         const parent = (owner && this.scene_render.cache.objects[owner.id]) ?? null
         const obj = this.scene_render.addEmptyObject(component.id, parent);
+        /*
+        if (component.matrix && component.matrix.length) {
+            obj.applyMatrix4(component.matrix);
+        }
+        */
     }
 
     remove(component: AssetContentTypeModel) {
@@ -139,7 +144,7 @@ class SceneCore {
     async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {
         for(const k in this.systems) {
             const system = this.systems[k];
-            await system.load(component);
+            //await system.load(component);
             await system.add(component, owner);
         }
        

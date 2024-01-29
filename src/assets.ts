@@ -121,6 +121,10 @@ interface AssetInfo {
 
 interface AssetContentTypeComponent extends Matter {
     type: string;
+    /**
+     * Used to indicate that componet attached to another component and should not be listed in global scope
+     */
+    owner?: string | null;
 }
 
 interface AssetContentTypeCollider extends AssetContentTypeComponent {
@@ -136,7 +140,9 @@ interface AssetContentTypeModel extends AssetContentTypeComponent {
     gltf: string, 
     material: string, 
     texture: string, 
-    matrix: Array<number> | null, 
+    matrix?: Array<number> | null, 
+    pos_x?: number | null,
+    pos_y?: number | null,
 }
 
 interface AssetContentTypeTileset extends AssetContentTypeComponent {
@@ -239,6 +245,10 @@ class Asset {
 
 class Assets {
     list: { [id: string] : Asset; };
+    
+    // Asset wich stores all components
+    bundles: { [id: string] : Asset; };
+
     matters: Matters;
     events: Events;
 
@@ -336,36 +346,76 @@ class Assets {
         const data = await res.json();
         //const myContentType = res.headers.get("Content-Type");
 
-        const info = {
-            url: data.url,
-            name: data.name,
-            id: data.id,
-            type: data.type,
-            extension: data.extension,
-            revision: data.revision,
-            tags: data.tags ?? "",
-            thumbnail: data.thumbnail
+        const asset = this._createAsset(data);
+        await asset.load();
+        this._initAsset(asset, asset.content);
+    }
+
+    _createAsset(info: AssetInfo) : Asset {
+        const _info = {
+            url: info.url,
+            name: info.name,
+            id: info.id,
+            type: info.type,
+            extension: info.extension,
+            revision: info.revision,
+            tags: info.tags ?? "",
+            thumbnail: info.thumbnail
         } as AssetInfo;
 
-        const asset = new Asset(info, id);
+        const asset = new Asset(_info, _info.id);
+        this.list[_info.id] = asset;
 
-        await asset.load();
+        return asset;
+    }
 
-        if (asset.content) {
-            if (this.matters.get(id)) {
-                asset.content = this.matters.replace(asset.content, id);
-            } else {
-                const inherites = asset.content.inherites ?? this._base_content_extensions[asset.info.extension]?.id;
-                try {
-                    asset.content = this.matters.create(asset.content, inherites, id, info.name);
-                } catch(err) {
-                    console.error(`Asset ${asset.id} creating error:`, err);
-                }
+    _initAsset(asset: Asset, content?: any | null) : Matter {
+        if (content) {
+            this.parseAssetContent(asset, content);
+        }
+        this.events.emit("asset", { id: asset.id });
+
+        return asset.content;
+    }
+
+    /**
+     * Uber function that handles all asset types
+     * 
+     * @param asset 
+     * @returns 
+     */
+    private parseAssetContent(asset: Asset, content?: any | null) {
+        // A. bundle
+        if (asset.info.extension == "bundle") {
+            const name = asset.info.name.split(".").shift() ?? asset.info.name;
+            for(const k in content.list) {
+                const c = content.list[k];
+                const id = c.id ?? k;
+                //const name = c.name ?? `${asset.info.name}-${id}`;
+                const _asset = this._createAsset(content.infos[id]);
+                _asset.bundle = name;
+                content.list[k] = this._initAsset(_asset, c);
             }
+
+            this.bundles[name] = asset;
+
+            return;
         }
 
-        this.list[id] = asset;
-        this.events.emit("asset", { id });
+        // B. Single asset content
+        // a. replacing existing matter (any kind of reloading)
+        if (this.matters.get(asset.id)) {
+            asset.content = this.matters.replace(content, asset.id);
+            return;
+        } 
+        
+        // b. creating new matter
+        const inherites = content.inherites ?? this._base_content_extensions[asset.info.extension]?.id;
+        try {
+            asset.content = this.matters.create(content, inherites, asset.id, asset.info.name);
+        } catch(err) {
+            console.error(`Asset ${asset.id} creating error:`, err);
+        }
     }
 
     /**
@@ -379,6 +429,7 @@ class Assets {
             throw new Error("Assets loading error");
         }
         this.list = {};
+        this.bundles = {};
         const data = await res.json();
         for (const i in data) {
             try {
@@ -394,16 +445,6 @@ class Assets {
         await this.loadAsset(id);
     }
 
-    async uploadJSON(content: any, id: string, custom?: any) {
-        const asset = this.get(id);
-
-        const file = new File([JSON.stringify(content)], `v${asset.info.revision}_${asset.info.name}`, {
-            type: "application/json",
-        });
-
-        await this.uploadAsset(id, [file], custom);
-    }
-
     async createFiles(files: Array<File>) : Promise<Array<string>> {
         const res = await sendFiles("/assets/upload", files);
         const ids = await res.json();
@@ -414,18 +455,84 @@ class Assets {
 
         return ids;
     }
+    
+    async uploadJSON(content: any, id: string, custom?: any) {
+        const asset = this.get(id);
+
+        const file = new File([JSON.stringify(content)], `v${asset.info.revision}_${asset.info.name}`, {
+            type: "application/json",
+        });
+
+        await this.uploadAsset(id, [file], custom);
+    }
 
     async createJSON(content: any, extension: string, name: string = `new`) : Promise<Array<string>> {
         const file = new File([JSON.stringify(content)], name + "." + extension, {
             type: "application/json",
         });
+
        return this.createFiles([file]);
+    }
+
+    async uploadComponent(content: Matter, extension: string, bundle_name: string = "base_bundle", name?: string) : Promise<string> {
+        if (!this.bundles[bundle_name]) {
+            const bundle = {
+                guids: 0,
+                list: {},
+                infos: {}
+            }
+            // now it will be handled by loadAsset function and base_bundle will be initialized
+            await this.createJSON(bundle, "bundle", bundle_name);
+        }
+
+        const bundle = this.bundles[bundle_name];
+        if (!bundle) {
+            throw new Error("Assets::uploadComponent unexpected error. Should not be like that.");
+        }
+
+        const id = bundle.content.list[content.id]?.id ?? `${bundle.id}-c${bundle.content.guids++}`;
+        name = name ?? content.name ?? `new-${id}.${extension}`;
+        content.id = id;
+        bundle.content.list[id] = content;
+        let _info = bundle.content.infos[id];
+        if (!bundle.content.infos[id]) {
+            _info = {
+                url: bundle.info.url,
+                name: name,
+                id: id,
+                type: bundle.info.type,
+                extension: extension,
+                revision: -1,
+                tags: bundle.info.tags ?? "",
+                thumbnail: null
+            } as AssetInfo;
+            bundle.content.infos[id] = _info;
+        }
+
+        _info.revision += 1;
+        _info.name = name;
+
+        await this.uploadJSON(bundle.content, bundle.id);
+
+        return id;
     }
 
     async wipeAsset(id: string) {
         if (this.matters.list[id]) {
             this.matters.remove(id);
         }
+
+        const asset = this.get(id);
+        if (asset.bundle) {
+            const bundle = this.bundles[asset.bundle];
+            delete bundle.content.infos[id];
+            delete bundle.content.list[id];
+            await this.uploadJSON(bundle.content, bundle.id);
+
+            delete this.list[id];
+            return;
+        }
+
         const res = await fetch(`/assets/wipe/${id}`, {
             method: 'POST',
         });

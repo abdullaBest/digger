@@ -100,9 +100,14 @@ export default class AssetsLibraryView {
             this.saveAsset(this.asset_selected?.id);
         }, this._listeners)
         listenClick("#asset-manage-wipe", async (ev) => {
+            await Popup.instance.show().message("Do not use this. Use delete.", "");
+            await Popup.instance.show().message("Really?", "Use delete.");
+            await this.assets.wipeAsset(this.asset_selected.id);
+        }, this._listeners)
+        listenClick("#asset-manage-delete", async (ev) => {
             const asset = this.asset_selected;
             const matter = this.assets.matters.get(asset.id)
-            this._wipeComponent(matter as AssetContentTypeComponent);
+            this._deleteComponent(matter as AssetContentTypeComponent);
             
         }, this._listeners)
     }
@@ -122,7 +127,9 @@ export default class AssetsLibraryView {
             return;
         }
 
-        if (asset.info.type.includes("json")) {
+        if (asset.bundle) {
+            await this.assets.uploadComponent(content, asset.id, asset.bundle, content.name);
+        } else if (asset.info.type.includes("json")) {
             await this.assets.uploadJSON(content, asset.id, { name: content.name });
         } else {
             await this.assets.uploadAsset(asset.id, [], { name: content.name });
@@ -160,13 +167,13 @@ export default class AssetsLibraryView {
         return selected.shift() ?? null;
     }
 
-    async _createComponent(extension: string, content?: any | null) : Promise<Array<string>> {
+    async _createComponent(extension: string, content?: any | null) : Promise<string> {
         const inherites = await this._showSelectList("inherite", {}, extension);
-        const component = { inherites };
+        const component = { inherites } as Matter;
         if (content) {
             Object.assign(component, content);
         }
-        return this.assets.createJSON(component, extension)
+        return this.assets.uploadComponent(component, extension);
     }
 
     listAsset(id: string, container: HTMLElement = this.container_list) {
@@ -197,13 +204,16 @@ export default class AssetsLibraryView {
 
         name_label.innerHTML = asset.info.name;
 
+        if (!this.assets.matters.get(id)) {
+            entry.classList.add("disabled");
+        }
+
         return entry;
     }
 
     viewAsset(id: string) {
         const asset = this.assets.get(id);
         this.asset_selected = asset;
-        
         if (this.asset_inspector) {
             this.asset_inspector.dispose();
         }
@@ -254,7 +264,7 @@ export default class AssetsLibraryView {
             this._createInheriteComponent(this.asset_inspector.matter as AssetContentTypeComponent);
         });
         this.asset_inspector.events?.addEventListener("delete", () => {
-            this._wipeComponent(this.asset_inspector.matter as AssetContentTypeComponent);
+            this._deleteComponent(this.asset_inspector.matter as AssetContentTypeComponent);
         });
     }
 
@@ -272,9 +282,9 @@ export default class AssetsLibraryView {
         this.viewAsset(ids[0]);
     }
 
-    async _wipeComponent(component: AssetContentTypeComponent) {
+    async _deleteComponent(component: AssetContentTypeComponent) {
         if (component && component.dependents) {
-            Popup.instance.show().message("wipe error", `Asset ${component.id} has ${component.dependents} dependents. Could not delete`);
+            Popup.instance.show().message("delete error", `Asset ${component.id} has ${component.dependents} dependents. Could not delete`);
             return;
         }
 
@@ -291,9 +301,10 @@ export default class AssetsLibraryView {
         if (links.length) {
             let message = `<q>Asset ${component.id} referensed in [${links}] assets. Could not delete.</q>`;
            
-            Popup.instance.show().message("wipe error", message);
+            Popup.instance.show().message("delete error", message);
             return;
         }
+        await Popup.instance.show().message("delete?", "");
         await this.assets.wipeAsset(component.id);
         const el = this.container_list.querySelector("#" + component.id) as HTMLElement;
         if (el) {
@@ -354,8 +365,8 @@ export default class AssetsLibraryView {
 
         const thumbnailUpd = async () => {
             if (!asset.thumbnail) {
-                await uploadThumbnail(asset, this.scene_render);
-                this.listAsset(asset.id);
+                //await uploadThumbnail(asset, this.scene_render);
+                //this.listAsset(asset.id);
             }
         }
 

@@ -52,6 +52,7 @@ function updateFiles(req, res) {
   if (!asset) {
     res.statusCode = 500;
     res.send(`Asset ${id} wasn't found. Cant update`);
+    return;
   }
 
   const file = req.file;
@@ -103,6 +104,12 @@ app.get('/assets/list', async (req, res) => {
 app.get('/assets/get/:id', async (req, res) => {
   const id = req.params.id;
   const asset = assets.get(id);
+  if (!asset) {
+    res.statusCode = 500;
+    res.send(`Asset ${id} wasn't found. Can't get`);
+    return;
+  }
+  
   const revision = asset.revision;
   const thumbnail = existsSync(path_uploads + path_uploads_thumbnails + id) ? "/assets/load/thumbnail/" + id : null
   const info = Object.assign(

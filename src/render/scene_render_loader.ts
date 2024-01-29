@@ -17,7 +17,7 @@ export default class SceneRenderLoader {
      * @param id model asset id
      * @returns gltf data
      */
-    async getModel(id: string, model: any) : Promise<any> {
+    async getModel(id: string, model: AssetContentTypeModel) : Promise<any> {
         const gltfurl = (this.assets.matters.get(model.gltf) as AssetContentTypeTexture).url
         const textureurl = (this.assets.matters.get(model.texture) as AssetContentTypeTexture).url;
         if (!gltfurl || !textureurl) {

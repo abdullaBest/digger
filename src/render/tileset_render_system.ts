@@ -52,10 +52,6 @@ class TilesetRender {
         this.dump = {};
         this.dump_exact = {};
         
-        this.min_x = -Infinity;
-        this.min_y = -Infinity;
-        this.max_x = Infinity;
-        this.max_y = Infinity;
     }
 
     _isPosInClipbounds(pos_x: number, pos_y: number) {
@@ -95,8 +91,14 @@ class TilesetRender {
             const tile = tiles.shift();
             if (tile) {
                 this.scene_core.remove(tile);
+                this.matters.remove(tile.id);
             }
         }
+        
+        this.min_x = -Infinity;
+        this.min_y = -Infinity;
+        this.max_x = Infinity;
+        this.max_y = Infinity;
     }
 
     cleanupTiles(tiles: Array<AssetContentTypeComponent>) {
