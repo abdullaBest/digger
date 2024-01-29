@@ -173,6 +173,10 @@ class SceneCore {
     }
 
     remove(component: AssetContentTypeComponent) {
+        if (component.abstract) {
+            return;
+        }
+
         for(const k in component) {
             const val = component[k];
             if (typeof val === "string" && val.startsWith("**")) {

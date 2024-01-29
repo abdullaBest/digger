@@ -200,7 +200,10 @@ export default class AssetsLibraryView {
         const _component = Object.assign({}, component);
         (_component as any).id = null;
         const id = await this.assets.uploadComponent(_component, component.type, null, name + "-clone");
-        this.viewAsset(id);
+
+        if (!_component.owner) {
+            this.viewAsset(id);
+        }
 
         return id;
     }
@@ -251,30 +254,31 @@ export default class AssetsLibraryView {
     listAsset(id: string, container: HTMLElement = this.container_list) {
         const asset = this.assets.get(id);
         let entry = container.querySelector("#" + asset.id) as HTMLElement;
-        let name_label;
+        let name_label, thumbnail;
         if (!entry) {
             entry = document.createElement("btn");
             entry.id = asset.id;
             entry.classList.add("flex-row", "gap-minor")
 
-            const thumbnail = document.createElement("img");
-            thumbnail.src = asset.thumbnail;
-            thumbnail.classList.add('fittext', 'icon');
+            thumbnail = document.createElement("img");
+            thumbnail.classList.add('fittext', 'icon', 'img-thumbnail');
             name_label = document.createElement("label");
-            name_label.classList.add("label-name");
+            name_label.classList.add("label-name", "flex-grow-1");
             const id_label = document.createElement("label");
 
             id_label.innerHTML = `[${asset.id}:${asset.info.extension}]`;
 
             entry.appendChild(thumbnail);
-            entry.appendChild(id_label);
             entry.appendChild(name_label);
+            entry.appendChild(id_label);
             container.appendChild(entry);
         } else {
             name_label = querySelector(".label-name", entry);
+            thumbnail = querySelector(".img-thumbnail", entry);
         }
 
         name_label.innerHTML = asset.info.name;
+        thumbnail.src = asset.thumbnail;
 
         const matter = this.assets.matters.get(id);
         if (!matter || matter.get("owner")) {
@@ -346,9 +350,11 @@ export default class AssetsLibraryView {
             const key = detail.key;
             const value_old = detail.value_old;
             const value_new = detail.value_new;
-            const ref = this.assets.matters.get(value_old);
-            if (ref && ref.get("owner") == id) {
-                this._wipeAsset(ref.id);
+            if (typeof value_old == "string") {
+                const ref = this.assets.matters.get(value_old);
+                if (ref && ref.get("owner") == id) {
+                    this._wipeAsset(ref.id);
+                }
             }
             this.viewAsset(asset.id)
         }) as any);

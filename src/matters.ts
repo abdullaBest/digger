@@ -148,7 +148,12 @@ class Matters {
             throw new Error(`Matters::replace error - Matter ${_id} does not exist.`);
         }
 
-        return Object.assign(matter, content);
+        // dependents is runtime variable. do not touch it
+        delete content.dependents;
+
+        const m = Object.assign(matter, content);
+
+        return m;
     }
 
     remove(id: string) {
@@ -162,7 +167,8 @@ class Matters {
         }
 
         if (matter.inherites) {
-            matter.get_prototype().dependents -= 1;
+            const prototype =  matter.get_prototype();
+            prototype.dependents -= 1;
         }
 
         delete this.list[id];

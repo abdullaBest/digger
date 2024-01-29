@@ -123,8 +123,8 @@ export default class InspectorMatters {
         btn_plug.classList.add("img-plug", "fittext");
 
         controls.appendChild(icon_external_code);
-        controls.appendChild(btn_external_ref);
         controls.appendChild(btn_discard);
+        controls.appendChild(btn_external_ref);
         controls.appendChild(btn_remove);
         controls.appendChild(btn_plug);
         entry.appendChild(controls);
@@ -232,9 +232,11 @@ export default class InspectorMatters {
         }
 
         const value =  matter.get(key);
-        if ((typeof value == "string" && value.startsWith("**") && (this.matters.get(value) as any)?.owner !== matter.id)) {
+        if ((typeof value == "string" && value.startsWith("**"))) {
             btn_external_ref.classList.remove("hidden");
-            btn_plug.classList.remove("hidden");
+            if (this.matters.get(value).get("owner") !== matter.id) {
+                btn_plug.classList.remove("hidden");
+            }
         }
 
         if (matter == this.matter && key == "name" && this.container) {
