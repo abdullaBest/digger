@@ -12,6 +12,7 @@ body,
 }
 
 :root {
+    --gap-minimum: 2px;
     --gap-minor: 4px;
     --padding-minor: 8px;
     --padding-minimum: 2px;
@@ -80,6 +81,10 @@ body,
     &.gap-minor {
         gap: var(--gap-minor);
     }
+
+    &.gap-minimum {
+        gap: var(--gap-minimum);
+    }
 }
 
 .appcore .flex-wrap {
@@ -104,6 +109,10 @@ body,
 
 .appcore .width-half {
     width: 50%;
+}
+
+.appcore .height-half {
+    height: 50%;
 }
 
 .appcore .width-medium {
@@ -149,6 +158,10 @@ body,
 
 .appcore .scroll-y {
     overflow-y: scroll;
+}
+
+.appcore .z-index-1 {
+    z-index: 1;
 }
 
 .appcore btn {
@@ -254,6 +267,81 @@ body,
     .img-close {
         background-image: url("res/icons-stylesheets/x.svg");
     }
+
+    .img-save {
+        background-image: url("res/icons-stylesheets/device-floppy.svg");
+    }
+
+    .img-close {
+        background-image: url("res/icons-stylesheets/browser-x.svg");
+    }
+
+    .img-translate {
+        background-image: url("res/icons-stylesheets/arrows-move.svg");
+    }
+
+    .img-rotate {
+        background-image: url("res/icons-stylesheets/rotate-360.svg");
+    }
+
+    .img-scale {
+        background-image: url("res/icons-stylesheets/resize.svg");
+    }
+
+    .img-transform-mode {
+        background-image: url("res/icons-stylesheets/world.svg");
+        &.highlighted {
+            background-image: url("res/icons-stylesheets/world-check.svg");
+        }
+    }
+
+    .img-draw {
+        background-image: url("res/icons-stylesheets/pencil.svg");
+    }
+
+    .img-erase {
+        background-image: url("res/icons-stylesheets/eraser.svg");
+    }
+
+
+    .img-play {
+        background-image: url("res/icons-stylesheets/player-play.svg");
+    }
+
+    .img-clip-tileset {
+        background-image: url("res/icons-stylesheets/box-align-bottom-right.svg");
+    }
+
+    .img-play-timer {
+        background-image: url("res/icons-stylesheets/clock-play.svg");
+    }
+
+    .img-attach_camera {
+        background-image: url("res/icons-stylesheets/video.svg");
+    }
+
+    .img-information {
+        background-image: url("res/icons-stylesheets/information.png");
+    }
+
+    .img-screenshoot {
+        background-image: url("res/icons-stylesheets/camera-star.svg");
+    }
+
+    .img-center-camera {
+        background-image: url("res/icons-stylesheets/focus-centered.svg");
+    }
+
+    .img-physdebug {
+        background-image: url("res/icons-stylesheets/chart-grid-dots.svg");
+    }
+
+    btn#controls_mode_transform_toggle_snap {
+        background-image: url("res/icons-stylesheets/lock-open.svg");
+        &.highlighted {
+            background-image: url("res/icons-stylesheets/lock.svg");
+        }
+    }
 }
 
 .appcore  {
@@ -270,6 +358,25 @@ body,
 
         &:hover {
             padding-left: var(--padding-minimum);
+        }
+    }
+
+    .buttons-list-s2 btn {
+        background-color: var(--background-color-b);
+        box-shadow: 0px 0px 2px 0px #3333;
+        border: 1px solid var(--border-color-a);
+        border-radius: 4px;
+        width: 32px;
+        height: 32px;
+
+        transition: 70ms;
+        &:hover {
+            box-shadow: 0px 0px 4px 0px #3331;
+            transform: scale(1.01);
+        }
+        &:active {
+            box-shadow: 0px 0px 1px 0px #3339;
+            transform: scale(0.99);
         }
     }
 }
@@ -346,20 +453,29 @@ body,
     font-size: 1.2em;
   }
 
-  .border-s1 {
+  .frame-s1 {
     background-color: var(--background-color-b);
     box-shadow: 0px 0px 2px 0px #3333;
     border: 1px solid var(--border-color-a);
     border-radius: 4px;
-    transition: 70ms;
 
     &.interactive {
+        transition: 70ms;
+        cursor: pointer;
         &:hover {
-            cursor: pointer;
             box-shadow: 0px 0px 4px 0px #3331;
             transform: scale(1.01);
         }
+        &:active {
+            box-shadow: 0px 0px 1px 0px #3339;
+            transform: scale(0.99);
+        }
     }
+  }
+
+  .frame-s2 {
+    background-color: var(--background-color-0);
+    border-radius: 4px;
   }
 }
 
@@ -380,106 +496,11 @@ body,
     }
 }
 
-.appcore .border-s1-right {
+.appcore .frame-s1-right {
     border-right: 1px solid var(--border-color-a);
 }
 
 // dust
 #rootlayout {
-    .img-background {
-        background-size: contain;
-        background-repeat: no-repeat;
-    }
-
-    .img-save {
-        background-image: url("res/icons-stylesheets/device-floppy.svg");
-        &:extend(.img-background);
-    }
-
-    .img-close {
-        background-image: url("res/icons-stylesheets/browser-x.svg");
-        &:extend(.img-background);
-    }
-
-    .img-translate {
-        background-image: url("res/icons-stylesheets/arrows-move.svg");
-        &:extend(.img-background);
-    }
-
-    .img-rotate {
-        background-image: url("res/icons-stylesheets/rotate-360.svg");
-        &:extend(.img-background);
-    }
-
-    .img-scale {
-        background-image: url("res/icons-stylesheets/resize.svg");
-        &:extend(.img-background);
-    }
-
-    .img-transform-mode {
-        background-image: url("res/icons-stylesheets/world.svg");
-        &:extend(.img-background);
-        &.highlighted {
-        background-image: url("res/icons-stylesheets/world-check.svg");
-        }
-    }
-
-    .img-draw {
-        background-image: url("res/icons-stylesheets/pencil.svg");
-        &:extend(.img-background);
-    }
-
-    .img-erase {
-        background-image: url("res/icons-stylesheets/eraser.svg");
-        &:extend(.img-background);
-    }
-
-
-    .img-play {
-        background-image: url("res/icons-stylesheets/player-play.svg");
-        &:extend(.img-background);
-    }
-
-    .img-clip-tileset {
-        background-image: url("res/icons-stylesheets/box-align-bottom-right.svg");
-        &:extend(.img-background);
-    }
-
-    .img-play-timer {
-        background-image: url("res/icons-stylesheets/clock-play.svg");
-        &:extend(.img-background);
-    }
-
-    .img-attach_camera {
-        background-image: url("res/icons-stylesheets/video.svg");
-        &:extend(.img-background);
-    }
-
-    .img-information {
-        background-image: url("res/icons-stylesheets/information.png");
-        &:extend(.img-background);
-    }
-
-    .img-screenshoot {
-        background-image: url("res/icons-stylesheets/camera-star.svg");
-        &:extend(.img-background);
-    }
-
-    .img-center-camera {
-        background-image: url("res/icons-stylesheets/focus-centered.svg");
-        &:extend(.img-background);
-    }
-
-    .img-physdebug {
-        background-image: url("res/icons-stylesheets/chart-grid-dots.svg");
-        &:extend(.img-background);
-    }
-
-    btn#controls_mode_transform_toggle_snap {
-        background-image: url("res/icons-stylesheets/lock-open.svg");
-        &:extend(.img-background);
-        &.highlighted {
-        background-image: url("res/icons-stylesheets/lock.svg");
-        }
-    }
+    
 }

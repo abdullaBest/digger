@@ -1,4 +1,4 @@
-import PropertyDraw from "./property_draw";
+import PropertyDraw from "../page/property_draw";
 import Character from "../character";
 
 export default class CharacterPropertyDraw {

@@ -1,9 +1,9 @@
 tab#docs-tab.hidden.display-block.size-fill
     .flex-row.size-fill
-        #docs-sidebar.flex-column.width-medium-x2.no-shrink.bg-default.border-s1-right.buttons-list-s1.padding-minor.fontsize-bigger
+        #docs-sidebar.flex-column.width-medium-x2.no-shrink.bg-default.frame-s1-right.buttons-list-s1.padding-minor.fontsize-bigger
             btn(data-tab="docs-notes1-tab").tab-switch notes
             btn(data-tab="docs-styles-tab").tab-switch styles
-        section#docs-tabs.flex-column.size-fill
+        section#docs-section.flex-column.size-fill
             section#docs-notes1-tab.display-block.bg-default.padding-minimum
                 .splitter игра
                 ul
@@ -26,4 +26,5 @@ tab#docs-tab.hidden.display-block.size-fill
                 .splitter заметки
             section#docs-styles-tab.flex-column.bg-default.padding-minimum
                 .splitter d
-                .border-s1.interactive abs
+                .frame-s1.interactive abs
+                .frame-s2 abs

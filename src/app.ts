@@ -1,11 +1,6 @@
 import SceneRender from "./render/scene_render";
 import Assets from "./assets";
-import {SceneEditUtils, SceneEdit } from "./scene_edit";
-import SceneEditView from "./views/scene_edit_view";
-import { listenFormSubmit, sendFiles } from "./assets";
-import { reattach, listenClick, switchPage, querySelector, addEventListener, EventListenerDetails } from "./document";
-import { popupListSelectMultiple, popupListSelect } from "./page/popup"
-import { importGltfSequence } from "./importer";
+import { listenClick, querySelector, addEventListener, EventListenerDetails } from "./document";
 import SceneGame from "./scene_game";
 import SceneMediator from "./scene_mediator";
 import SceneCollisions from "./scene_collisions";
@@ -20,26 +15,19 @@ import ControlsContainerCollapse from "./page/controls_container_collapse";
 
 import test from "./test/index";
 
-// deprecated {
-import AssetsView from "./views/assets_view";
-// deprecated }
-
 import { AssetsLibraryView } from "./views";
 
 
 class App {
     constructor() {
         this.assets = new Assets();
-        this.scene_edit = new SceneEdit(this.assets);
         this.scene_collisions = new SceneCollisions();
         this.scene_render = new SceneRender(this.assets);
         this.scene_core = new SceneCore(this.assets.matters, this.scene_collisions, this.scene_render);
         this.scene_map = new SceneMap(this.scene_core);
         this.scene_edit_tools = new SceneEditTools(this.scene_render, this.scene_collisions, this.scene_core);
         this.scene_game = new SceneGame(this.scene_collisions, this.scene_render, this.scene_core);
-        this.scene_mediator = new SceneMediator(this.scene_edit, this.scene_game, this.scene_core);
-        this.assets_view = new AssetsView(this.assets, this.scene_render, this.scene_mediator);
-        this.scene_edit_view = new SceneEditView(this.scene_edit, this.scene_render, this.scene_edit_tools, this.scene_mediator, this.scene_core);
+        this.scene_mediator = new SceneMediator(this.scene_game, this.scene_core);
         this.assets_library_view = new AssetsLibraryView(this.assets, this.scene_render, this.scene_map);
 
         this.active = false;
@@ -76,11 +64,11 @@ class App {
                     this.scene_render.reattach(querySelector("#gameroot"))
                     break;
                 case "edit-tab":
-                    this.scene_render.reattach(querySelector("#scene_view_canvas_container"))
+                    this.scene_render.reattach(querySelector("#edit-section-canvas"))
                     break;
             }
         });
-        maintabs.click("library-tab");
+        maintabs.click("edit-tab");
         const debugWindows = ControlsContainerCollapse.construct(querySelector("#debug-tab"));
         const libraryWindows = ControlsContainerCollapse.construct(querySelector("#library-tab"));
         const test_tabls = new Tabs().init(querySelector("#testcases-select-window"), querySelector("#debug-tab"), (id: string) => {
@@ -93,7 +81,7 @@ class App {
                     break;
             }
         });
-        new Tabs().init(querySelector("#docs-sidebar"), querySelector("#docs-tabs"));
+        new Tabs().init(querySelector("#docs-sidebar"), querySelector("#docs-section"));
     }
 
     dispose() {
@@ -101,8 +89,6 @@ class App {
         this.stop();
     }
     run() {
-        this.assets_view.init(document.querySelector("#assets_list"), document.querySelector("#asset_details_content"))
-        this.scene_edit_view.init(document.querySelector("#scene_edit_list"), document.querySelector("#scene_edit_elements"))
         this.load();
 
         this.listenersRun();
@@ -199,19 +185,7 @@ class App {
         });
     }
     async load() {
-        this.scene_edit_view.list_container.classList.add("disabled");
-        this.assets.events.on("asset", ({id}) => {
-            // draw in main assets view
-            this.assets_view.draw(id);
-
-            // draw scene list
-            if (this.assets.filter(id, {extension: "scene"})) {
-                this.assets_view.draw(id, this.scene_edit_view.list_container, "#scene_edit_details");
-            }
-        })
         await this.assets.load();
-
-        this.scene_edit_view.list_container.classList.remove("disabled");
     }
     stop() {
         this.scene_render.stop();
@@ -221,8 +195,6 @@ class App {
     private assets: Assets;
     private scene_render: SceneRender;
     private scene_edit_tools: SceneEditTools;
-    private scene_edit: SceneEdit;
-    private scene_edit_view: SceneEditView;
     private scene_mediator: SceneMediator;
     private scene_collisions: SceneCollisions;
     private scene_core: SceneCore;
@@ -230,8 +202,10 @@ class App {
     private scene_game: SceneGame;
     private assets_library_view: AssetsLibraryView;
 
+    //private scene_edit: SceneEdit;
+    //private scene_edit_view: SceneEditView;
     // deprecated {
-    private assets_view: AssetsView;
+    //private assets_view: AssetsView;
     // deprecated }
 
     private active: Boolean;

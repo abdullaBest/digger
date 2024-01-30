@@ -1,17 +1,14 @@
-import SceneEdit from "./scene_edit";
 import SceneGame from "./scene_game";
 import SceneCore from "./scene_core";
 
 class SceneMediator {
-    scene_edit: SceneEdit;
     scene_game: SceneGame;
     scene_core: SceneCore;
     events: HTMLElement;
 
     active_scene: string | null;
 
-    constructor(scene_edit: SceneEdit, scene_game: SceneGame, scene_core: SceneCore) {
-        this.scene_edit = scene_edit;
+    constructor(scene_game: SceneGame, scene_core: SceneCore) {
         this.scene_game = scene_game;
         this.active_scene = null;
         this.events = document.createElement("event");
@@ -37,8 +34,7 @@ class SceneMediator {
         }
 
         this.active_scene = id;
-        await this.scene_edit.load(id);
-        this.scene_game.run(this.scene_edit.elements);
+        this.scene_game.run();
         this.events.dispatchEvent(new CustomEvent("scene_open", { detail : {id}}));
     }
 

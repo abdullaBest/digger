@@ -1,4 +1,4 @@
-import PropertyDraw from "./views/property_draw";
+import PropertyDraw from "./page/property_draw";
 import { querySelector } from "./document";
 import SceneRenderCache from "./render/scene_render_cache";
 
