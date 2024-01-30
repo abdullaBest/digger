@@ -27,6 +27,11 @@ class Matter {
         return value;
     }
 
+    is_link(key: string) {
+        const val = this.get(key);
+        return typeof val === "string" && val.startsWith("**");
+    }
+
     get(key: string) {
         return this[key];
     }

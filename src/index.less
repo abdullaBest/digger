@@ -1,5 +1,6 @@
 @import "./style/dust.less";
 @import "./style/colors.less";
+@import "./style/conditionals.less";
 
 html,
 body, 
@@ -115,6 +116,14 @@ body,
     height: 50%;
 }
 
+.appcore .height-quart {
+    height: 25%;
+}
+
+.appcore .max-height-quart {
+    max-height: 25%;
+}
+
 .appcore .width-medium {
     width: var(--size-medium);
 }
@@ -157,7 +166,12 @@ body,
 }
 
 .appcore .scroll-y {
-    overflow-y: scroll;
+    overflow-y: auto;
+}
+
+.appcore .scroll-y-limit {
+    overflow-y: auto;
+    max-height: 100%;
 }
 
 .appcore .z-index-1 {
@@ -190,6 +204,8 @@ body,
 
         &.fittext {
             width: 1em;
+            height: 1em;
+            margin: auto;
         }
     }
 }
@@ -272,7 +288,7 @@ body,
         background-image: url("res/icons-stylesheets/device-floppy.svg");
     }
 
-    .img-close {
+    .img-close-window {
         background-image: url("res/icons-stylesheets/browser-x.svg");
     }
 
@@ -345,6 +361,21 @@ body,
 }
 
 .appcore  {
+    .dropzone {
+        &.dropallow {
+            border: 2px var(--highlight-color-a) dashed;
+        }
+    }
+    .buttons-list-draggable {
+        [draggable=true] {
+            cursor: grab;
+        }
+
+        .dragged {
+            opacity: 0.7;
+            border-bottom: 2px var(--highlight-color-a) dashed;
+        }
+    }
     .buttons-list-s1 btn, .btn-s1 {
         border-bottom: 2px var(--border-color-a) solid;
         transition: 70ms;
@@ -370,13 +401,14 @@ body,
         height: 32px;
 
         transition: 70ms;
+        background-size: 90%;
         &:hover {
             box-shadow: 0px 0px 4px 0px #3331;
-            transform: scale(1.01);
-        }
+            background-size: 100%;
+    }   
         &:active {
             box-shadow: 0px 0px 1px 0px #3339;
-            transform: scale(0.99);
+            background-size: 85%;
         }
     }
 }
@@ -407,6 +439,7 @@ body,
 .appcore container.style-window {
     &, & > .header {
         background-color: var(--background-color-a);
+        padding: 0 var(--padding-minimum);
     }
     //border-radius: 4px;
     border: 1px solid var(--border-color-a);
@@ -442,6 +475,34 @@ body,
 
 #approot {
 
+}
+
+.appcore .btn.icon, btn.icon {
+    &[tooltip] {
+      position: relative;
+      &::after {
+        transition: all 0.3s;
+        opacity: 0;
+        transform: translate(-50%, 100%);
+        bottom: 0;
+        left: 50%;
+        content: attr(tooltip);
+        position: absolute;
+        background-color: #000a;
+        color: white;
+        padding: 2px 4px;
+        border-radius: 2px;
+        z-index: 1;
+        pointer-events: none;
+      }
+    }
+
+    &[tooltip]:hover {
+      &::after {
+        opacity: 1;
+        bottom: -.5em;
+      }
+    }
 }
 
 // decor 

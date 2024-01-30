@@ -424,39 +424,7 @@ db {
     padding: 4px;
     gap: 4px;
   }
-
-  .btn.icon, btn.icon {
-    width: 1.5em;
-    height: 1.5em;
-
-    &[tooltip] {
-      position: relative;
-      &::after {
-        transition: all 0.3s;
-        opacity: 0;
-        transform: translate(-50%, 100%);
-        bottom: 0;
-        left: 50%;
-        content: attr(tooltip);
-        position: absolute;
-        background-color: #000a;
-        color: white;
-        padding: 2px 4px;
-        border-radius: 2px;
-        z-index: 1;
-        pointer-events: none;
-      }
-    }
-
-    &[tooltip]:hover {
-      &::after {
-        opacity: 1;
-        bottom: -.5em;
-      }
-    }
-  }
-
-
+  
   // animation (stash)
 
   btn.icon {

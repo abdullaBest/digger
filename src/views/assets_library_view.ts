@@ -68,6 +68,9 @@ export default class AssetsLibraryView {
             const textureid = await this._showSelectList("select texture", {extension: /(png)/});
             await this._createComponent("tileset", { texture: "**" + textureid });
         }, this._listeners);
+        listenClick("#assets-create-space", async (ev) => {
+            await this._createComponent("space");
+        }, this._listeners);
         listenClick("#asset-component-add", async (ev) => {
             const link_id = await this._showSelectList("select", {}, "component");
             if (!link_id) {
@@ -423,7 +426,6 @@ export default class AssetsLibraryView {
     async renderAsset(id: string) {
         this.scene_map.cleanup();
         this.scene_render.clearCached();
-        this.scene_render.reattach(this.container_preview_render as HTMLElement);
 
         this.container_preview_render.classList.add("hidden");
         this.preview_image.classList.add("hidden");

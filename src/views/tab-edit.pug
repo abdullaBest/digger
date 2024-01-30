@@ -1,9 +1,11 @@
 tab#edit-tab.hidden
     .flex-row.size-fill
-        #edit-sidebar.flex-column.width-medium-x2.no-shrink.bg-default.frame-s1-right.buttons-list-s1.padding-minor.fontsize-bigger
-            sidebat
+        section#edit-sidebar.flex-column.width-medium-x2.no-shrink.bg-default.frame-s1-right.buttons-list-s1.padding-minor
+            container.behave-collapsing.size-fill.flex-column
+                .header#scene-content-list-header ...
+                content#scene-content-list.flex-grow-1.dropzone.flex-column
         section#edit-section.flex-column.size-fill
-            section#edit-section-canvas.display-block.padding-minimum.height-half.bg-zero
+            section#edit-section-canvas.display-block.padding-minimum.bg-zero.flex-grow-1
                 container#scene_edit_tools.position-absolute.buttons-list-s2.z-index-1.gap-minimum.flex-column
                     container.frame-s2.flex-row.bg-secondary.padding-minimum.gap-minimum
                         btn#controls_mode_transform_translate.icon.img-translate(tooltip="translate")
@@ -34,5 +36,6 @@ tab#edit-tab.hidden
                         .splitter#character_state_details-toggle.cursor-pointer character state
                         container#character_state_details.flex-column.hidden
                 canvas#rootcanvas.position-absolute
-            section#edit-assets-section.flex-column.bg-default.padding-minimum.height-half
-                b tools
+            container#edit-assets-section.bg-default.style-window.behave-collapsing.max-height-quart.scroll-y
+                .header asset library
+                content.flex-column.buttons-list-s1.disabled-content-apply.buttons-list-draggable

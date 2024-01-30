@@ -15,7 +15,7 @@ import ControlsContainerCollapse from "./page/controls_container_collapse";
 
 import test from "./test/index";
 
-import { AssetsLibraryView } from "./views";
+import { AssetsLibraryView, SceneEditView } from "./views";
 
 
 class App {
@@ -29,6 +29,7 @@ class App {
         this.scene_game = new SceneGame(this.scene_collisions, this.scene_render, this.scene_core);
         this.scene_mediator = new SceneMediator(this.scene_game, this.scene_core);
         this.assets_library_view = new AssetsLibraryView(this.assets, this.scene_render, this.scene_map);
+        this.scene_edit_view = new SceneEditView(this.assets_library_view);
 
         this.active = false;
         this.timestamp = 0;
@@ -45,6 +46,7 @@ class App {
 
         this.assets.init();
         this.assets_library_view.init();
+        this.scene_edit_view.init();
         this.app_debug_draw = new AppDebug();
         this.app_debug_draw.app_state_draw.init(this);
         this.scene_render.init(canvas as HTMLCanvasElement);
@@ -71,6 +73,7 @@ class App {
         maintabs.click("edit-tab");
         const debugWindows = ControlsContainerCollapse.construct(querySelector("#debug-tab"));
         const libraryWindows = ControlsContainerCollapse.construct(querySelector("#library-tab"));
+        const editWindows = ControlsContainerCollapse.construct(querySelector("#edit-tab"));
         const test_tabls = new Tabs().init(querySelector("#testcases-select-window"), querySelector("#debug-tab"), (id: string) => {
             switch (id) {
                 case "testcase-matters-tab":
@@ -201,6 +204,7 @@ class App {
     private scene_map: SceneMap;
     private scene_game: SceneGame;
     private assets_library_view: AssetsLibraryView;
+    private scene_edit_view: SceneEditView;
 
     //private scene_edit: SceneEdit;
     //private scene_edit_view: SceneEditView;
