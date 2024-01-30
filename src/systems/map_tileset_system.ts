@@ -78,8 +78,8 @@ class MapTileset {
         
         const omin_x = Math.round(origin_x);
         const omax_y = Math.round(origin_y);
-        const omin_y = omax_y - this.image.width; // y operations inverted
-        const omax_x = omin_x + this.image.width;
+        const omin_y = omax_y - img.height; // y operations inverted
+        const omax_x = omin_x + img.width;
 
         min_x = Math.round(min_x ?? omin_x);
         min_y = Math.round(min_y ?? omin_y);
@@ -101,13 +101,12 @@ class MapTileset {
 
         const clip_x = Math.max(omin_x, min_x) - omin_x;
         const clip_y = omax_y - Math.min(omax_y, max_y);
-        const clip_w = Math.min(max_w, d1x, d2x);
-        const clip_h = Math.min(max_h, d1y, d2y);
+        const clip_w = Math.min(max_w, d1x, d2x, img.width);
+        const clip_h = Math.min(max_h, d1y, d2y, img.height);
 
         if (clip_x < 0 || clip_y < 0 || clip_w <= 0 || clip_h <= 0) {
             return;
         }
-
 
         canvas.width = clip_w;
         canvas.height = clip_h;
