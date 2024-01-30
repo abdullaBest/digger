@@ -68,6 +68,9 @@ class App {
                 case "edit-tab":
                     this.scene_render.reattach(querySelector("#edit-section-canvas"))
                     break;
+                case "library-tab":
+                    this.scene_render.reattach(querySelector("#asset-render-preview"))
+                    break;
             }
         });
         maintabs.click("edit-tab");

@@ -101,6 +101,7 @@ export default class AssetsLibraryView {
                 const id = await this._createComponent("tile", { link: "**" + linkid, owner: this.asset_selected.id });
                 link_id = id;
             }
+            console.log(link_id);
             if (!link_id) {
                 return;
             }
