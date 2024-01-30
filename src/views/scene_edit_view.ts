@@ -1,18 +1,25 @@
 import AssetsLibraryView from "./assets_library_view";
 import { querySelector, listenClick, addEventListener, EventListenerDetails } from "../document";
-import { Assets, Asset } from "../assets";
+import { Assets, Asset, AssetContentTypeComponent } from "../assets";
+import { SceneEditTools, SceneEditToolMode } from "../render/scene_edit_tools";
+import SceneCore from "../scene_core";
+import { uploadThumbnail } from "../importer";
 
 export default class SceneEditView {
     asset_selected: Asset;
     assets_library_view: AssetsLibraryView;
+    scene_edit_tools: SceneEditTools
+    scene_core: SceneCore;
     assets: Assets;
     container_lib: HTMLElement;
     container_list: HTMLElement;
     private _listeners: Array<EventListenerDetails>;
 
-    constructor(assets_library_view: AssetsLibraryView) {
+    constructor(assets_library_view: AssetsLibraryView, scene_core: SceneCore, scene_edit_tools: SceneEditTools) {
         this.assets_library_view = assets_library_view;
         this.assets = this.assets_library_view.assets;
+        this.scene_edit_tools = scene_edit_tools;
+        this.scene_core = scene_core;
         this._listeners = [];
     }
 
@@ -32,13 +39,24 @@ export default class SceneEditView {
             this.saveAsset(this.asset_selected?.id);
             const id = (ev.target as HTMLElement)?.id;
             const matter = this.assets.matters.list[id];
-            if (matter && matter.inherited_equals("type", "space")) {
+            if (matter) {
                 this.viewAsset(id);
             }
         }, this._listeners)
 
+        listenClick("#edit-controls-save-asset", () => this.saveAsset(this.asset_selected.id), this._listeners)
+        listenClick("#edit-controls-make-thumbnail", () => uploadThumbnail(this.asset_selected, this.scene_core.scene_render), this._listeners)
+
+        this.initDragzone();
+        this.initTransformControls();
+    }
+
+    initDragzone() {
         const scene_content = this.container_list;
         addEventListener({name: "drop", callback: async (ev) => {
+            if (!scene_content.classList.contains("dropallow")) {
+                return;
+            }
             let id = "";
             const datatransfer = (ev as DragEvent).dataTransfer;
             if (datatransfer) {
@@ -47,20 +65,139 @@ export default class SceneEditView {
             if (this.asset_selected) {
                 this.addComponent(this.asset_selected.id, id);
             }
-            scene_content.classList.remove("dropallow");
         }, node: scene_content}, this._listeners);
                 
         addEventListener({name: "dragenter", callback: async (ev) => {
-            scene_content.classList.add("dropallow");
-            ev.preventDefault();
+            if (scene_content.classList.contains("dropallow")) {
+                ev.preventDefault();
+            }
         }, node: scene_content}, this._listeners);
         addEventListener({name: "dragover", callback: async (ev) => {
-            ev.preventDefault();
+            if (scene_content.classList.contains("dropallow")) {
+                ev.preventDefault();
+            }
         }, node: scene_content}, this._listeners);
         addEventListener({name: "dragleave", callback: async (ev) => {
-            scene_content.classList.remove("dropallow");
-            ev.preventDefault();
+            if (scene_content.classList.contains("dropallow")) {
+                ev.preventDefault();
+            }
         }, node: scene_content}, this._listeners);
+    }
+
+    initTransformControls() {
+        
+        const set_edit_mode = (mode: SceneEditToolMode) => {
+            this.scene_edit_tools.setEditMode(mode);
+            switch (mode) {
+                case SceneEditToolMode.DEFAULT:
+                    break;
+                case SceneEditToolMode.TRANSLATE:
+                    break;
+                case SceneEditToolMode.ROTATE:
+                    break;
+                case SceneEditToolMode.SCALE:
+                    break;
+                case SceneEditToolMode.TILE_DRAW:
+                    break;
+                case SceneEditToolMode.TILE_ERASE:
+                    break;
+            }
+        }
+
+        const edit_modes_elements = {
+            [SceneEditToolMode.TRANSLATE]: querySelector("#controls_mode_transform_translate"),
+            [SceneEditToolMode.ROTATE]: querySelector("#controls_mode_transform_rotate"),
+            [SceneEditToolMode.SCALE]: querySelector("#controls_mode_transform_scale"),
+            [SceneEditToolMode.TILE_DRAW]: querySelector("#controls_mode_draw_tiles"),
+            [SceneEditToolMode.TILE_ERASE]: querySelector("#controls_mode_erase_tiles"),
+        }
+
+        const addModeBtnListener = (mode: SceneEditToolMode) => {
+            const el = edit_modes_elements[mode];
+            listenClick(el, () => {
+                set_edit_mode(mode);
+                for(const i in edit_modes_elements) {
+                    edit_modes_elements[i].classList.remove("highlighted");
+                }
+                el.classList.add("highlighted");
+            }, this._listeners);
+        }
+
+        addModeBtnListener(SceneEditToolMode.TRANSLATE);
+        addModeBtnListener(SceneEditToolMode.ROTATE);
+        addModeBtnListener(SceneEditToolMode.SCALE);
+        addModeBtnListener(SceneEditToolMode.TILE_DRAW);
+        addModeBtnListener(SceneEditToolMode.TILE_ERASE);
+        // toggles modes of transform helper
+        const tcontrols = this.scene_edit_tools.transform_controls
+
+        listenClick("#controls_mode_transform_toggle_snap", (ev) => { 
+            let tsnap: number | null = 1;
+            let rsnap: number | null = 15 * Math.PI / 180;
+            let ssnap: number | null = 0.25;
+            if (!(ev.target as HTMLElement)?.classList.toggle("highlighted")) {
+                tsnap = rsnap = ssnap = null;
+            }
+            tcontrols.setTranslationSnap( tsnap );
+            tcontrols.setRotationSnap( rsnap );
+            tcontrols.setScaleSnap( ssnap );
+        }, this._listeners )
+        listenClick("#controls_mode_transform_toggle_world", (ev) =>  {
+            const mode_local = (ev.target as HTMLElement)?.classList.toggle("highlighted")
+            const mode_text = mode_local ? 'local'  : 'world'
+            tcontrols.setSpace( mode_text );
+            //(ev.target as HTMLElement).innerHTML = "t: " + mode_text;
+        }, this._listeners)
+
+
+        tcontrols.addEventListener( 'objectChange', (e) => {
+            const object = e.target.object;
+            const id = object.name;
+            const matter = this.assets.matters.get(id);
+
+            // only works with scene edit elements
+            if (!matter) {
+                return;
+            }
+
+            //this.scene_core.updateEntityCollider(id);
+            const pos_x = (object as any).position.x;
+            const pos_y = (object as any).position.y;
+            matter.pos_x = pos_x;
+            matter.pos_y = pos_y;
+            matter.matrix = object.matrixWorld.toArray()
+        });
+
+        tcontrols.addEventListener( 'object-changed',  ( e ) => {
+            const object = e.target.object;
+            if (!object) {
+                return;
+            }
+            const id = object.name;
+            const matter = this.assets.matters.get(id);
+            if (id) {
+                console.log("selected component " + id, matter);
+            }
+        });
+
+        tcontrols.addEventListener( 'mouseUp',  async ( e ) => {
+            const object = e.target.object;
+            const id = object.name;
+            //this.scene_core.updateEntityCollider(id);
+            const matter = this.assets.matters.get(id);
+            if (!matter) {
+                return;
+            }
+
+            // redraw tileset
+            if (matter.get("type") === "tileset") {
+                //this.redrawElement(matter.id);
+            }
+
+            this.scene_core.remove(matter as AssetContentTypeComponent);
+            await this.scene_core.add(matter as AssetContentTypeComponent);
+            tcontrols.attach(this.scene_core.scene_render.cache.objects[id]);
+        } );
     }
 
     saveAsset(id: string) {
@@ -68,6 +205,8 @@ export default class SceneEditView {
     }
 
     viewAsset(id: string) {
+        const sidebar = querySelector("#edit-sidebar");
+        sidebar.classList.remove("noselected");
         const header = querySelector("#scene-content-list-header");
         const asset = this.assets.get(id);
         this.asset_selected = asset;
@@ -92,11 +231,15 @@ export default class SceneEditView {
     async addComponent(owner: string, inherites: string) {
         const omatter = this.assets.matters.get(owner);
 
+        if (owner == inherites) {
+            return;
+        }
+
         const inherite = this.assets.matters.get(inherites);
         const extension = inherite.get("type");
         const global_id = await this.assets.uploadComponent({ inherites, owner: owner }, extension);
 
-        const local_id = omatter.get("guilds") ?? 0;
+        const local_id = omatter.get("guids") ?? 0;
         omatter.set("guids", (local_id) + 1);
         omatter.set_link("e" + local_id, global_id);
 
@@ -110,7 +253,7 @@ export default class SceneEditView {
             entry.classList.add("disabled-optional");
         }
 
-        if(matter?.inherited_equals("type", "space") && !entry.querySelector(".img-external")) {
+        if(!entry.querySelector(".img-external")) {
             const icon = document.createElement("icon");
             icon.classList.add("img-external", "fittext");
             entry.insertBefore(icon, entry.firstChild);
@@ -119,14 +262,26 @@ export default class SceneEditView {
         entry.draggable = true;
         addEventListener({name: "dragstart", callback: async (ev) => {
             const datatransfer = (ev as DragEvent).dataTransfer;
-            if (datatransfer) {
-                datatransfer.setData("text/plain", entry.id);
+            const id = entry.id;
+            if (!id || ! this.asset_selected) {
+                return;
             }
-            //(ev as DragEvent).dataTransfer?.setDragImage(querySelector(".img-thumbnail", entry), 64, 64);
-            entry.classList.add("dragged")
+
+            const selected_matter = this.assets.matters.get(this.asset_selected.id);
+            if (!selected_matter.inherited_equals("type", "space")) {
+                return;
+            }
+
+            if (datatransfer) {
+                datatransfer.setData("text/plain", id);
+                //datatransfer.setDragImage(querySelector(".img-thumbnail", entry), 64, 64);
+            }
+            entry.classList.add("dragged");
+            this.container_list.classList.add("dropallow");
         }, node: entry}, this._listeners);
         addEventListener({name: "dragend", callback: async (ev) => {
-            entry.classList.remove("dragged")
+            entry.classList.remove("dragged");
+            this.container_list.classList.remove("dropallow");
         }, node: entry}, this._listeners);
     }
 }

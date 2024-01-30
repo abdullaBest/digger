@@ -119,7 +119,7 @@ class SceneCollidersSystem extends MapSystem {
 }
 
 class SceneCore {
-    private scene_render: SceneRender;
+    scene_render: SceneRender;
     scene_collisions: SceneCollisions;
     matters: Matters;
     components: { [id: string] : AssetContentTypeComponent }

@@ -1,5 +1,15 @@
 content#scene-content-list:empty {
     &::after {
-        content: "Nothing here. drag'n'drop something from lib";
+        content: "Nothing here. Drop asset.";
+    }
+}
+
+section#edit-sidebar.noselected {
+    #edit-sidebar-list-root, section#edit-sidebar-controls {
+        display: none;
+    }
+
+    &::after {
+        content: "Nothing here. Select asset";
     }
 }
