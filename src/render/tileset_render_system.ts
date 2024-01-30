@@ -90,8 +90,7 @@ class TilesetRender {
         while(tiles?.length) {
             const tile = tiles.shift();
             if (tile) {
-                this.scene_core.remove(tile);
-                this.matters.remove(tile.id);
+                this.scene_core.remove(tile.id);
             }
         }
         
@@ -117,7 +116,7 @@ class TilesetRender {
         }
         
         if (!this._isPosInClipbounds(pos_x, pos_y)) {
-            this.scene_core.remove(tile);
+            this.scene_core.remove(tile.id);
             
             //remove from array
             const b = tiles[0];
@@ -154,11 +153,14 @@ class TilesetRender {
         const pos_x = tile.pos_x;
         const pos_y = tile.pos_y;
         if (this._isPosInClipbounds(pos_x, pos_y)) {
-            this.scene_core.add(tile).then(() => {
+            this.scene_core.add(tile).then((id) => {
+                if (!id) {
+                    return;
+                }
                 if (!this.tiles[tileset]) {
                     this.tiles[tileset] = [];
                 }
-                this.tiles[tileset].push(tile)
+                this.tiles[tileset].push(this.scene_core.matters.get(id) as AssetContentTypeComponent);
             })
         }
         delete this.queue[k];

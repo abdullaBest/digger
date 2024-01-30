@@ -122,7 +122,10 @@ class SceneCore {
     scene_render: SceneRender;
     scene_collisions: SceneCollisions;
     matters: Matters;
-    components: { [id: string] : AssetContentTypeComponent }
+
+    // list of component instances. first id is original component id, second id is instance id
+    components: { [id: string] : { [id: string] : AssetContentTypeComponent } }
+
     systems: { [id: string] : MapSystem; }
 
     constructor(matters: Matters, scene_collisions: SceneCollisions, scene_render: SceneRender) {
@@ -140,47 +143,79 @@ class SceneCore {
         };
     }
 
-    async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {
+    /**
+     * Creates separate component instance and registers it in systems
+     * 
+     * @param component component to add on scene
+     * @param owner upper-tree component. do not mess up with AssetContentTypeComponent.owner
+     * @returns instance id
+     */
+    async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) : Promise<string | null> {
         if (component.abstract) {
-            return;
+            return null;
         }
+
+        const cinstace = this.matters.create({}, component.id) as AssetContentTypeComponent;
         
         for(const k in this.systems) {
             const system = this.systems[k];
             //await system.load(component);
-            await system.add(component, owner);
+            await system.add(cinstace, owner);
         }
        
-        const subcomponents: Array<AssetContentTypeComponent> = [];
-        for(const k in component) {
-            const val = component[k];
-            if (typeof val === "string" && val.startsWith("**")) {
-                subcomponents.push(this.matters.get(val.substring(2)) as AssetContentTypeComponent)
+        const subcomponents: Array<{key: string, component: AssetContentTypeComponent}> = [];
+        for(const key in component) {
+            if (component.is_link(key)) {
+                subcomponents.push({key, component: this.matters.get(component.get(key)) as AssetContentTypeComponent})
             }
         }
 
         subcomponents.sort((a, b) => {
-            const sa = this.systems[a.type];
-            const sb = this.systems[b.type]
-            return (sb?.filter(b, component) ? sb.priority : 0) - (sa?.filter(a, component) ? sa.priority : 0)
+            const sa = this.systems[a.component.type];
+            const sb = this.systems[b.component.type]
+            return (sb?.filter(b.component, component) ? sb.priority : 0) - (sa?.filter(a.component, component) ? sa.priority : 0)
         })
 
         for(const i in subcomponents) {
-            await this.add(subcomponents[i], component);
+            const subc = subcomponents[i];
+            const id = await this.add(subc.component, cinstace);
+            if (id) {
+                cinstace.set_link(subc.key, id)
+            }
         }
 
-        this.components[component.id] = component;
+        let list = this.components[component.id]
+        if (!list) {
+            this.components[component.id] = list ={};
+        }
+        list[cinstace.id] = cinstace;
+
+        return cinstace.id;
     }
 
-    remove(component: AssetContentTypeComponent) {
+    /**
+     * removes component instance
+     * @param refid reference component id
+     * @param id  
+     * @returns 
+     */
+    remove(id: string) {
+        const component = this.matters.get(id) as AssetContentTypeComponent;
+
         if (component.abstract) {
             return;
         }
 
-        for(const k in component) {
-            const val = component[k];
-            if (typeof val === "string" && val.startsWith("**")) {
-                this.remove(this.matters.get(val.substring(2)) as AssetContentTypeComponent);
+        if (!component.inherites) {
+            throw new Error(`Component ${id} is not an instance of anything`);
+        }
+
+        for(const key in component) {
+            if (component.is_link(key)) {
+                const _component = this.matters.get(component.get(key));
+                if (_component) {
+                    this.remove(_component.id);
+                }
             }
         }
 
@@ -189,19 +224,31 @@ class SceneCore {
             system.remove(component);
         }
 
-        delete this.components[component.id];
+        this.matters.remove(id);
+
+        const ref = this.matters.get(component.inherites);
+        const list = this.components[ref.id]
+        if (list) {
+            delete list[component.id];
+        }
     }
 
     cleanup() {
         for(const k in this.components) {
-            this.remove(this.components[k]);
+            const list = this.components[k];
+            for(const kk in list) {
+                this.remove(list[kk].id);
+            }
         }
     }
 
     addSystem(name: string, system: MapSystem) {
         this.systems[name] = system;
         for(const k in this.components) {
-            system.add(this.components[k]);
+            const list = this.components[k];
+            for(const kk in list) {
+                system.add(list[kk]);
+            }
         }
     }
 
