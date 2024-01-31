@@ -153,7 +153,8 @@ export default class SceneEditView {
         tcontrols.addEventListener( 'objectChange', (e) => {
             const object = e.target.object;
             const id = object.name;
-            const matter = this.assets.matters.get(id);
+            const instance = this.assets.matters.get(id)
+            const matter = (instance.inherites ? this.assets.matters.get(instance.inherites) : instance) as AssetContentTypeComponent;
 
             // only works with scene edit elements
             if (!matter) {
@@ -184,7 +185,8 @@ export default class SceneEditView {
             const object = e.target.object;
             const id = object.name;
             //this.scene_core.updateEntityCollider(id);
-            const matter = this.assets.matters.get(id);
+            const instance = this.assets.matters.get(id)
+            const matter = instance.inherites ? this.assets.matters.get(instance.inherites) : instance;
             if (!matter) {
                 return;
             }
@@ -194,9 +196,11 @@ export default class SceneEditView {
                 //this.redrawElement(matter.id);
             }
 
-            this.scene_core.remove(matter as AssetContentTypeComponent);
-            await this.scene_core.add(matter as AssetContentTypeComponent);
-            tcontrols.attach(this.scene_core.scene_render.cache.objects[id]);
+            this.scene_core.remove(instance.id);
+            const newid = await this.scene_core.add(matter as AssetContentTypeComponent);
+            if (newid) {
+                tcontrols.attach(this.scene_core.scene_render.cache.objects[newid]);
+            }
         } );
     }
 
@@ -235,9 +239,13 @@ export default class SceneEditView {
             return;
         }
 
+
         const inherite = this.assets.matters.get(inherites);
         const extension = inherite.get("type");
         const global_id = await this.assets.uploadComponent({ inherites, owner: owner }, extension);
+
+        // scene has to be cleaned up before link set
+        this.scene_core.cleanup();
 
         const local_id = omatter.get("guids") ?? 0;
         omatter.set("guids", (local_id) + 1);

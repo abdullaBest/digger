@@ -123,8 +123,8 @@ class SceneCore {
     scene_collisions: SceneCollisions;
     matters: Matters;
 
-    // list of component instances. first id is original component id, second id is instance id
-    components: { [id: string] : { [id: string] : AssetContentTypeComponent } }
+    // list of component instances.
+    components: { [id: string] : AssetContentTypeComponent }
 
     systems: { [id: string] : MapSystem; }
 
@@ -155,7 +155,7 @@ class SceneCore {
             return null;
         }
 
-        const cinstace = this.matters.create({}, component.id) as AssetContentTypeComponent;
+        const cinstace = this.matters.create({ owner: owner?.id ?? null }, component.id) as AssetContentTypeComponent;
         
         for(const k in this.systems) {
             const system = this.systems[k];
@@ -184,11 +184,7 @@ class SceneCore {
             }
         }
 
-        let list = this.components[component.id]
-        if (!list) {
-            this.components[component.id] = list ={};
-        }
-        list[cinstace.id] = cinstace;
+        this.components[cinstace.id] = cinstace;
 
         return cinstace.id;
     }
@@ -200,7 +196,15 @@ class SceneCore {
      * @returns 
      */
     remove(id: string) {
-        const component = this.matters.get(id) as AssetContentTypeComponent;
+        let component = this.components[id] as AssetContentTypeComponent;
+        if (!component) {
+            for(const k in this.components) {
+                const _c = this.components[k];
+                if (_c.inherites == id) {
+                    this.remove(_c.id);
+                }
+            }
+        }
 
         if (component.abstract) {
             return;
@@ -225,20 +229,12 @@ class SceneCore {
         }
 
         this.matters.remove(id);
-
-        const ref = this.matters.get(component.inherites);
-        const list = this.components[ref.id]
-        if (list) {
-            delete list[component.id];
-        }
+        delete this.components[component.id]
     }
 
     cleanup() {
         for(const k in this.components) {
-            const list = this.components[k];
-            for(const kk in list) {
-                this.remove(list[kk].id);
-            }
+            this.remove(k);
         }
     }
 

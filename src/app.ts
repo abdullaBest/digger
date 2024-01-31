@@ -27,7 +27,7 @@ class App {
         this.scene_map = new SceneMap(this.scene_core);
         this.scene_edit_tools = new SceneEditTools(this.scene_render, this.scene_collisions, this.scene_core);
         this.scene_game = new SceneGame(this.scene_collisions, this.scene_render, this.scene_core);
-        this.scene_mediator = new SceneMediator(this.scene_game, this.scene_core);
+        this.scene_mediator = new SceneMediator(this.scene_game, this.scene_map);
         this.assets_library_view = new AssetsLibraryView(this.assets, this.scene_render, this.scene_map);
         this.scene_edit_view = new SceneEditView(this.assets_library_view, this.scene_core, this.scene_edit_tools);
 

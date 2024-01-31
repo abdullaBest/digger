@@ -11,7 +11,6 @@ import { SceneCore, MapEntity, MapComponent } from "./scene_core";
 import SystemObjectsBreak from "./gameplay/SystemObjectsBreak";
 import SystemObjectsFall from "./gameplay/SystemObjectsFall";
 import SystemRenderBodiesPos from "./gameplay/SystemRenderBodiesPos";
-import TilesetRender from "./render/tileset_render_system";
 
 export default class SceneGame {
     player_character: Character;
@@ -24,7 +23,6 @@ export default class SceneGame {
     system_objects_break: SystemObjectsBreak;
     system_objects_fall: SystemObjectsFall;
     system_render_bodiespos: SystemRenderBodiesPos;
-    tileset_render: TilesetRender;
 
     attach_camera_to_player: boolean;
     camera_config: { attach_camera_z: number, attach_camera_y: number }
@@ -33,7 +31,6 @@ export default class SceneGame {
     private active: boolean;
     private inplay: boolean;
     autostep: boolean;
-    elements: { [id: string] : SceneElement; }
 
     requested_map_switch: string | null;
     requested_map_entrance: string | null;
@@ -50,7 +47,6 @@ export default class SceneGame {
         this.system_objects_break = new SystemObjectsBreak(this.scene_core);
         this.system_objects_fall = new SystemObjectsFall(this.scene_core, this.scene_render);
         this.system_render_bodiespos = new SystemRenderBodiesPos(this.scene_core, this.scene_render);
-        this.tileset_render = new TilesetRender(this.scene_core);
 
         this.active = false;
         this.inplay = false;
@@ -77,15 +73,8 @@ export default class SceneGame {
         return this;
     }
 
-    async run(elements: { [id: string] : SceneElement; }) {
-        this.tileset_render.run();
-        this._updateTilesetsDraw();
-
-        this.elements = elements;
-        this.active = true;
-    }
-
     async play(entrance_id?: string | null) {
+        this.active = true;
         this.stopPlay();
         this.system_objects_break.run();
         this.system_objects_fall.run();
@@ -120,16 +109,15 @@ export default class SceneGame {
         const startpos = new Vector2(0.1, 4);
         {
             let entrance_found = false;
-            for(const k in this.elements) {
-                const el = this.elements[k];
-                const props = el.components.trigger?.properties;
-                if (!entrance_id && props && props.type == "mapentry") {
-                    startpos.x = props.pos_x ?? 0;
-                    startpos.y = props.pos_y ?? 0;
+            for(const k in this.scene_core.components) {
+                const el = this.scene_core.components[k];
+                if (!entrance_id && el.type == "mapentry") {
+                    startpos.x = el.pos_x ?? 0;
+                    startpos.y = el.pos_y ?? 0;
                     entrance_found = true;
                 } else if (entrance_id && el.id === entrance_id) {
-                    startpos.x = props.pos_x ?? 0;
-                    startpos.y = props.pos_y ?? 0;
+                    startpos.x = el.pos_x ?? 0;
+                    startpos.y = el.pos_y ?? 0;
                     entrance_found = true;
                 }
 
@@ -170,7 +158,6 @@ export default class SceneGame {
 
     stop() {
         this.stopPlay();
-        this.scene_core.stop();
 
         this.active = false;
         this.requested_map_switch = null;
@@ -188,11 +175,6 @@ export default class SceneGame {
     step(dt: number, forced: boolean = false) {
         if (!this.active) {
             return;
-        }
-
-        if (this.tileset_render.clip_tiles_draw) {
-            // while map already drawn if there's no clip set
-            this._updateTilesetsDraw();
         }
 
         if (!this.inplay) {
@@ -256,7 +238,7 @@ export default class SceneGame {
             if (!cid) {
                 continue;
             }
-            const el = this.scene_core.entities[cid];
+            const el = this.scene_core.components[k];
             const props = el?.components.trigger?.properties;
             if (props && props.type == "mapexit") {
                 interacts = true;
@@ -266,12 +248,6 @@ export default class SceneGame {
         }
 
         this.player_character_render.drawUiInteractSprite(interacts);
-    }
-
-    
-    _updateTilesetsDraw(clip: boolean = this.tileset_render.clip_tiles_draw) {
-        this.tileset_render.clip_tiles_draw = clip;
-        this.tileset_render.update(this.player_character?.body.collider.x ?? 0, this.player_character?.body.collider.y ?? 0, this.system_objects_break.breakable_objects ?? {});
     }
 
     requestMapSwitch(signal: string) {
@@ -295,7 +271,7 @@ export default class SceneGame {
             // falling block activate
             this.system_objects_fall.touchFallingBlock(hit_result);
             // remove breakable block
-            this.scene_core.removeEntity(hit_result);
+            this.scene_core.remove(hit_result);
         }
     }
 

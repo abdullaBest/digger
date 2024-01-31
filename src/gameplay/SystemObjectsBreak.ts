@@ -23,29 +23,28 @@ export default class SystemObjectsBreak {
         const hit_damage = 1;
         const hit_strength = 1;
 
-        const durability = this.breakable_objects[id] ?? this.scene_core.entities[id]?.components.model?.properties.durability;
+        let component = this.scene_core.components[id] as any;
+        while(!component?.breakable) {
+            component = this.scene_core.matters.get(component.owner);
+        }
+        if (!component || !component.breakable) {
+            return false;
+        }
+        const durability = this.scene_core.components[id]
         if (!durability) {
             return false;
         }
 
-        let endurance = (durability & 0xF0) >> 4;
-        let resistance = durability & 0x0F;
-        if (durability > 0xFF) {
-            endurance = (durability & 0xFF) >> 8;
-            resistance = durability & 0x00FF;
-        }
+        let endurance = component.endurance;
+        let resistance = component.resistance;
 
         if (hit_strength < resistance) {
             return false;
         }
         
         endurance -= hit_damage;
-        let newdurability = ((endurance << 4) & 0xF0) + ((resistance) & 0x0F);
-        if (durability > 0xFF) {
-            newdurability = ((endurance << 8) & 0xFF00) + ((resistance) & 0x00FF);
-        }
 
-        this.breakable_objects[id] = Math.max(0, newdurability);
+        component.endurance = Math.max(0, endurance);
 
         return endurance <= 0;
     }

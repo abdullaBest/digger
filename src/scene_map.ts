@@ -19,7 +19,7 @@ export default class SceneMap {
     }
 
     remove(component: AssetContentTypeComponent) {
-        this.scene_core.remove(component);
+        this.scene_core.remove(component.id);
     }
 
     cleanup() {

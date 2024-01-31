@@ -92,6 +92,7 @@ export default class CharacterRender {
         if (!gltf) {
             return;
         }
+
        
         this.updateCharacterAnimations();
         this.renderCharacterModel(dt);

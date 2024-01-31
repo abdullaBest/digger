@@ -129,6 +129,10 @@ interface AssetContentTypeComponent extends Matter {
      * Indicates that component should not be added into scene tree
      */
     abstract?: boolean | null;
+
+    matrix?: Array<number> | null, 
+    pos_x?: number | null,
+    pos_y?: number | null,
 }
 
 interface AssetContentTypeCollider extends AssetContentTypeComponent {
@@ -148,9 +152,6 @@ interface AssetContentTypeModel extends AssetContentTypeComponent {
     gltf: string, 
     material: string, 
     texture: string, 
-    matrix?: Array<number> | null, 
-    pos_x?: number | null,
-    pos_y?: number | null,
 }
 
 interface AssetContentTypeTileset extends AssetContentTypeComponent {
