@@ -3,6 +3,8 @@ import * as THREE from '../lib/three.module.js';
 import SceneRenderLoader from './scene_render_loader.js';
 import MapTileset from '../systems/map_tileset_system.js';
 import { focusCameraOn } from './render_utils.js';
+import SceneCore from '../scene_core.js';
+import { AssetContentTypeModel } from '../assets.js';
 
 export default class TilesetEditor {
     scene: THREE.Group;
@@ -17,6 +19,7 @@ export default class TilesetEditor {
     tilesize_y: number;
 
     loader: SceneRenderLoader;
+    scene_core: SceneCore;
 
     objects: { [id:string] : THREE.Object3D };
     colors: { [id:string] : string }
@@ -25,7 +28,7 @@ export default class TilesetEditor {
     selected_tileset: string | null;
     changed_tilesets:  { [id:string] : number };
 
-    constructor(loader: SceneRenderLoader) {
+    constructor(scene_core: SceneCore, loader: SceneRenderLoader) {
         this.palette_h = 512;
         this.palette_w = 64;
         this.tilesize_x = 1;
@@ -34,6 +37,7 @@ export default class TilesetEditor {
         this.objects = {};
         this.colors = {};
         this.changed_tilesets = {};
+        this.scene_core = scene_core;
     }
 
     init() : TilesetEditor {
@@ -112,13 +116,17 @@ export default class TilesetEditor {
 
         this.tilesize_x = tileset.tileset.tilesize_x;
         this.tilesize_y = tileset.tileset.tilesize_y;
-        this.selected_tileset = tileset.id;
+        this.selected_tileset = tileset.tileset.id;
 
         let index = 0;
-        for(const color in tileset.models_ids) {
-            const id = tileset.models_ids[color];
-            const m = tileset.models[id];
-            const o = await this.loader.getModel(id, m);
+        for(const id in tileset.components) {
+            const matter = this.scene_core.matters.get(id);
+            let model : AssetContentTypeModel | null = null;
+            this.scene_core.matters.traverse(id, (m) => { if (m.inherited_equals("type", "model")) { model = m as AssetContentTypeModel } });
+            if (!model) {
+                continue;
+            }
+            const o = await this.loader.getModel(id, model);
             o.name = id;
             this.objects[id] = o;
             this.colors[id] = tileset.colors[id]

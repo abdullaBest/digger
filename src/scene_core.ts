@@ -139,14 +139,15 @@ class SceneCore {
      * 
      * @param component component to add on scene
      * @param owner upper-tree component. do not mess up with AssetContentTypeComponent.owner
+     * @param id new instance id
      * @returns instance id
      */
-    async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) : Promise<string | null> {
+    async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent | null, id?: string) : Promise<AssetContentTypeComponent | null> {
         if (component.abstract) {
             return null;
         }
 
-        const cinstace = this.matters.create({ owner: owner?.id ?? null }, component.id) as AssetContentTypeComponent;
+        const cinstace = this.matters.create({ owner: owner?.id ?? null }, component.id, id) as AssetContentTypeComponent;
         
         for(const k in this.systems) {
             const system = this.systems[k];
@@ -169,15 +170,15 @@ class SceneCore {
 
         for(const i in subcomponents) {
             const subc = subcomponents[i];
-            const id = await this.add(subc.component, cinstace);
-            if (id) {
-                cinstace.set_link(subc.key, id)
+            const subcomponent = await this.add(subc.component, cinstace);
+            if (subcomponent) {
+                cinstace.set_link(subc.key, subcomponent.id)
             }
         }
 
         this.components[cinstace.id] = cinstace;
 
-        return cinstace.id;
+        return cinstace;
     }
 
     /**

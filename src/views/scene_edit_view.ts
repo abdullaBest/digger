@@ -1,9 +1,10 @@
 import AssetsLibraryView from "./assets_library_view";
 import { querySelector, listenClick, addEventListener, EventListenerDetails } from "../document";
-import { Assets, Asset, AssetContentTypeComponent } from "../assets";
+import { Assets, Asset, AssetContentTypeComponent, AssetContentTypeTileset, AssetContentTypeTexture, sendFiles } from "../assets";
 import { SceneEditTools, SceneEditToolMode } from "../render/scene_edit_tools";
 import SceneCore from "../scene_core";
 import { uploadThumbnail } from "../importer";
+import { MapTilesetSystem } from "../systems";
 
 export default class SceneEditView {
     asset_selected: Asset;
@@ -35,12 +36,36 @@ export default class SceneEditView {
             this.listAssetLib(id);
         }, this._listeners)
 
+        // asset library click
         listenClick(this.container_lib, (ev) => {
             this.saveAsset(this.asset_selected?.id);
             const id = (ev.target as HTMLElement)?.id;
             const matter = this.assets.matters.list[id];
             if (matter) {
                 this.viewAsset(id);
+            }
+        }, this._listeners)
+
+        // scene elements click
+        listenClick(this.container_list, (ev) => {
+            const id = (ev.target as HTMLElement)?.id;
+            const matter = this.assets.matters.list[id];
+            if (!matter) {
+                return;
+            }
+
+            let instance = matter;
+            for(const k in this.scene_core.components) {
+                const c = this.scene_core.components[k];
+                if (c.inherites == matter.id) {
+                    instance = c;
+                    break;
+                }
+            }
+
+            this.scene_edit_tools.attachTransformControls(instance.id);
+            if (instance.type == "tileset") {
+                this.scene_edit_tools.tileset_editor.drawPalette((this.scene_core.systems.tileset as MapTilesetSystem).tilesets[instance.id]);
             }
         }, this._listeners)
 
@@ -161,7 +186,6 @@ export default class SceneEditView {
                 return;
             }
 
-            //this.scene_core.updateEntityCollider(id);
             const pos_x = (object as any).position.x;
             const pos_y = (object as any).position.y;
             matter.pos_x = pos_x;
@@ -184,8 +208,10 @@ export default class SceneEditView {
         tcontrols.addEventListener( 'mouseUp',  async ( e ) => {
             const object = e.target.object;
             const id = object.name;
-            //this.scene_core.updateEntityCollider(id);
             const instance = this.assets.matters.get(id)
+
+            // all transfroms attached to component instance initially
+            // changes has to be made in original component
             const matter = instance.inherites ? this.assets.matters.get(instance.inherites) : instance;
             if (!matter) {
                 return;
@@ -196,16 +222,62 @@ export default class SceneEditView {
                 //this.redrawElement(matter.id);
             }
 
+            // remake component after each change
             this.scene_core.remove(instance.id);
-            const newid = await this.scene_core.add(matter as AssetContentTypeComponent);
-            if (newid) {
-                tcontrols.attach(this.scene_core.scene_render.cache.objects[newid]);
+            const ninstance = await this.scene_core.add(matter as AssetContentTypeComponent);
+            if (ninstance) {
+                tcontrols.attach(this.scene_core.scene_render.cache.objects[ninstance.id]);
             }
         } );
     }
 
     saveAsset(id: string) {
+        if (!id) {
+            return;
+        }
         this.assets_library_view.saveAsset(id);
+        this.scene_core.matters.traverse(id, (m) => {
+            if (m.inherited_equals("type", "tileset")) {
+                this.saveAssetTileset(m.id);
+            }
+        })
+    }
+
+     /**
+     * saves new tileset image
+     * 
+     * @param id tileset id
+     */
+     saveAssetTileset(id: string) {
+        const tileset = this.scene_core.matters.get(id) as AssetContentTypeTileset;
+        const image_matter = this.scene_core.matters.get(tileset.texture) as AssetContentTypeTexture;
+        const image_asset = this.assets.get(image_matter.id);
+        const image = image_matter.asset;
+        if (!image) {
+            return;
+        }
+
+        // is it possible to send files without canvas?
+        const canvas = querySelector("db#cache canvas#cache_canvas") as HTMLCanvasElement;
+        const ctx = canvas.getContext("2d");
+        if (!canvas || !image || !ctx) {
+            return;
+        }
+        
+        canvas.width = image.width;
+        canvas.height = image.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0);
+        canvas.toBlob(async (blob) => {
+            if (!blob || !image_asset) {
+                return;
+            }
+            const file = new File([blob], image_asset.info.id, {
+                type: image_asset.info.type,
+            });
+
+            await this.assets.uploadAsset(image_asset.id, [file]);
+        });
     }
 
     viewAsset(id: string) {

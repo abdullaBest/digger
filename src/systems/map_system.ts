@@ -6,7 +6,7 @@ export default class MapSystem {
         this.priority = 0;
     }
     async load(component: AssetContentTypeComponent) {}
-    async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {}
+    async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent | null) {}
     remove(component: AssetContentTypeComponent) {}
     filter(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) : boolean { return false; }
     step(dt: number) {};

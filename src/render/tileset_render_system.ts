@@ -155,17 +155,17 @@ class TilesetRender {
             break;
         }
         const tile = this.queue[k];
-        const pos_x = tile.pos_x;
-        const pos_y = tile.pos_y;
+        const pos_x = tile.pos_x ?? 0;
+        const pos_y = tile.pos_y ?? 0;
         if (this._isPosInClipbounds(pos_x, pos_y)) {
-            this.scene_core.add(tile).then((id) => {
-                if (!id) {
+            this.scene_core.add(tile).then((instance) => {
+                if (!instance) {
                     return;
                 }
                 if (!this.tiles[tileset]) {
                     this.tiles[tileset] = [];
                 }
-                this.tiles[tileset].push(this.scene_core.matters.get(id) as AssetContentTypeComponent);
+                this.tiles[tileset].push(instance);
             })
         }
         delete this.queue[k];
@@ -190,8 +190,8 @@ class TilesetRender {
         }
     }
 
-    makeTileEntity(ref: AssetContentTypeComponent, id: string, pos_x: number, pos_y: number) {
-        let component = this.matters.get(id);
+    makeTileEntity(ref: AssetContentTypeComponent, id: string, pos_x: number, pos_y: number): AssetContentTypeComponent {
+        let component = this.matters.get(id) as AssetContentTypeComponent;
         if (!component) {
             component = this.matters.create({ pos_x, pos_y }, ref.id, id) as AssetContentTypeComponent;
         } else if (this.dump_exact[id]) {

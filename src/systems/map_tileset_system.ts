@@ -7,6 +7,7 @@ import { Matters } from "../matters";
 class MapTileset {
     tilerefs: { [id: number] : string };
     components: { [id: string] : string }
+    colors: { [id: string] : string }
     image: HTMLImageElement | null;
     tileset: AssetContentTypeTileset;
     canvas: HTMLCanvasElement;
@@ -19,6 +20,7 @@ class MapTileset {
         this.tileset = tileset;
         this.components = {};
         this.tilerefs = {};
+        this.colors = {};
         this.image = null;
 
         this.init();
@@ -59,6 +61,7 @@ class MapTileset {
             const colorid = parseInt(color.replace("#", "0x"));
             this.components[refid] = refid;
             this.tilerefs[colorid] = refid;
+            this.colors[refid] = color;
         }
     }
 

@@ -6,6 +6,8 @@ import TilesetEditor from './tileset_editor.js';
 import { setObjectPos } from './render_utils.js';
 import { snap } from '../math.js';
 import { SceneCore, MapComponent, MapEntity } from '../scene_core.js';
+import { AssetContentTypeComponent } from '../assets.js';
+import { MapTilesetSystem } from '../systems/map_tileset_system.js';
 
 enum SceneEditToolMode {
     DEFAULT = 0,
@@ -51,7 +53,7 @@ class SceneEditTools {
         this.mousepos_abs = new THREE.Vector2();
         this.raycaster = new THREE.Raycaster();
         this.mousepressed = false;
-        this.tileset_editor = new TilesetEditor(this.scene_render.loader);
+        this.tileset_editor = new TilesetEditor(scene_core, this.scene_render.loader);
         this.editmode = SceneEditToolMode.DEFAULT;
     }
 
@@ -138,9 +140,9 @@ class SceneEditTools {
             pos.y = snap(pos.y, this.tileset_editor.tilesize_y);
 
             if (this.tileset_editor.selected_tileset) {
-                const tileset = this.scene_core.tilesets[this.tileset_editor.selected_tileset];
-                pos.x += tileset.pos_x % 1;
-                pos.y += tileset.pos_y % 1;
+                const tileset = this.scene_core.components[this.tileset_editor.selected_tileset] as AssetContentTypeComponent
+                pos.x += (tileset.pos_x ?? 0) % 1;
+                pos.y += (tileset.pos_y ?? 0) % 1;
             }
 
             this.mousepos_world.copy(pos);
@@ -188,7 +190,7 @@ class SceneEditTools {
         }
     }
 
-    tilesetDraw() {
+    async tilesetDraw() {
         const drawobject = this.tileset_editor.slected_object;
         if (!this.tileset_editor.selected_tileset) {
             return;
@@ -199,7 +201,7 @@ class SceneEditTools {
         }
 
         const tileset_id = this.tileset_editor.selected_tileset;
-        const tileset = this.scene_core.tilesets[tileset_id];
+        const tileset = (this.scene_core.systems.tileset as MapTilesetSystem).tilesets[tileset_id]
 
         const canvas = tileset.canvas;
         const image = tileset.image;
@@ -213,8 +215,8 @@ class SceneEditTools {
         const rpos_x = pos_x - tileset.pos_x;
         const rpos_y = pos_y - tileset.pos_y;
 
-        if (rpos_x < 0 || rpos_y < 0 || rpos_x >= image.width || rpos_y >= image.height) {
-            throw new Error("Can't draw outside canvas.");
+        if (rpos_x < 0 || rpos_y > 0 || rpos_x >= image.width || rpos_y >= image.height) {
+            throw new Error("Can't draw outside tileset bounds.");
         }
 
         let drawcolor = tileset.tileset.zero_color
@@ -222,16 +224,17 @@ class SceneEditTools {
 
         if (drawobject && this.editmode == SceneEditToolMode.TILE_DRAW) {
             const drawid = drawobject.name;
-            const drawmodel = tileset.models[drawid];
             drawcolor = this.tileset_editor.colors[drawid];
-            const entity = new MapEntity(newid);
-            // tynroar todo: make proper inheritance insead of ref_id
-            entity.inherits = drawid;
-            const model = Object.setPrototypeOf({ pos_x, pos_y }, drawmodel);
-            entity.components.model = new MapComponent(model);
-            this.scene_core.addEntity(entity);
+            const ref = this.scene_core.matters.get(drawid) as AssetContentTypeComponent;
+            const instance = await this.scene_core.add(ref, null, newid);
+            if (instance) {
+                instance.pos_x = rpos_x;
+                instance.pos_y = rpos_y;
+                const object = this.scene_render.cache.objects[instance.id];
+                this.scene_render.setPos(object, new THREE.Vector3(rpos_x, rpos_y, 0));
+            }
         } else if (this.editmode == SceneEditToolMode.TILE_ERASE) {
-            this.scene_core.removeEntity(newid);
+            this.scene_core.remove(newid);
         }
 
         const ctx = canvas.getContext("2d");
@@ -242,8 +245,7 @@ class SceneEditTools {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(image, 0, 0);
             ctx.rect(rpos_x, -rpos_y, 1, 1);
-            ctx.fillStyle = drawcolor.replace("0x", "#");
-            console.log(drawcolor);
+            ctx.fillStyle = drawcolor;
             ctx.fill();
             image.src = canvas.toDataURL();
         }

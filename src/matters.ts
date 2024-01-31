@@ -101,6 +101,12 @@ class Matters {
         return id.startsWith("**") ? this.list[id.substring(2)] : this.list[id];
     }
 
+    /**
+     * traverses all included matters and callbacks each of them
+     * @param id 
+     * @param callback 
+     * @returns 
+     */
     traverse(id: string, callback: (matter: Matter, key: string, value: any) => void) {
         const matter = this.get(id);
         if (!matter) {
