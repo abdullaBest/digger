@@ -77,9 +77,7 @@ export default class AssetsLibraryView {
                 return;
             }
             const extension = this.assets.get(link_id).info.extension;
-            const asset = this.asset_selected;
-            asset.content[extension] = "**" + link_id;
-            this.viewAsset(asset.id);
+            this.addComponentLink(this.asset_selected.content as Matter, extension, link_id);
         }, this._listeners)
         listenClick("#asset-collider-add", async (ev) => {
             let link_id = await this._showSelectList("select", {}, "collider", ["create"]);
@@ -90,9 +88,7 @@ export default class AssetsLibraryView {
             if (!link_id) {
                 return;
             }
-            const asset = this.asset_selected;
-            asset.content["collider"] = "**" + link_id;
-            this.viewAsset(asset.id);
+            this.addComponentLink(this.asset_selected.content as Matter, "collider", link_id);
         }, this._listeners);
         listenClick("#asset-tile-add", async (ev) => {
             let link_id = await this._showSelectList("select", {}, "tile", ["create"]);
@@ -105,9 +101,12 @@ export default class AssetsLibraryView {
             if (!link_id) {
                 return;
             }
+            this.addComponentLink(this.asset_selected.content as Matter, "tile_" + link_id, link_id);
+        }, this._listeners);
+        listenClick("#asset-gameprop-add", async (ev) => {
+            const id = await this._createComponent("gameprop", { owner: this.asset_selected.id });
             const asset = this.asset_selected;
-            asset.content["tile_" + link_id] = "**" + link_id;
-            this.viewAsset(asset.id);
+            this.addComponentLink(asset.content as Matter, "gameprop", id);
         }, this._listeners);
         listenClick("#asset-manage-save", async (ev) => {
             if (this.asset_selected) {
@@ -127,6 +126,19 @@ export default class AssetsLibraryView {
             this._deleteComponentSequence(matter as AssetContentTypeComponent);
             
         }, this._listeners)
+    }
+
+    /**
+     * scene should be cleaned up before any component link changes to avoid attempts to remove wrong components on scene
+     * 
+     * @param matter 
+     * @param key 
+     * @param id 
+     */
+    addComponentLink(matter: Matter, key: string, id: string) {
+        this.scene_map.scene_core.cleanup();
+        matter.set_link(key, id);
+        this.viewAsset(matter.id);
     }
 
     async saveAsset(id?: string | null) {
@@ -222,6 +234,7 @@ export default class AssetsLibraryView {
     }
 
     async _wipeAsset(id: string) {
+        this.scene_map.cleanup();
         await this.assets.wipeAsset(id);
         const el = this.container_list.querySelector("#" + id) as HTMLElement;
         if (el) {
@@ -230,6 +243,7 @@ export default class AssetsLibraryView {
     }
 
     async _deleteComponentSequence(component: AssetContentTypeComponent) {
+    
         if (component && component.dependents) {
             Popup.instance.show().message("delete error", `Asset ${component.id} has ${component.dependents} dependents. Could not delete`);
             return;

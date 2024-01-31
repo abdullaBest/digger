@@ -232,9 +232,9 @@ export default class InspectorMatters {
         }
 
         const value =  matter.get(key);
-        if ((typeof value == "string" && value.startsWith("**"))) {
+        if (matter.is_link(key)) {
             btn_external_ref.classList.remove("hidden");
-            if (this.matters.get(value).get("owner") !== matter.id) {
+            if (this.matters.get(value)?.get("owner") !== matter.id) {
                 btn_plug.classList.remove("hidden");
             }
         }

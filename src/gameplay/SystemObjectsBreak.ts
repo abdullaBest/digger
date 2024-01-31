@@ -23,30 +23,28 @@ export default class SystemObjectsBreak {
         const hit_damage = 1;
         const hit_strength = 1;
 
+        // hit result is collider. Breakable component has to be found somehere in tree
         let component = this.scene_core.components[id] as any;
-        while(!component?.breakable) {
+        while(component && !component.gameprop && component.owner) {
             component = this.scene_core.matters.get(component.owner);
         }
-        if (!component || !component.breakable) {
-            return false;
-        }
-        const durability = this.scene_core.components[id]
-        if (!durability) {
+        if (!component || !component.gameprop) {
             return false;
         }
 
-        let endurance = component.endurance;
+        component = this.scene_core.matters.get(component.gameprop)
+
+        let durability = component.durability;
         let resistance = component.resistance;
 
         if (hit_strength < resistance) {
             return false;
         }
         
-        endurance -= hit_damage;
+        durability -= hit_damage;
 
-        component.endurance = Math.max(0, endurance);
-
-        return endurance <= 0;
+        component.durability = Math.max(0, durability);
+        return durability <= 0;
     }
 
     

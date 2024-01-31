@@ -74,12 +74,10 @@ export default class SystemObjectsFall {
                 }
 
                 
-                const entity = this.scene_core.entities[k];
-                const model = entity?.components.model?.properties;
-                if (model) {
-                    model.pos_x = collider.x;
-                    model.pos_y = collider.y;
-                    entity.persist = true;
+                const component = this.scene_core.components[k];
+                if (component) {
+                    component.pos_x = collider.x;
+                    component.pos_y = collider.y;
                 }
             } 
 
@@ -128,9 +126,16 @@ export default class SystemObjectsFall {
                 continue;
             }
 
-            const model = this.scene_core.entities[k]?.components.model?.properties;
-            if (model && model.tags && model.tags.includes("falling")) {
-                activate(k);
+            let component = this.scene_core.components[k] as any;
+            while(component && !component.gameprop && component.owner) {
+                component = this.scene_core.matters.get(component.owner);
+            }
+            if (!component || !component.gameprop) {
+                return;
+            }
+            component = this.scene_core.matters.get(component.gameprop)
+            if (component && component.falling) {
+                activate(component.id);
             }
         }
     }

@@ -139,6 +139,12 @@ interface AssetContentTypeCollider extends AssetContentTypeComponent {
 
 }
 
+interface AssetContentTypeGameprop extends AssetContentTypeComponent {
+    durability: number;
+    resistance: number;
+    falling: boolean;
+}
+
 interface AssetContentTypeSpace extends AssetContentTypeComponent {
     guids: number;
 }
@@ -265,10 +271,11 @@ class Assets {
         component: AssetContentTypeComponent,
         space: AssetContentTypeSpace,
         texture: AssetContentTypeTexture,
+        collider: AssetContentTypeCollider,
+        gameprop: AssetContentTypeGameprop,
         model: AssetContentTypeModel, 
         tileset: AssetContentTypeTileset,
         tile: AssetContentTypeTile,
-        collider: AssetContentTypeCollider
     }
 
     constructor () {
@@ -282,7 +289,8 @@ class Assets {
         const base_asset_extension_component = { type: "component" };
         const base_asset_extension_space = { type: "space", guids: 0 };
         const base_asset_extension_texture = { type: "texture", asset: null };
-        const base_asset_extension_collider = { type: "collider", autosize: true };
+        const base_asset_extension_collider = { type: "collider", autosize: true, width: 0, height: 0 };
+        const base_asset_extension_gameprop = { type: "gameprop", durability: 1, resistence: 999, falling: false };
         const base_asset_extension_model = { type: "model", gltf: "toset", material: "standart", texture: "toset", matrix: null }
         const base_asset_extension_tileset = { type: "tileset", texture: "toset", zero_color: "#ffffffff", tilesize_x: 1, tilesize_y: 1, pos_x: 0, pos_y: 0 }
         const base_asset_extension_tile = { type: "tile", color: "#000000", link: "toset", abstract: true };
@@ -291,10 +299,11 @@ class Assets {
             component: this.matters.create(base_asset_extension_component, null, "base_asset_type_component") as AssetContentTypeComponent,
             space: this.matters.create(base_asset_extension_space, "base_asset_type_component", "base_asset_type_space") as AssetContentTypeSpace,
             texture: this.matters.create(base_asset_extension_texture, "base_asset_type_component", "base_asset_type_texture") as AssetContentTypeTexture,
+            collider: this.matters.create(base_asset_extension_collider, "base_asset_type_component", "base_asset_type_collider") as AssetContentTypeCollider,
+            gameprop: this.matters.create(base_asset_extension_gameprop, "base_asset_type_component", "base_asset_type_gameprop") as AssetContentTypeGameprop,
             model: this.matters.create(base_asset_extension_model, "base_asset_type_component", "base_asset_type_model") as AssetContentTypeModel,
             tileset: this.matters.create(base_asset_extension_tileset, "base_asset_type_component", "base_asset_type_tileset") as AssetContentTypeTileset,
             tile: this.matters.create(base_asset_extension_tile, "base_asset_type_component", "base_asset_type_tile") as AssetContentTypeTile,
-            collider: this.matters.create(base_asset_extension_collider, "base_asset_type_component", "base_asset_type_collider") as AssetContentTypeCollider,
         };
 
     }
