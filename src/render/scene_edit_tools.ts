@@ -141,8 +141,10 @@ class SceneEditTools {
 
             if (this.tileset_editor.selected_tileset) {
                 const tileset = this.scene_core.components[this.tileset_editor.selected_tileset] as AssetContentTypeComponent
-                pos.x += (tileset.pos_x ?? 0) % 1;
-                pos.y += (tileset.pos_y ?? 0) % 1;
+                if (tileset) {
+                    pos.x += (tileset.pos_x ?? 0) % 1;
+                    pos.y += (tileset.pos_y ?? 0) % 1;
+                }
             }
 
             this.mousepos_world.copy(pos);
@@ -206,6 +208,10 @@ class SceneEditTools {
 
         const tileset_id = this.tileset_editor.selected_tileset;
         const tileset = (this.scene_core.systems.tileset as MapTilesetSystem).tilesets[tileset_id]
+
+        if (!tileset) {
+            return;
+        }
 
         const canvas = tileset.canvas;
         const image = tileset.image;
