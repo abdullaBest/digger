@@ -62,11 +62,11 @@ class SceneRender {
 		light1.name = 'ambient_light';
 		camera.add(light1);
         const light2 = new THREE.DirectionalLight(0xffffff, 2.3);
-		(light2 as any).position.set(0.5, 0, 0.866); // ~60º
+		(light2 as any).position.set(0.5, 0, -0.866); // ~60º
 		light2.name = 'main_light';
 		rootscene.add(light2);
         
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0xdddddd, 1.2);
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x333333, 3.2);
         hemiLight.name = 'hemi_light';
         rootscene.add(hemiLight);
 
