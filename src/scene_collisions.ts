@@ -167,7 +167,7 @@ class SceneCollisions {
 
         this.cache = new CollidersCache();
 
-        this.step_threshold = 0.05;
+        this.step_threshold = 0.01;
         this.step_elapsed = 0;
         this.last_step_elapsed = 1;
         this.step_number = 0;

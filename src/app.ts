@@ -33,7 +33,7 @@ class App {
 
         this.active = false;
         this.timestamp = 0;
-        this.fixed_timestep = true;
+        this.fixed_timestep = false;
 
         this.frame_threshold = 16;
         this.average_frametime = 0;
