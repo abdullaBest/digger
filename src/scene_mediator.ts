@@ -34,7 +34,7 @@ class SceneMediator {
         }
 
         this.active_scene = id;
-        this.scene_game.run();
+        this.scene_game.play();
         this.events.dispatchEvent(new CustomEvent("scene_open", { detail : {id}}));
     }
 

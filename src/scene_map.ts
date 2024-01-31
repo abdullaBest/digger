@@ -4,14 +4,15 @@ import { RenderTilesetSystem } from "./render/tileset_render_system";
 
 export default class SceneMap {
     scene_core: SceneCore;
+    render_tileset_system: RenderTilesetSystem;
 
     constructor(scene_core: SceneCore) {
         this.scene_core = scene_core;
     }
 
     init() {
-        const render_tileset_system = new RenderTilesetSystem(this.scene_core);
-        this.scene_core.addSystem("render_tileset", render_tileset_system);
+        this.render_tileset_system = new RenderTilesetSystem(this.scene_core);
+        this.scene_core.addSystem("render_tileset", this.render_tileset_system);
     }
 
     async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {
@@ -24,5 +25,9 @@ export default class SceneMap {
 
     cleanup() {
         this.scene_core.cleanup();
+    }
+
+    step(dt: number) {
+        this.render_tileset_system.tileset_render.update(0, 0);
     }
 }

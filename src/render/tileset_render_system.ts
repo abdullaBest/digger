@@ -46,12 +46,14 @@ class TilesetRender {
     cleanup() {
         this.queue = {};
         for(const k in this.tiles) {
-           this.cleanupTileset(k);
+            this.cleanupTileset(k);
         }
+        
         this.tiles = {};
         this.dump = {};
         this.dump_exact = {};
         
+        this.resetThreshold();
     }
 
     _isPosInClipbounds(pos_x: number, pos_y: number) {
@@ -63,6 +65,13 @@ class TilesetRender {
         const threshold_h = this.clip_h * 0.5;
 
         return !(pos_x < this.min_x - threshold_w || pos_x > this.max_x + threshold_w || pos_y < this.min_y - threshold_h || pos_y > this.max_y + threshold_h);
+    }
+
+    resetThreshold() {
+        this.min_x = -Infinity;
+        this.min_y = -Infinity;
+        this.max_x = Infinity;
+        this.max_y = Infinity;
     }
 
     update(pos_x, pos_y, ignore?: {[id: string] : any}) {
@@ -94,10 +103,7 @@ class TilesetRender {
             }
         }
         
-        this.min_x = -Infinity;
-        this.min_y = -Infinity;
-        this.max_x = Infinity;
-        this.max_y = Infinity;
+        this.resetThreshold();
     }
 
     cleanupTiles(tiles: Array<AssetContentTypeComponent>) {
@@ -117,7 +123,6 @@ class TilesetRender {
         
         if (!this._isPosInClipbounds(pos_x, pos_y)) {
             this.scene_core.remove(tile.id);
-            
             //remove from array
             const b = tiles[0];
             tiles[index] = b;
@@ -247,9 +252,13 @@ class RenderTilesetSystem extends MapSystem {
         }
 
         this.tileset_render.update(0, 0);
+        this.tileset_render.resetThreshold();
     }
 
     remove(component: AssetContentTypeTileset) {
+        if (!this.filter(component)) {
+            return;
+        }
         this.tileset_render.cleanupTileset(component.id);
     }
 }

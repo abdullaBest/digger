@@ -206,7 +206,7 @@ class SceneCore {
             }
         }
 
-        if (component.abstract) {
+        if (!component || component.abstract) {
             return;
         }
 

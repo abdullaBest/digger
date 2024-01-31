@@ -148,6 +148,7 @@ class App {
 
     step(dt: number) {
         this.scene_game.step(dt);
+        this.scene_map.step(dt);
 
         // scene_edit_tools steps before scene_render
         this.scene_edit_tools.step(dt);
@@ -186,7 +187,6 @@ class App {
                     break;
                 case "game_clip_tilesets":
                     const clip = target.classList.toggle("highlighted");
-                    this.scene_game._updateTilesetsDraw(clip);
             }
         });
     }
