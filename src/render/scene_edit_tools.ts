@@ -152,7 +152,11 @@ class SceneEditTools {
         }
     }
 
-    onMouseClick( event ) {
+    onMouseClick( ev: MouseEvent ) {
+        if (ev.button !== 0) {
+            return;
+        }
+        const event = ev as any;
         event.preventDefault();
         
         // pick sidebar

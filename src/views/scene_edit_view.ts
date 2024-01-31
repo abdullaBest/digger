@@ -63,6 +63,7 @@ export default class SceneEditView {
                 }
             }
 
+            this.scene_edit_tools.tileset_editor.cleanupPalette();
             this.scene_edit_tools.attachTransformControls(instance.id);
             if (instance.type == "tileset") {
                 this.scene_edit_tools.tileset_editor.drawPalette((this.scene_core.systems.tileset as MapTilesetSystem).tilesets[instance.id]);
