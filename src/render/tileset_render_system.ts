@@ -191,7 +191,7 @@ class TilesetRender {
     }
 
     makeTileEntity(ref: AssetContentTypeComponent, id: string, pos_x: number, pos_y: number) {
-        let component = this.dump_exact[id] ?? this.dump[ref.id]?.pop();
+        let component = this.matters.get(id);
         if (!component) {
             component = this.matters.create({ pos_x, pos_y }, ref.id, id) as AssetContentTypeComponent;
         } else if (this.dump_exact[id]) {

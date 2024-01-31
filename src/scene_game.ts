@@ -11,6 +11,7 @@ import { SceneCore, MapEntity, MapComponent } from "./scene_core";
 import SystemObjectsBreak from "./gameplay/SystemObjectsBreak";
 import SystemObjectsFall from "./gameplay/SystemObjectsFall";
 import SystemRenderBodiesPos from "./gameplay/SystemRenderBodiesPos";
+import { AssetContentTypeComponent } from "./assets";
 
 export default class SceneGame {
     player_character: Character;
@@ -268,10 +269,14 @@ export default class SceneGame {
 
         const broke = this.system_objects_break.hit(hit_result);
         if (broke) {
+            const component = this.scene_core.matters.get(hit_result) as AssetContentTypeComponent;
+            if (!component?.owner) {
+                return;
+            }
             // falling block activate
-            this.system_objects_fall.touchFallingBlock(hit_result);
+            this.system_objects_fall.touchFallingBlock(component.id);
             // remove breakable block
-            this.scene_core.remove(hit_result);
+            this.scene_core.remove(component.owner);
         }
     }
 

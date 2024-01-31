@@ -2,6 +2,7 @@ import SceneCore from "../scene_core";
 import SceneRender from "../render/scene_render";
 import { SceneCollisions, BoxColliderC } from "../scene_collisions";
 import { lerp, distlerp } from "../math";
+import { AssetContentTypeComponent } from "../assets";
 
 class BodiesPosStepInfo {
     pos_x: number;
@@ -55,7 +56,14 @@ export default class SystemRenderBodiesPos {
 
         for(const k in this.scene_collisions.bodies) {
             const collider = this.scene_collisions.bodies[k].collider;
-            const object = this.scene_render.cache.objects[k];
+            let object = this.scene_render.cache.objects[k];
+
+            if (!object) {
+                const component = this.scene_core.matters.get(k) as AssetContentTypeComponent;
+                if (component.owner) {
+                    object = this.scene_render.cache.objects[component.owner]
+                }
+            }
 
             if (!collider || !object) {
                 delete this.stepinfos[k];

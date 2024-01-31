@@ -77,14 +77,11 @@ class SceneRenderModelSystem extends MapSystem {
 class SceneCollidersSystem extends MapSystem {
     private scene_render: SceneRender;
     private scene_collisions: SceneCollisions;
-    private colliders: { [id: string] : string }
     constructor(scene_collisions: SceneCollisions, scene_render: SceneRender) {
         super();
         this.priority = -1;
         this.scene_collisions = scene_collisions;
         this.scene_render = scene_render;
-
-        this.colliders = {};
     }
 
     filter(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) : boolean {
@@ -101,20 +98,14 @@ class SceneCollidersSystem extends MapSystem {
         }
         const box = SceneMath.instance.genObject2dAABB(this.scene_render.cache.objects[owner.id], this.scene_collisions.origin, this.scene_collisions.normal);
         if (box) {
-            this.scene_collisions.createBoxCollider(owner.id, box);
-            this.colliders[component.id] = owner.id;
+            this.scene_collisions.createBoxCollider(component.id, box);
         } 
 
     }
 
     remove(component: AssetContentTypeComponent): void {
-        const collider = this.colliders[component.id];
-        if (!collider) {
-            return;
-        }
-        this.scene_collisions.removeBody(collider)
-        this.scene_collisions.removeCollider(collider)
-        delete this.colliders[component.id];
+        this.scene_collisions.removeBody(component.id)
+        this.scene_collisions.removeCollider(component.id)
     }
 }
 
@@ -245,6 +236,12 @@ class SceneCore {
             for(const kk in list) {
                 system.add(list[kk]);
             }
+        }
+    }
+
+    step(dt: number) {
+        for (const k in this.systems){
+            this.systems[k].step(dt);
         }
     }
 

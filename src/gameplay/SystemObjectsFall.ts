@@ -3,6 +3,7 @@ import SceneRender from "../render/scene_render";
 import SceneCollisions from "../scene_collisions";
 
 interface FallingBlockData {
+    collider: string;
     elapsed: number;
     shaking: boolean;
 }
@@ -27,8 +28,8 @@ export default class SystemObjectsFall {
         for(const k in this.falling_objects) {
             const b = this.falling_objects[k];
 
-            const collider = this.scene_collisions.colliders[k];
-            const body = this.scene_collisions.bodies[k];
+            const collider = this.scene_collisions.colliders[b.collider];
+            const body = this.scene_collisions.bodies[b.collider];
         
             if (!collider) {
                 continue;
@@ -51,21 +52,21 @@ export default class SystemObjectsFall {
 
                 (obj as any).position.x = x;
                 (obj as any).position.y = y;
-            } else if (!this.scene_collisions.bodies[k] && collider) {
+            } else if (!this.scene_collisions.bodies[b.collider] && collider) {
                 // b.1 falling
-                this.scene_collisions.addBoxBody(k, collider);
+                this.scene_collisions.addBoxBody(b.collider, collider);
                 // b.2 make fall surrounding blocks
-                this.touchFallingBlock(k, 0.01);
+                this.touchFallingBlock(b.collider, 0.01);
             } else if (body) {
                 // c. deactivating
                 for(let i = 0; i < body.contacts; i++) {
                     const c = body.contacts_list[i];
                     if (c && c.normal_y < 0 && c.time <= 0 && !this.scene_collisions.bodies[c.id ?? ""]) {
                         delete this.falling_objects[k];
-                        this.scene_collisions.removeBody(k, false);
+                        this.scene_collisions.removeBody(b.collider, false);
                         
                         const obj = this.scene_render.cache.objects[k];
-                        const collider = this.scene_collisions.colliders[k];
+                        const collider = this.scene_collisions.colliders[b.collider];
                         if (obj) {
                             (obj as any).position.x  = collider.x;
                             (obj as any).position.y  = collider.y;
@@ -87,9 +88,9 @@ export default class SystemObjectsFall {
 
     
     touchFallingBlock(id: string, shaketime: number = 1,) {
-        const activate = (blockid: string) => {
+        const activate = (blockid: string, colliderid: string) => {
             // b. iterate all blocks around activating block and find out if it stays on something
-            const ca = this.scene_collisions.colliders[blockid];
+            const ca = this.scene_collisions.colliders[colliderid];
             for (const k in this.scene_collisions.colliders) {
                 if (k == id) {
                     continue;
@@ -109,7 +110,7 @@ export default class SystemObjectsFall {
                 }
             }
 
-            this.activateFallingBlock(blockid, shaketime);
+            this.activateFallingBlock(blockid, colliderid, shaketime);
         }
 
         // a. Iterate over all block around broken tile and try to activate falling blocks
@@ -133,19 +134,19 @@ export default class SystemObjectsFall {
             if (!component || !component.gameprop) {
                 return;
             }
-            component = this.scene_core.matters.get(component.gameprop)
-            if (component && component.falling) {
-                activate(component.id);
+            if ((this.scene_core.matters.get(component.gameprop) as any)?.falling) {
+                activate(component.id, k);
             }
         }
     }
 
-    activateFallingBlock(id: string, shaketime: number) {
+    activateFallingBlock(id: string, colliderid: string, shaketime: number) {
         if (this.falling_objects[id]) {
             return;
         }
 
         this.falling_objects[id] = {
+            collider: colliderid,
             elapsed: 1 - shaketime,
             shaking: true
         }

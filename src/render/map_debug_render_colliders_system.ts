@@ -7,7 +7,8 @@ import * as THREE from '../lib/three.module.js';
 export default class MapDebugRenderCollidersSystem extends MapSystem {
     private scene_render: SceneRender;
     private scene_collisions: SceneCollisions;
-    private debug_colliders: { [id: string]: THREE.Object3D }
+    private debug_colliders: { [id: string]: THREE.Object3D };
+
     constructor(scene_collisions: SceneCollisions, scene_render: SceneRender) {
         super();
         this.priority = -1;
@@ -17,7 +18,7 @@ export default class MapDebugRenderCollidersSystem extends MapSystem {
     }
 
     filter(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) : boolean {
-        return component.type == "collider" && !!owner;
+        return component.type == "collider";
     }
 
     async add(component: AssetContentTypeModel, owner?: AssetContentTypeComponent) {
@@ -25,15 +26,12 @@ export default class MapDebugRenderCollidersSystem extends MapSystem {
             return;
         }
 
-        if (!owner) {
-            throw new Error("SceneCollidersSystem:add error - this component can't be used without owner node.")
-        }
-
-        const collider = this.scene_collisions.colliders[owner.id];
+        const collider = this.scene_collisions.colliders[component.id];
         if (!collider) {
-            console.warn(`MapDebugRenderCollidersSystem::add error - no object ${owner.id} registered.`);
+            console.warn(`MapDebugRenderCollidersSystem::add error - no object ${component.id} registered.`);
         }
         this.drawColliderDebug(component.id, collider);
+
     }
 
     remove(component: AssetContentTypeModel) {
@@ -68,5 +66,14 @@ export default class MapDebugRenderCollidersSystem extends MapSystem {
         (plane as any).scale.set(collider.width, collider.height, 1);
         plane.lookAt(planepos.x + this.scene_collisions.normal.x, planepos.y + this.scene_collisions.normal.y, this.scene_collisions.origin.z + this.scene_collisions.normal.z);
         this.debug_colliders[id] = plane;
+    }
+
+    step(dt: number): void {
+        for (const k in this.scene_collisions.bodies) {
+            const body = this.scene_collisions.bodies[k];
+            if (this.debug_colliders[k]) {
+                this.drawColliderDebug(k, body.collider);
+            }
+        }
     }
 }

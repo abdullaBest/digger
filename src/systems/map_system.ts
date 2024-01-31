@@ -9,4 +9,5 @@ export default class MapSystem {
     async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) {}
     remove(component: AssetContentTypeComponent) {}
     filter(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent) : boolean { return false; }
+    step(dt: number) {};
 }

@@ -29,5 +29,6 @@ export default class SceneMap {
 
     step(dt: number) {
         this.render_tileset_system.tileset_render.update(0, 0);
+        this.scene_core.step(dt);
     }
 }
