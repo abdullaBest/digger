@@ -70,6 +70,7 @@ function updateFiles(req, res) {
     if (!filename) {
       break;
     }
+    asset.revision -= 1;
     const path = assets.directory + filename;
     if (existsSync(path)){
       rmSync(path, { force: true });
@@ -208,7 +209,6 @@ app.get('/assets/load/:id/:revision', async (req, res, next) => {
   const asset = assets.get(id);
 
   const filename = asset.revisions[revision] || asset.revisions[asset.revision];
-
   sendFile(filename, asset.type, res).catch((err)=>{
     if (err.status !== 404) return next(err); // non-404 error
       // file for download not found
