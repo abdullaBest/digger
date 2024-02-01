@@ -35,12 +35,19 @@ export default class SceneMap {
     }
 
     step(dt: number) {
-        this.render_tileset_system.tileset_render.update(this.viewpoint_x, this.viewpoint_y);
+        if (this.render_tileset_system.tileset_render.clip_tiles_draw) {
+            this.render_tileset_system.tileset_render.update(this.viewpoint_x, this.viewpoint_y);
+        }
         this.scene_core.step(dt);
     }
 
     setViewpoint(x: number, y: number) {
         this.viewpoint_x = x;
         this.viewpoint_y = y;
+    }
+
+    clipTilesDraw(clip: boolean) {
+        this.render_tileset_system.tileset_render.clip_tiles_draw = clip;
+        this.render_tileset_system.tileset_render.update(this.viewpoint_x, this.viewpoint_y);
     }
 }

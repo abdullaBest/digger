@@ -187,6 +187,7 @@ class App {
                     break;
                 case "game_clip_tilesets":
                     const clip = target.classList.toggle("highlighted");
+                    this.scene_map.clipTilesDraw(clip);
             }
         });
     }

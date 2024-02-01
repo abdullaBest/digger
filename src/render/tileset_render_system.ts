@@ -76,7 +76,6 @@ class TilesetRender {
         } else {
             this._queueDraw(ignore);
             draw_count = this.queued + 1;
-            return;
         }
 
         for(const k in this.map_tileset_system.tilesets) {
