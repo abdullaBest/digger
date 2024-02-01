@@ -56,8 +56,9 @@ function updateFiles(req, res) {
   if (file) {
     asset.filename = file.filename;
     asset.revision += 1;
-    asset.revisions.push(file.filename);
-    asset.revisions_total =  (asset.revisions_total ?? 0) + 1
+    const rid = "r" + asset.revision;
+    asset.revision_files[rid] = asset.filename;
+    asset.revisions.push(rid);
   }
   if (name) {
     asset.name = name;
@@ -68,17 +69,17 @@ function updateFiles(req, res) {
 
   /*
   while(asset.revisions.length > 10) {
-    const filename = asset.revisions.shift();
-    if (!filename) {
+    const rid = asset.revisions.shift();
+    if (!rid) {
       break;
     }
-    asset.revision -= 1;
+    const filename = asset.revision_files[rid];
+    delete asset.revision_files[rid];
     const path = assets.directory + filename;
     if (existsSync(path)){
       rmSync(path, { force: true });
     }
-  }
-  */
+  }*/
 
   assets.save();
 
@@ -211,7 +212,7 @@ app.get('/assets/load/:id/:revision', async (req, res, next) => {
   const revision = req.params.revision || -1;
   const asset = assets.get(id);
 
-  const filename = asset.revisions[revision] || asset.revisions[asset.revision];
+  const filename = asset.revision_files["r" + revision] || asset.revision_files["r" + asset.revision];
   sendFile(filename, asset.type, res).catch((err)=>{
     if (err.status !== 404) return next(err); // non-404 error
       // file for download not found

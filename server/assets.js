@@ -48,7 +48,8 @@ export default class Assets {
             size,
             extension,
             revision: 0,
-            revisions: [filename],
+            revision_files: {"r0": filename},
+            revisions: ["r0"],
             tags
         }
 
