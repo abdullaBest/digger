@@ -230,11 +230,13 @@ class SceneEditTools {
         }
 
         let drawcolor = tileset.tileset.zero_color
-        const newid = tileset.makeTileId(rpos_x, rpos_y);
+        const newid = "i" + tileset.makeTileId(rpos_x, rpos_y);
 
         if (drawobject && this.editmode == SceneEditToolMode.TILE_DRAW) {
             this.scene_core.remove(newid);
-            this.scene_core.matters.remove(newid);
+            if (this.scene_core.matters.get(newid)) {
+                this.scene_core.matters.remove(newid);
+            }
             const drawid = drawobject.name;
             drawcolor = this.tileset_editor.colors[drawid];
             const ref = this.scene_core.matters.get(drawid) as AssetContentTypeComponent;

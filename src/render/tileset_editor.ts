@@ -122,7 +122,7 @@ export default class TilesetEditor {
         for(const id in tileset.components) {
             const matter = this.scene_core.matters.get(id);
             let model : AssetContentTypeModel | null = null;
-            this.scene_core.matters.traverse(id, (m) => { if (m.inherited_equals("type", "model")) { model = m as AssetContentTypeModel } });
+            this.scene_core.matters.traverse(id, null, (m) => { if (m.inherited_equals("type", "model")) { model = m as AssetContentTypeModel } });
             if (!model) {
                 continue;
             }

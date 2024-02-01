@@ -102,21 +102,29 @@ class Matters {
     }
 
     /**
-     * traverses all included matters and callbacks each of them
+     * traverses all matter fields and fields of all included matters
      * @param id 
-     * @param callback 
+     * @param callback_values callback on each matter filed
+     * @param callback_links callback on each matter included and called matter itself 
      * @returns 
      */
-    traverse(id: string, callback: (matter: Matter, key: string, value: any) => void) {
+    traverse(id: string, callback_values?: ((matter: Matter, key: string, value: any) => void) | null, callback_links?: (matter: Matter) => void) {
         const matter = this.get(id);
         if (!matter) {
             return;
         }
+
+        if (callback_links) {
+            callback_links(matter);
+        }
+
         for(const k in matter) {
             const value = matter.get(k);
-            callback(matter, k, value);
+            if (callback_values) {
+                callback_values(matter, k, value);
+            }
             if (typeof value == "string" && value.startsWith("**")) {
-                this.traverse(value, callback);
+                this.traverse(value, callback_values, callback_links);
             }
         }
     }
