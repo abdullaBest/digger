@@ -67,7 +67,6 @@ function updateFiles(req, res) {
     asset.tags = tags;
   }
 
-  /*
   while(asset.revisions.length > 10) {
     const rid = asset.revisions.shift();
     if (!rid) {
@@ -79,7 +78,7 @@ function updateFiles(req, res) {
     if (existsSync(path)){
       rmSync(path, { force: true });
     }
-  }*/
+  }
 
   assets.save();
 
