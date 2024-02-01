@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
     let revision = 0;
     if (req.params.id && assets.get(req.params.id)) {
       const asset = assets.get(req.params.id);
-      revision = asset.revision
+      revision = asset.revision ?? 0
     }
 
     let name = id;

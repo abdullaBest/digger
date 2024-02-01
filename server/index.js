@@ -57,6 +57,7 @@ function updateFiles(req, res) {
     asset.filename = file.filename;
     asset.revision += 1;
     asset.revisions.push(file.filename);
+    asset.revisions_total =  (asset.revisions_total ?? 0) + 1
   }
   if (name) {
     asset.name = name;
@@ -65,6 +66,7 @@ function updateFiles(req, res) {
     asset.tags = tags;
   }
 
+  /*
   while(asset.revisions.length > 10) {
     const filename = asset.revisions.shift();
     if (!filename) {
@@ -76,6 +78,7 @@ function updateFiles(req, res) {
       rmSync(path, { force: true });
     }
   }
+  */
 
   assets.save();
 
