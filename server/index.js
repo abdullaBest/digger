@@ -64,6 +64,18 @@ function updateFiles(req, res) {
   if (tags) {
     asset.tags = tags;
   }
+
+  while(asset.revisions.length > 10) {
+    const filename = asset.revisions.shift();
+    if (!filename) {
+      break;
+    }
+    const path = assets.directory + filename;
+    if (existsSync(path)){
+      rmSync(path, { force: true });
+    }
+  }
+
   assets.save();
 
   res.send();

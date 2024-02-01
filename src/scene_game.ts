@@ -8,6 +8,7 @@ import { distlerp, lerp } from "./math";
 import { SceneElement } from "./scene_edit";
 import SceneDebug from "./scene_debug";
 import { SceneCore, MapEntity, MapComponent } from "./scene_core";
+import SceneMap from "./scene_map";
 import SystemObjectsBreak from "./gameplay/SystemObjectsBreak";
 import SystemObjectsFall from "./gameplay/SystemObjectsFall";
 import SystemRenderBodiesPos from "./gameplay/SystemRenderBodiesPos";
@@ -20,6 +21,7 @@ export default class SceneGame {
     scene_collisions: SceneCollisions;
     scene_debug: SceneDebug;
     scene_core: SceneCore;
+    scene_map: SceneMap;
 
     system_objects_break: SystemObjectsBreak;
     system_objects_fall: SystemObjectsFall;
@@ -39,10 +41,11 @@ export default class SceneGame {
     gravity_x: number;
     gravity_y: number;
 
-    constructor(scene_collisions: SceneCollisions, scene_render: SceneRender, scene_core: SceneCore) {
+    constructor(scene_collisions: SceneCollisions, scene_render: SceneRender, scene_map: SceneMap) {
         this.scene_collisions = scene_collisions;
         this.scene_render = scene_render;
-        this.scene_core = scene_core;
+        this.scene_map = scene_map;
+        this.scene_core = this.scene_map.scene_core;
 
         this.player_character_render = new CharacterRender();
         this.system_objects_break = new SystemObjectsBreak(this.scene_core);
@@ -214,9 +217,11 @@ export default class SceneGame {
             this.scene_render.setCameraPos(pos, targ);
         }
 
-        if(this.player_character.performed_actions.find((e) => e.tag == "hit")) { 
+        if (this.player_character.performed_actions.find((e) => e.tag == "hit")) { 
             this._actionHit();
         }
+
+        this.scene_map.setViewpoint(this.player_character.body.collider.x, this.player_character.body.collider.y);
 
         this._stepCharacterInteractions(this.player_character);
     }
@@ -269,6 +274,7 @@ export default class SceneGame {
 
         const broke = this.system_objects_break.hit(hit_result);
         if (broke) {
+            // component is collider. owner is actual block object
             const component = this.scene_core.matters.get(hit_result) as AssetContentTypeComponent;
             if (!component?.owner) {
                 return;
@@ -276,7 +282,16 @@ export default class SceneGame {
             // falling block activate
             this.system_objects_fall.touchFallingBlock(component.id);
             // remove breakable block
-            this.scene_core.remove(component.owner);
+
+            const owner = this.scene_core.matters.get(component.owner);
+            this.scene_core.remove(owner.id);
+
+            // #debt-tilerefs: tileset creates two tile data object - one is persist tile reference, second one is actual tile instance
+            // here tile ref marked as destroyed and it should not be restored
+            if ((owner as any).tileref && owner.inherites) {
+                const ref = this.scene_core.matters.get(owner.inherites) as any;
+                ref.tiledestroyed = ref;
+            }  
         }
     }
 

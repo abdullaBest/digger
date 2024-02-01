@@ -129,7 +129,7 @@ class Matters {
      * @param name .
      * @param id .
      */
-    create(content: any, inherite?: string | null, id?: string, name?: string) : Matter {
+    create(content: any, inherite?: string | null, id?: string | null, name?: string) : Matter {
         const _id = id ?? content.id ?? this.newid();
         const _name = name ?? content.name ?? _id;
         const _inherites = inherite ?? content.inherites ?? this.base_matter.id;

@@ -1,6 +1,7 @@
 import SceneCore from "../scene_core";
 import SceneRender from "../render/scene_render";
 import SceneCollisions from "../scene_collisions";
+import { AssetContentTypeComponent } from "../assets";
 
 interface FallingBlockData {
     collider: string;
@@ -74,8 +75,12 @@ export default class SystemObjectsFall {
                     }
                 }
 
-                
-                const component = this.scene_core.components[k];
+                let component = this.scene_core.components[k];
+
+                // #debt-tilerefs: saving position for tile instance in tile reference - it not gonna be destroyed durning tileset cleanup
+                if ((component as any).tileref && component.inherites) {
+                    component = this.scene_core.matters.get(component.inherites) as AssetContentTypeComponent;
+                }
                 if (component) {
                     component.pos_x = collider.x;
                     component.pos_y = collider.y;

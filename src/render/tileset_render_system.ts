@@ -20,10 +20,6 @@ class TilesetRender {
     // tile add queue
     queue: { [id: string] : AssetContentTypeComponent }
     queued: number;
-    // removed tiles that can be reused
-    dump: { [id: string] : Array<AssetContentTypeComponent> }
-    // removed tiles that gonna be restored as it was (preserved)
-    dump_exact: { [id: string] : AssetContentTypeComponent };
 
     clip_w: number;
     clip_h: number;
@@ -50,8 +46,6 @@ class TilesetRender {
         }
         
         this.tiles = {};
-        this.dump = {};
-        this.dump_exact = {};
         
         this.resetThreshold();
     }
@@ -100,6 +94,9 @@ class TilesetRender {
             const tile = tiles.shift();
             if (tile) {
                 this.scene_core.remove(tile.id);
+                if (tile.inherites) {
+                    this.matters.remove(tile.inherites);
+                }
             }
         }
         
@@ -111,42 +108,32 @@ class TilesetRender {
         let picked = 0;
         const topick = Math.log(tiles.length + 1) * 16;
         let removed = 0;
-        while(this.tiles.length && picked < topick && removed < topick * 0.5) {
-        picked += 1;
-        const index = Math.floor(Math.random() * tiles.length);
-        const tile = tiles[index];
-        const pos_x = this.scene_core.entity_pos_x(tile.id);
-        const pos_y = this.scene_core.entity_pos_y(tile.id);
-        if (this.queue[tile.id]) {
-            continue;
-        }
-        
-        if (!this._isPosInClipbounds(pos_x, pos_y)) {
-            this.scene_core.remove(tile.id);
-            //remove from array
-            const b = tiles[0];
-            tiles[index] = b;
-            tiles.shift();
-            removed += 1;
-
-            if (false && tile.inherites) {
-                // save entity into dump
-                // a. save into exact list - gonna be restored as it was
-                // b. save into dump array - just saves some memory operations
-                if (tile.persist) {
-                    this.dump_exact[tile.id] = tile;
-                } else {
-                    let arr = this.dump[tile.inherits]
-                    if (!arr) {
-                        arr = this.dump[tile.inherits] = [];
-                    }
-                    arr.push(tile);
-                }
+        while(tiles.length && picked < topick && removed < topick * 0.5) {
+            picked += 1;
+            const index = Math.floor(Math.random() * tiles.length);
+            const tile = tiles[index];
+            const pos_x = tile.pos_x ?? 0;
+            const pos_y = tile.pos_y ?? 0;
+            if (this.queue[tile.id]) {
+                continue;
             }
-        } 
+            
+            if (!this._isPosInClipbounds(pos_x, pos_y)) {
+                this.scene_core.remove(tile.id);
+                //remove from array
+                const b = tiles[0];
+                tiles[index] = b;
+                tiles.shift();
+                removed += 1;
+            } 
         }
     }
 
+    /**
+     * #debt-tilerefs: each tile has two matter objects - first base one with position and second is tile instance added on scene
+     * @param tileset 
+     * @param limit 
+     */
     _drawQuqued(tileset: string, limit: number) {
        // add tiles from queue list
        let added = 0;
@@ -157,8 +144,9 @@ class TilesetRender {
         const tile = this.queue[k];
         const pos_x = tile.pos_x ?? 0;
         const pos_y = tile.pos_y ?? 0;
-        if (this._isPosInClipbounds(pos_x, pos_y)) {
-            this.scene_core.add(tile).then((instance) => {
+        const id =  "i" + tile.id
+        if (this._isPosInClipbounds(pos_x, pos_y) && !this.matters.get(id)) {
+            this.scene_core.add(tile, null, id).then((instance) => {
                 if (!instance) {
                     return;
                 }
@@ -178,32 +166,20 @@ class TilesetRender {
             const tileset = this.map_tileset_system.tilesets[k];
 
             tileset.propagate((ref_id: string, id: string, pos_x: number, pos_y: number) => {
-                if (this.scene_core.components[id] || (ignore && id in ignore) || this.queue[id]) {
+                if ((ignore && id in ignore) || this.queue[id]) {
                     return;
                 }
                 const ref = this.matters.get(tileset.components[ref_id]) as AssetContentTypeComponent;
-                const entity = this.makeTileEntity(ref, id, pos_x, pos_y);
-                this.queue[id] = entity;
+
+                const component = (this.matters.get(id) ?? this.matters.create({ pos_x, pos_y, tileref: true }, ref.id, id)) as AssetContentTypeComponent;
+                if ((component as any).tiledestroyed) {
+                    return;
+                }
+                this.queue[id] = component;
                 this.queued += 1;
             }, 
             min_x, min_y, max_x, max_y);
         }
-    }
-
-    makeTileEntity(ref: AssetContentTypeComponent, id: string, pos_x: number, pos_y: number): AssetContentTypeComponent {
-        let component = this.matters.get(id) as AssetContentTypeComponent;
-        if (!component) {
-            component = this.matters.create({ pos_x, pos_y }, ref.id, id) as AssetContentTypeComponent;
-        } else if (this.dump_exact[id]) {
-           delete this.dump_exact[id];
-        } else {
-            component.id = id;
-            component.pos_x = pos_x;
-            component.pos_y = pos_y;
-        }
-
-
-        return component;
     }
 
     _queueDrawClip(pos_x, pos_y, ignore?: {[id: string] : any}) {

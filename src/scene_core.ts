@@ -142,7 +142,7 @@ class SceneCore {
      * @param id new instance id
      * @returns instance id
      */
-    async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent | null, id?: string) : Promise<AssetContentTypeComponent | null> {
+    async add(component: AssetContentTypeComponent, owner?: AssetContentTypeComponent | null, id?: string | null) : Promise<AssetContentTypeComponent | null> {
         if (component.abstract) {
             return null;
         }
@@ -255,24 +255,6 @@ class SceneCore {
             const pos_y = properties.pos_y;
             const collider = this.scene_collisions.createBoxColliderByPos(id, pos_x, pos_y, properties.width, properties.height, ColliderType.SIGNAL);
         }
-    }
-
-    entity_pos_x(id: string) {
-        const c = this.scene_collisions.colliders[id];
-        if (c) {
-            return c.x;
-        }
-
-        return 0;
-    }
-
-    entity_pos_y(id: string) {
-        const c = this.scene_collisions.colliders[id];
-        if (c) {
-            return c.y;
-        }
-
-        return 0;
     }
 }
 

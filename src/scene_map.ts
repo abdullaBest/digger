@@ -6,8 +6,14 @@ export default class SceneMap {
     scene_core: SceneCore;
     render_tileset_system: RenderTilesetSystem;
 
+    viewpoint_x: number;
+    viewpoint_y: number;
+
     constructor(scene_core: SceneCore) {
         this.scene_core = scene_core;
+
+        this.viewpoint_x = 0;
+        this.viewpoint_y = 0;
     }
 
     init() {
@@ -25,10 +31,16 @@ export default class SceneMap {
 
     cleanup() {
         this.scene_core.cleanup();
+        this.setViewpoint(0, 0);
     }
 
     step(dt: number) {
-        this.render_tileset_system.tileset_render.update(0, 0);
+        this.render_tileset_system.tileset_render.update(this.viewpoint_x, this.viewpoint_y);
         this.scene_core.step(dt);
+    }
+
+    setViewpoint(x: number, y: number) {
+        this.viewpoint_x = x;
+        this.viewpoint_y = y;
     }
 }
