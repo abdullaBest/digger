@@ -218,7 +218,6 @@ class SceneRender {
           gltf.scene.name = id;
           this.cache.gltfs[id] = gltf;
           this.cache.objects[id] = gltf.scene;
-          //console.log(dumpObject(gltf.scene).join('\n'));
           resolve(gltf);
         },
         undefined,
@@ -366,25 +365,5 @@ class SceneRender {
   }
 }
 
-function dumpObject(
-  obj,
-  lines: Array<string> = [],
-  isLast = true,
-  prefix = "",
-) {
-  const localPrefix = isLast ? "└─" : "├─";
-  lines.push(
-    `${prefix}${prefix ? localPrefix : ""}${obj.name || "*no-name*"} [${
-      obj.type
-    }]`,
-  );
-  const newPrefix = prefix + (isLast ? "  " : "│ ");
-  const lastNdx = obj.children.length - 1;
-  obj.children.forEach((child, ndx) => {
-    const isLast = ndx === lastNdx;
-    dumpObject(child, lines, isLast, newPrefix);
-  });
-  return lines;
-}
 
 export default SceneRender;

@@ -126,6 +126,12 @@ export default class AssetsLibraryView {
             this._deleteComponentSequence(matter as AssetContentTypeComponent);
             
         }, this._listeners)
+        listenClick("#asset-manage-reimport", async (ev) => {
+            const asset = this.asset_selected;
+						if (asset.info.extension === "gltf") {
+							await importGltfSequence(this.assets, asset.id);
+						}
+        }, this._listeners)
     }
 
     /**
@@ -320,12 +326,19 @@ export default class AssetsLibraryView {
                 //return;
             }
         }
+
+				const sectionel = querySelector("#asset-manage-section");
+				if (this.asset_selected) {
+					sectionel.classList.remove("type-" + this.asset_selected.info.extension)
+				}
         
         const asset = this.assets.get(id);
         this.asset_selected = asset;
         if (this.asset_inspector) {
             this.asset_inspector.dispose();
         }
+
+				sectionel.classList.add("type-" + asset.info.extension)
 
         const container = querySelector("#assets-library-details content")
         container.innerHTML = "";

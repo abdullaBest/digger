@@ -13,3 +13,21 @@ section#edit-sidebar.noselected {
         content: "Nothing here. Select asset";
     }
 }
+
+section#asset-manage-section {
+	btn#asset-manage-reimport, btn#asset-tile-add {
+		display: none;
+	}
+
+	&.type-tileset {
+		btn#asset-tile-add {
+			display: flex;
+		}
+	}
+
+	&.type-gltf {
+		btn#asset-manage-reimport {
+			display: flex;
+		}
+	}
+}
