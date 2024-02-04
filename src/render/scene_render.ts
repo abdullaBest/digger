@@ -21,6 +21,7 @@ class SceneRender {
     private cube: THREE.Mesh;
     renderer: THREE.WebGLRenderer;
     rootscene: THREE.Scene;
+		global_lights: THREE.Group;
     scene: THREE.Group;
     camera: THREE.PerspectiveCamera;
     controls: OrbitControls;
@@ -58,20 +59,8 @@ class SceneRender {
         const cube = new THREE.Mesh( geometry, material );
         scene.add( cube );
 
-        const light1 = new THREE.AmbientLight(0xffffff, 0.7);
-		light1.name = 'ambient_light';
-		camera.add(light1);
-        const light2 = new THREE.DirectionalLight(0xffffff, 2.3);
-		(light2 as any).position.set(0.5, 0, -0.866); // ~60º
-		light2.name = 'main_light';
-		rootscene.add(light2);
-        
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x333333, 3.2);
-        hemiLight.name = 'hemi_light';
-        rootscene.add(hemiLight);
-
         this.controls = new OrbitControls(camera, renderer.domElement);
-		this.controls.screenSpacePanning = true;
+				this.controls.screenSpacePanning = true;
 
         
         (camera as any).position.z = 2;
@@ -82,10 +71,29 @@ class SceneRender {
         this.rootscene = rootscene;
         this.camera = camera;
 
+				this.initLights();
         this.updateSize();
        
         return this;
     }
+
+		initLights() {
+			this.global_lights = new THREE.Group();
+			this.rootscene.add(this.global_lights);
+
+			const light1 = new THREE.AmbientLight(0xffffff, 0.7);
+			light1.name = 'ambient_light';
+			this.global_lights.add(light1);
+
+			const light2 = new THREE.DirectionalLight(0xffffff, 2.3);
+			(light2 as any).position.set(0.5, 0, -0.866); // ~60º
+			light2.name = 'main_light';
+			this.global_lights.add(light2);
+
+			const hemiLight = new THREE.HemisphereLight(0xffffff, 0x333333, 3.2);
+			hemiLight.name = 'hemi_light';
+			this.global_lights.add(hemiLight);
+		}
 
     async addModel(id: string, model: any, parent?: THREE.Object3D | null) : Promise<THREE.Object3D> {
         const object = await this.loader.getModel(id, model);

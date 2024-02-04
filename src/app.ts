@@ -188,6 +188,10 @@ class App {
                 case "game_clip_tilesets":
                     const clip = target.classList.toggle("highlighted");
                     this.scene_map.clipTilesDraw(clip);
+										break;
+								case "scene_toggle_lights":
+										const light = target.classList.toggle("highlighted");
+										this.scene_render.global_lights.visible = light;
             }
         });
     }
