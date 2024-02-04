@@ -5,22 +5,27 @@ export default class Tabs {
     private buttons: Array<HTMLElement> | null;
     private tabs: Array<HTMLElement> | null;
 
-    constructor() {
+		buttons_container: HTMLElement;
+		tabs_container: HTMLElement;
+
+    constructor(buttons_container: HTMLElement, tabs_container: HTMLElement) {
         this._listeners = [];
+				this.buttons_container = buttons_container;
+				this.tabs_container = tabs_container;
     }
 
-    init(buttons_container: HTMLElement, tabs_container: HTMLElement, callback?: (id: string) => void) {
+    init(callback?: (id: string) => void) {
         this.buttons = [];
         this.tabs = [];
 
-        const buttons = buttons_container.querySelectorAll("btn.tab-switch")
+        const buttons = this.buttons_container.querySelectorAll("btn.tab-switch")
         for(let i = 0; i < buttons.length; i++) {
             const btn = buttons[i] as HTMLElement;
             const id = btn.dataset.tab;
             if (!id) {
                 throw new Error("Tabs::init error - btn has no attribute 'data-tab' set.")
             }
-            const tab = querySelector("#" + id, tabs_container);
+            const tab = querySelector("#" + id, this.tabs_container);
             listenClick(btn, () => { 
                 this.click(id);
                 if(callback) {
