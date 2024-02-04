@@ -60,7 +60,7 @@ export default class SystemRenderBodiesPos {
 
             if (!object) {
                 const component = this.scene_core.matters.get(k) as AssetContentTypeComponent;
-                if (component.owner) {
+                if (component?.owner) {
                     object = this.scene_render.cache.objects[component.owner]
                 }
             }
