@@ -31,7 +31,6 @@ class SceneRender {
 
   scene_math: SceneMath;
   assets: Assets;
-  private active: Boolean;
   cache: SceneRenderCache;
   loader: SceneRenderLoader;
 
@@ -39,7 +38,6 @@ class SceneRender {
 
   constructor(assets: Assets) {
     this.assets = assets;
-    this.active = false;
     this.cache = new SceneRenderCache();
 
     this.scene_math = SceneMath.instance;
@@ -263,19 +261,7 @@ class SceneRender {
     return this.loader.getMaterial(name, texture_url, flipY);
   }
 
-  dispose() {
-    this.stop();
-  }
-  run() {
-    this.active = true;
-  }
-  stop() {
-    this.active = false;
-  }
   step(dt: number) {
-    if (!this.active) {
-      return;
-    }
 
     this.updateSize();
 
