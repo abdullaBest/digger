@@ -1,6 +1,10 @@
 import { Matters, Matter } from "./matters";
 import Events from "./events";
 import { sendFiles, listenFormSubmit } from "./request_utils";
+import {
+	BaseContentExtensionsList,
+	cunstructBaseExtensionsData,
+} from "./assets_base_extensions";
 
 enum AssetStatus {
 	UNKNOWN = 0,
@@ -17,74 +21,6 @@ interface AssetInfo {
 	type: string;
 	extension: string;
 	revision: number;
-}
-
-interface AssetContentTypeComponent extends Matter {
-	type: string;
-	/**
-	 * Used to indicate that componet attached to another component and should not be listed in global scope
-	 */
-	owner?: string | null;
-
-	/**
-	 * Indicates that component should not be added into scene tree
-	 */
-	abstract?: boolean | null;
-
-	matrix?: Array<number> | null;
-	pos_x?: number | null;
-	pos_y?: number | null;
-}
-
-interface AssetContentTypeEvent extends AssetContentTypeComponent {
-	user_interact?: string | null;
-	user_collide?: string | null;
-}
-
-interface AssetContentTypeCollider extends AssetContentTypeComponent {
-	trigger: boolean;
-	autosize: boolean;
-	width: number;
-	height: number;
-}
-
-interface AssetContentTypeGameprop extends AssetContentTypeComponent {
-	durability: number;
-	resistance: number;
-	falling: boolean;
-}
-
-interface AssetContentTypeSpace extends AssetContentTypeComponent {
-	guids: number;
-}
-
-interface AssetContentTypeTexture extends AssetContentTypeComponent {
-	asset: HTMLImageElement;
-	url: string;
-}
-
-interface AssetContentTypeModel extends AssetContentTypeComponent {
-	gltf: string;
-	material: string;
-	texture: string;
-}
-
-interface AssetContentTypeTileset extends AssetContentTypeComponent {
-	guids: 0;
-	texture: string;
-	zero_color: string;
-	color_id_prefix: string;
-	link_id_prefix: string;
-	durability_id_prefix: string;
-	tilesize_x: number;
-	tilesize_y: number;
-	pos_x: number;
-	pos_y: number;
-}
-
-interface AssetContentTypeTile extends AssetContentTypeComponent {
-	color: string;
-	link: string;
 }
 
 class Asset {
@@ -177,17 +113,7 @@ class Assets {
 	matters: Matters;
 	events: Events;
 
-	private _base_content_extensions: {
-		component: AssetContentTypeComponent;
-		space: AssetContentTypeSpace;
-		event: AssetContentTypeEvent;
-		texture: AssetContentTypeTexture;
-		collider: AssetContentTypeCollider;
-		gameprop: AssetContentTypeGameprop;
-		model: AssetContentTypeModel;
-		tileset: AssetContentTypeTileset;
-		tile: AssetContentTypeTile;
-	};
+	private _base_content_extensions: BaseContentExtensionsList;
 
 	constructor() {
 		this.events = new Events();
@@ -197,93 +123,7 @@ class Assets {
 	init() {
 		this.matters.init();
 
-		const base_asset_extension_component = { type: "component" };
-		const base_asset_extension_space = { type: "space", guids: 0 };
-		const base_asset_extension_event = { user_interact: null, user_collide: null };
-		const base_asset_extension_texture = { type: "texture", asset: null };
-		const base_asset_extension_collider = {
-			type: "collider",
-			autosize: true,
-			trigger: false,
-			width: 0,
-			height: 0,
-		};
-		const base_asset_extension_gameprop = {
-			type: "gameprop",
-			durability: 1,
-			resistence: 999,
-			falling: false,
-		};
-		const base_asset_extension_model = {
-			type: "model",
-			gltf: "toset",
-			material: "standart",
-			texture: "toset",
-			matrix: null,
-		};
-		const base_asset_extension_tileset = {
-			type: "tileset",
-			texture: "toset",
-			zero_color: "#ffffffff",
-			tilesize_x: 1,
-			tilesize_y: 1,
-			pos_x: 0,
-			pos_y: 0,
-		};
-		const base_asset_extension_tile = {
-			type: "tile",
-			color: "#000000",
-			link: "toset",
-			abstract: true,
-		};
-
-		this._base_content_extensions = {
-			component: this.matters.create(
-				base_asset_extension_component,
-				null,
-				"base_asset_type_component"
-			) as AssetContentTypeComponent,
-			event: this.matters.create(
-				base_asset_extension_event,
-				"base_asset_type_component",
-				"base_asset_type_event"
-			) as AssetContentTypeEvent,
-			space: this.matters.create(
-				base_asset_extension_space,
-				"base_asset_type_component",
-				"base_asset_type_space"
-			) as AssetContentTypeSpace,
-			texture: this.matters.create(
-				base_asset_extension_texture,
-				"base_asset_type_component",
-				"base_asset_type_texture"
-			) as AssetContentTypeTexture,
-			collider: this.matters.create(
-				base_asset_extension_collider,
-				"base_asset_type_component",
-				"base_asset_type_collider"
-			) as AssetContentTypeCollider,
-			gameprop: this.matters.create(
-				base_asset_extension_gameprop,
-				"base_asset_type_component",
-				"base_asset_type_gameprop"
-			) as AssetContentTypeGameprop,
-			model: this.matters.create(
-				base_asset_extension_model,
-				"base_asset_type_component",
-				"base_asset_type_model"
-			) as AssetContentTypeModel,
-			tileset: this.matters.create(
-				base_asset_extension_tileset,
-				"base_asset_type_component",
-				"base_asset_type_tileset"
-			) as AssetContentTypeTileset,
-			tile: this.matters.create(
-				base_asset_extension_tile,
-				"base_asset_type_component",
-				"base_asset_type_tile"
-			) as AssetContentTypeTile,
-		};
+		this._base_content_extensions = cunstructBaseExtensionsData(this.matters);
 	}
 
 	get(id: string): Asset {
@@ -574,12 +414,25 @@ class Assets {
 }
 
 export default Assets;
+
+import {
+	AssetContentTypeComponent,
+	AssetContentTypeCollider,
+	AssetContentTypeEvents,
+	AssetContentTypeModel,
+	AssetContentTypeTileset,
+	AssetContentTypeTile,
+	AssetContentTypeTexture,
+} from "./assets_base_extensions";
+
 export {
 	Assets,
 	Asset,
 	listenFormSubmit,
 	sendFiles,
 	AssetContentTypeComponent,
+	AssetContentTypeCollider,
+	AssetContentTypeEvents,
 	AssetContentTypeModel,
 	AssetContentTypeTileset,
 	AssetContentTypeTile,

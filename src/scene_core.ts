@@ -311,11 +311,20 @@ class SceneCore {
 	addSystem(name: string, system: MapSystem) {
 		this.systems[name] = system;
 		for (const k in this.components) {
-			const list = this.components[k];
-			for (const kk in list) {
-				system.add(list[kk]);
-			}
+			system.add(this.components[k]);
 		}
+	}
+
+	removeSystem(name: string) {
+		const system = this.systems[name];
+		if (!system) {
+			return;
+		}
+
+		for (const k in this.components) {
+			system.remove(this.components[k]);
+		}
+		delete this.systems[name];
 	}
 
 	step(dt: number) {
