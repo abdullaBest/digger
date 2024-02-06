@@ -108,6 +108,11 @@ export default class AssetsLibraryView {
             const asset = this.asset_selected;
             this.addComponentLink(asset.content as Matter, "gameprop", id);
         }, this._listeners);
+        listenClick("#asset-events-add", async (ev) => {
+            const id = await this._createComponent("events", { owner: this.asset_selected.id });
+            const asset = this.asset_selected;
+            this.addComponentLink(asset.content as Matter, "events", id);
+        }, this._listeners);
         listenClick("#asset-manage-save", async (ev) => {
             if (this.asset_selected) {
                 this.saveAsset(this.asset_selected.id);
@@ -277,12 +282,13 @@ export default class AssetsLibraryView {
 
     listAsset(id: string, container: HTMLElement = this.container_list) {
         const asset = this.assets.get(id);
-        let entry = container.querySelector("#" + asset.id) as HTMLElement;
+        const matter = this.assets.matters.get(id);
+        let btn = container.querySelector("#" + asset.id) as HTMLElement;
         let name_label, thumbnail;
-        if (!entry) {
-            entry = document.createElement("btn");
-            entry.id = asset.id;
-            entry.classList.add("flex-row", "gap-minor")
+        if (!btn) {
+            btn = document.createElement("btn");
+            btn.id = asset.id;
+            btn.classList.add("flex-row", "gap-minor")
 
             thumbnail = document.createElement("img");
             thumbnail.classList.add('fittext', 'icon', 'img-thumbnail');
@@ -292,24 +298,39 @@ export default class AssetsLibraryView {
 
             id_label.innerHTML = `[${asset.id}:${asset.info.extension}]`;
 
-            entry.appendChild(thumbnail);
-            entry.appendChild(name_label);
-            entry.appendChild(id_label);
-            container.appendChild(entry);
+            btn.appendChild(thumbnail);
+            btn.appendChild(name_label);
+            btn.appendChild(id_label);
+
+						// add elements nested by it's owner
+						const eid = ((matter && matter.get("owner")) ?? asset.id);
+            let entry = container.querySelector("#e" + eid);
+						if (!entry) {
+							entry = document.createElement("entry");
+							entry.classList.add("style-nest-nonfirst");
+							entry.id = "e" + eid;
+
+							container.appendChild(entry);
+						}
+
+						if (eid == asset.id && entry.firstChild) {
+							entry.insertBefore(btn, entry.firstChild);
+						} else {
+							entry.appendChild(btn);
+						}
         } else {
-            name_label = querySelector(".label-name", entry);
-            thumbnail = querySelector(".img-thumbnail", entry);
+            name_label = querySelector(".label-name", btn);
+            thumbnail = querySelector(".img-thumbnail", btn);
         }
 
         name_label.innerHTML = asset.info.name;
         thumbnail.src = asset.thumbnail;
 
-        const matter = this.assets.matters.get(id);
         if (!matter || matter.get("owner")) {
-            entry.classList.add("disabled-optional");
+            btn.classList.add("disabled-optional");
         }
 
-        return entry;
+        return btn;
     }
 
     viewAsset(id: string) {

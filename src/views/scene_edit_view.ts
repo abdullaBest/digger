@@ -239,7 +239,6 @@ export default class SceneEditView {
         this.assets_library_view.saveAsset(id);
         this.scene_core.matters.traverse(id, null, (m) => {
             if (m.inherited_equals("type", "tileset")) {
-                console.log(m, m.id);
                 this.saveAssetTileset(m.id);
             }
         })
