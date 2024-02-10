@@ -18,7 +18,7 @@ import SystemObjectsBreak from "./gameplay/SystemObjectsBreak";
 import SystemObjectsFall from "./gameplay/SystemObjectsFall";
 
 import SystemRenderBodiesPos from "./gameplay/SystemRenderBodiesPos";
-import { AssetContentTypeComponent } from "./assets";
+import { AssetContentTypeComponent, AssetContentTypeGameprop } from "./assets";
 import { GameInputs, InputAction } from "./game_inputs";
 
 export default class SceneGame {
@@ -254,6 +254,11 @@ export default class SceneGame {
 				this.gravity_y * dt * this.scene_collisions.forces_scale;
 		}
 
+		if (!this.player_character.alive) {
+			this.stopPlay();
+			this.events.emit("gameover");
+		}
+
 		this.player_character.step(dt);
 		this.scene_collisions.step(dt);
 		this.player_character_render.step(dt);
@@ -299,8 +304,34 @@ export default class SceneGame {
 		this._stepCharacterInteractions(this.player_character);
 	}
 
+	updateCharacterDamageConditions() {
+
+		// crash by falling blocks
+		if (
+			this.player_character.collided_top &&
+			this.player_character.collided_bottom
+		) {
+			const top_collider =
+				this.scene_core.components[this.player_character.collided_top];
+			const top_component = this.scene_core.components[top_collider.owner];
+			const gameprop_id = top_component.get("gameprop");
+
+			if (gameprop_id) {
+				const gameprop = this.scene_core.matters.get(
+					gameprop_id
+				) as AssetContentTypeGameprop;
+
+				if (gameprop.falling) {
+					this.player_character.health = 0;
+				}
+			}
+		}
+	}
+
 	private _stepCharacterInteractions(cha: Character) {
 		let interacts = false;
+
+		this.updateCharacterDamageConditions();
 
 		const proceedMapExitInteraction = (el: MapEntity) => {
 			if (

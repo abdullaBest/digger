@@ -44,8 +44,8 @@ class MenuControls {
 	}
 
 	/**
-	* @brief returns data-action of currently selected element
-	*/
+	 * @brief returns data-action of currently selected element
+	 */
 	get_selected(): string {
 		return this.selected_el?.dataset["action"];
 	}
@@ -59,9 +59,34 @@ class MenuControls {
 	}
 }
 
+class GameHud {
+	healthbar: HTMLElement;
+	game: AppGame;
+
+	constructor(game: AppGame) {
+		this.game = game;
+	}
+
+	init() {
+		this.healthbar = querySelector("#gamehud #healthbar");
+	}
+
+	step(dt: number) {
+		const character = this.game.scene_game.player_character;
+		if (!character) {
+			return;
+		}
+		this.healthbar.style.setProperty(
+			"--progress",
+			character.health * 100 + "%"
+		);
+	}
+}
+
 export default class ShellGame {
 	core: AppCore;
 	game: AppGame;
+	gamehud: GameHud;
 
 	loadingtab: HTMLElement;
 	rootcontainer: HTMLElement;
@@ -73,9 +98,11 @@ export default class ShellGame {
 	constructor(core: AppCore, game: AppGame) {
 		this.core = core;
 		this.game = game;
+		this.gamehud = new GameHud(game);
 	}
 
 	init() {
+		this.gamehud.init();
 		this.menucontrols = new MenuControls();
 		this.rootcontainer = querySelector("#gameui");
 		this.loadingtab = querySelector("#gameloadingpage", this.rootcontainer);
@@ -90,6 +117,17 @@ export default class ShellGame {
 		});
 
 		this.game.inputs.events.on("action_start", this._action.bind(this));
+
+		this.game.scene_game.events.on("gameover", () => {
+			this.page("gameovermenu");
+		});
+	}
+
+	step(dt: number) {
+		if (!this.active) {
+			return;
+		}
+		this.gamehud.step(dt);
 	}
 
 	show() {
@@ -114,7 +152,7 @@ export default class ShellGame {
 			return;
 		}
 
-		switch(act) {
+		switch (act) {
 			case InputAction.up:
 				this.menucontrols.prev();
 				break;
@@ -132,7 +170,7 @@ export default class ShellGame {
 
 	_esc_action() {
 		const page = this.get_page();
-		switch(page) {
+		switch (page) {
 			case "gamehud":
 				this.page("gamepausemenu");
 				this.game.scene_game.autostep = false;
@@ -150,7 +188,7 @@ export default class ShellGame {
 	}
 
 	_menu_action(act: string) {
-		switch(act) {
+		switch (act) {
 			case "play":
 				this._propagate_levelselect_options();
 				this.page("gamelevelselectmenu");
@@ -186,10 +224,10 @@ export default class ShellGame {
 	_propagate_levelselect_options() {
 		const container = querySelector("#levelselectoptions");
 		container.innerHTML = "";
-		
-		for(const k in this.core.assets.list) {
+
+		for (const k in this.core.assets.list) {
 			const asset = this.core.assets.list[k];
-			
+
 			if (asset.content?.type !== "space") {
 				continue;
 			}
@@ -203,7 +241,7 @@ export default class ShellGame {
 	}
 
 	get_page() {
-		return this.menus_history[this.menus_history.length-1];
+		return this.menus_history[this.menus_history.length - 1];
 	}
 
 	page_prev() {

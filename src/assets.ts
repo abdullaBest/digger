@@ -435,6 +435,7 @@ import {
 	AssetContentTypeTileset,
 	AssetContentTypeTile,
 	AssetContentTypeTexture,
+	AssetContentTypeGameprop,
 } from "./assets_base_extensions";
 
 export {
@@ -443,6 +444,7 @@ export {
 	AssetStatus,
 	listenFormSubmit,
 	sendFiles,
+	AssetContentTypeGameprop,
 	AssetContentTypeComponent,
 	AssetContentTypeCollider,
 	AssetContentTypeEvents,

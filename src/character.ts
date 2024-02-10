@@ -23,6 +23,8 @@ interface CharacterAction {
 class Character {
     body: DynamicBody;
 
+		health: number;
+
     movement_speed: number;
     jump_force: number;
     jump_threshold: number;
@@ -73,6 +75,7 @@ class Character {
 
     constructor(scene_collisions: SceneCollisions) {
         this.scene_collisions = scene_collisions;
+				this.health = 1;
 
         this.movement_speed = 2.7;
         this.jump_force = 5;
@@ -158,6 +161,10 @@ class Character {
         this._applyMovementForces(dt, perform_physics_actions);
 
     }
+
+		get alive() : boolean {
+			return this.health > 0;
+		}
 
     /**
      * Call only on physics step

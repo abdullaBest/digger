@@ -69,6 +69,7 @@ export default class AppShell {
 	step(dt: number) {
 		this.scene_edit_tools.step(dt);
 		this.scene_edit_tools.render();
+		this.shell_game.step(dt);
 	}
 
 	initPages() {
