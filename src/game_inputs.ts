@@ -11,7 +11,8 @@ enum InputAction {
 	acion_c = 6,
 	acion_d = 7,
 	acion_f = 8,
-	action_shift = 9
+	action_shift = 9,
+	action_esc = 10
 }
 
 class GameInputs {
@@ -42,6 +43,9 @@ class GameInputs {
 
 		const key = event.code;
 		switch (key) {
+			case "Escape":
+				this.events.emit("action_start", InputAction.action_esc);
+				break;
 			case "ArrowLeft":
 				this.events.emit("action_start", InputAction.left);
 				break;
@@ -76,6 +80,9 @@ class GameInputs {
 
 		const key = event.code;
 		switch (key) {
+			case "Escape":
+				this.events.emit("action_end", InputAction.action_esc);
+				break;
 			case "ArrowLeft":
 				this.events.emit("action_end", InputAction.left);
 				break;

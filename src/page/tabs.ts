@@ -4,6 +4,7 @@ export default class Tabs {
     private _listeners: Array<EventListenerDetails>;
     private buttons: Array<HTMLElement> | null;
     private tabs: Array<HTMLElement> | null;
+		private callback?: (id: string) => void;
 
 		buttons_container: HTMLElement;
 		tabs_container: HTMLElement;
@@ -17,6 +18,7 @@ export default class Tabs {
     init(callback?: (id: string) => void) {
         this.buttons = [];
         this.tabs = [];
+				this.callback = callback;
 
         const buttons = this.buttons_container.querySelectorAll("btn.tab-switch")
         for(let i = 0; i < buttons.length; i++) {
@@ -28,9 +30,6 @@ export default class Tabs {
             const tab = querySelector("#" + id, this.tabs_container);
             listenClick(btn, () => { 
                 this.click(id);
-                if(callback) {
-                    callback(id);
-                }
             }, this._listeners);
             this.buttons.push(btn);
             this.tabs.push(tab);
@@ -53,6 +52,10 @@ export default class Tabs {
             btn.classList[btn.dataset.tab == id ? "add" : "remove"]("highlighted");
             tab.classList[tab.id == id ? "remove" : "add"]("hidden");
         }
+
+				if(this.callback) {
+					this.callback(id);
+				}
     }
 
     dispose() {

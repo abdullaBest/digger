@@ -76,6 +76,8 @@ export default class AppShell {
 			querySelector("#header"),
 			querySelector("#apptabs")
 		).init((id: string) => {
+			this.shell_game.hide();
+
 			switch (id) {
 				case "play-tab":
 					this.core.scene_render.reattach(querySelector("#gameroot"));

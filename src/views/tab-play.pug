@@ -1,7 +1,25 @@
 tab#play-tab.size-fill.hidden.display-block
 	container#gameroot.size-fill.display-block
-		container#gameui.size-fill.display-block.position-absolute
+		container#gameui.size-fill.flex-column.position-absolute.z-index-1
 			page#gameloadingpage.size-fill.flex-column
 				progressbar#gameloadingbar
-			page#gamemainmenu.size-fill.flex-column
+			page#gamehud
+				b hud here
+			page#gamemainmenu.flex-column.margin-auto.menu-style
 				h1 digger v0
+				btn(data-action="play")
+				btn(data-action="credits")
+			page#gamelevelselectmenu.flex-column.margin-auto.menu-style
+				h1 select level
+				container#levelselectoptions
+				btn(data-action="back")
+			page#gamecreditsmenu.flex-column.margin-auto.menu-style
+				h4 автор Татарин
+				h4 кодит tynroar
+				h4 моделит никто
+				h4 геймдизайнер оч нужен
+				btn(data-action="back")
+			page#gamepausemenu.flex-column.margin-auto.menu-style
+				h1 paused
+				btn(data-action="continue")
+				btn(data-action="exit")

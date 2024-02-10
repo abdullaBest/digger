@@ -389,11 +389,13 @@ class Character {
 
         switch(tag) {
             case "jump":
-                if (this._actiunJump()) {
-                    apply_code = CharacterActionApplyCode.PERFORMED;
-                } else {
-                    apply_code = CharacterActionApplyCode.DISCARED;
-                }
+								if (code == CharacterActionCode.START) {
+									if (this._actiunJump()) {
+										apply_code = CharacterActionApplyCode.PERFORMED;
+									} else {
+										apply_code = CharacterActionApplyCode.DISCARED;
+									}
+								}
                 break;
             case "run":
                 apply_code = CharacterActionApplyCode.PERFORMED;
