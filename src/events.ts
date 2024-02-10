@@ -33,7 +33,7 @@ export default class Events {
         delete this.list[id];
     }
 
-    emit(name: string, detail: any) {
+    emit(name: string, detail?: any) {
         this.core.dispatchEvent(new CustomEvent(name, { detail }));
     }
 

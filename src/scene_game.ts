@@ -1,7 +1,12 @@
+import Events from "./events";
 import { Character, CharacterActionCode } from "./character";
-import { SceneCollisions, BoxColliderC } from './scene_collisions';
+import { SceneCollisions, BoxColliderC } from "./scene_collisions";
 import { Box2, Vector2 } from "./lib/three.module";
-import { addEventListener, removeEventListeners, EventListenerDetails } from "./document";
+import {
+	addEventListener,
+	removeEventListeners,
+	EventListenerDetails,
+} from "./document";
 import CharacterRender from "./render/character_render";
 import SceneRender from "./render/scene_render";
 import { distlerp, lerp } from "./math";
@@ -11,333 +16,396 @@ import { SceneCore, MapEntity, MapComponent } from "./scene_core";
 import SceneMap from "./scene_map";
 import SystemObjectsBreak from "./gameplay/SystemObjectsBreak";
 import SystemObjectsFall from "./gameplay/SystemObjectsFall";
+
 import SystemRenderBodiesPos from "./gameplay/SystemRenderBodiesPos";
 import { AssetContentTypeComponent } from "./assets";
+import { GameInputs, InputAction } from "./game_inputs";
 
 export default class SceneGame {
-    player_character: Character;
-    private player_character_render: CharacterRender;
-    private scene_render: SceneRender;
-    scene_collisions: SceneCollisions;
-    scene_debug: SceneDebug;
-    scene_core: SceneCore;
-    scene_map: SceneMap;
+	events: Events;
+	inputs: GameInputs;
+	player_character: Character;
+	private player_character_render: CharacterRender;
+	private scene_render: SceneRender;
+	scene_collisions: SceneCollisions;
+	scene_debug: SceneDebug;
+	scene_core: SceneCore;
+	scene_map: SceneMap;
 
-    system_objects_break: SystemObjectsBreak;
-    system_objects_fall: SystemObjectsFall;
-    system_render_bodiespos: SystemRenderBodiesPos;
+	system_objects_break: SystemObjectsBreak;
+	system_objects_fall: SystemObjectsFall;
+	system_render_bodiespos: SystemRenderBodiesPos;
 
-    attach_camera_to_player: boolean;
-    camera_config: { attach_camera_z: number, attach_camera_y: number }
+	attach_camera_to_player: boolean;
+	camera_config: { attach_camera_z: number; attach_camera_y: number };
 
-    private _listeners: Array<EventListenerDetails>;
-    private active: boolean;
-    private inplay: boolean;
-    autostep: boolean;
+	private _listeners: Array<EventListenerDetails>;
+	private active: boolean;
+	private inplay: boolean;
+	autostep: boolean;
 
-    requested_map_switch: string | null;
-    requested_map_entrance: string | null;
+	requested_map_switch: string | null;
+	requested_map_entrance: string | null;
 
-    gravity_x: number;
-    gravity_y: number;
+	gravity_x: number;
+	gravity_y: number;
 
-    constructor(scene_collisions: SceneCollisions, scene_render: SceneRender, scene_map: SceneMap) {
-        this.scene_collisions = scene_collisions;
-        this.scene_render = scene_render;
-        this.scene_map = scene_map;
-        this.scene_core = this.scene_map.scene_core;
+	constructor(
+		scene_collisions: SceneCollisions,
+		scene_render: SceneRender,
+		scene_map: SceneMap,
+		inputs: GameInputs
+	) {
+		this.events = new Events();
+		this.inputs = inputs;
+		this.scene_collisions = scene_collisions;
+		this.scene_render = scene_render;
+		this.scene_map = scene_map;
+		this.scene_core = this.scene_map.scene_core;
 
-        this.player_character_render = new CharacterRender();
-        this.system_objects_break = new SystemObjectsBreak(this.scene_core);
-        this.system_objects_fall = new SystemObjectsFall(this.scene_core, this.scene_render);
-        this.system_render_bodiespos = new SystemRenderBodiesPos(this.scene_core, this.scene_render);
+		this.player_character_render = new CharacterRender();
+		this.system_objects_break = new SystemObjectsBreak(this.scene_core);
+		this.system_objects_fall = new SystemObjectsFall(
+			this.scene_core,
+			this.scene_render
+		);
+		this.system_render_bodiespos = new SystemRenderBodiesPos(
+			this.scene_core,
+			this.scene_render
+		);
 
-        this.active = false;
-        this.inplay = false;
-        this.autostep = true;
-        this._listeners = [];
-        this.requested_map_switch = null;
-        this.requested_map_entrance = null;
+		this.active = false;
+		this.inplay = false;
+		this.autostep = true;
+		this._listeners = [];
+		this.requested_map_switch = null;
+		this.requested_map_entrance = null;
 
-        this.gravity_x = 0;
-        this.gravity_y = -9.8;
+		this.gravity_x = 0;
+		this.gravity_y = -9.8;
 
-        this.camera_config = {
-            attach_camera_z: 7,
-            attach_camera_y: 1
-        }
-    }
-    
-    async init(): Promise<SceneGame> {
-        this.player_character_render.init(this.scene_render, this.scene_collisions);
-        this.attach_camera_to_player = false;
-        await this.scene_collisions.init();
-        this.scene_debug = new SceneDebug();
+		this.camera_config = {
+			attach_camera_z: 7,
+			attach_camera_y: 1,
+		};
+	}
 
-        return this;
-    }
+	async init(): Promise<SceneGame> {
+		this.player_character_render.init(this.scene_render, this.scene_collisions);
+		this.attach_camera_to_player = false;
+		await this.scene_collisions.init();
+		this.scene_debug = new SceneDebug();
 
-    async play(entrance_id?: string | null) {
-        this.active = true;
-        this.stopPlay();
-        this.system_objects_break.run();
-        this.system_objects_fall.run();
-        this.system_render_bodiespos.run();
+		this.inputs.events.on("action_start", (action: InputAction) => {
+			this._action(action, CharacterActionCode.START);
+		});
+		this.inputs.events.on("action_end", (action: InputAction) => {
+			this._action(action, CharacterActionCode.END);
+		});
 
-        this.requested_map_switch = null;
-        this.requested_map_entrance = null;
-        
-        await this._runCharacter(entrance_id);
+		return this;
+	}
 
-        addEventListener({callback: this._keydown.bind(this), name: "keydown", node: document.body}, this._listeners)
-        addEventListener({callback: this._keyup.bind(this), name: "keyup", node: document.body}, this._listeners)
-        addEventListener({callback: ()=> {
-            this.player_character.actionRequest("move_left", CharacterActionCode.END);
-            this.player_character.actionRequest("move_right", CharacterActionCode.END)
-        }, name: "blur", node: window as any}, this._listeners)
-        //addEventListener({callback: ()=> {console.log("focus")}, name: "focus", node: window as any}, this._listeners)
+	async play(entrance_id?: string | null) {
+		this.active = true;
+		this.stopPlay();
+		this.system_objects_break.run();
+		this.system_objects_fall.run();
+		this.system_render_bodiespos.run();
 
-        // debug outputs -- {
-        this.scene_debug.run(this.player_character, this.camera_config);
-        this.scene_debug.camera_config_draw.addWrite("camera_fov", 
-            () => this.scene_render.camera_base_fov, 
-            (v) => {this.scene_render.camera_base_fov = v; this.scene_render.updateCameraAspect();}
-            );
-        // debug outputs -- }
+		this.requested_map_switch = null;
+		this.requested_map_entrance = null;
 
-        this.inplay = true;
-    }
+		await this._runCharacter(entrance_id);
 
-    async _runCharacter(entrance_id?: string | null) {
-        // find start pos
-        const startpos = new Vector2(0.1, 4);
-        {
-            let entrance_found = false;
-            for(const k in this.scene_core.components) {
-                const el = this.scene_core.components[k];
-                if (!entrance_id && el.type == "mapentry") {
-                    startpos.x = el.pos_x ?? 0;
-                    startpos.y = el.pos_y ?? 0;
-                    entrance_found = true;
-                } else if (entrance_id && el.id === entrance_id) {
-                    startpos.x = el.pos_x ?? 0;
-                    startpos.y = el.pos_y ?? 0;
-                    entrance_found = true;
-                }
+		addEventListener(
+			{
+				callback: () => {
+					this.player_character.actionRequest(
+						"move_left",
+						CharacterActionCode.END
+					);
+					this.player_character.actionRequest(
+						"move_right",
+						CharacterActionCode.END
+					);
+				},
+				name: "blur",
+				node: window as any,
+			},
+			this._listeners
+		);
+		//addEventListener({callback: ()=> {console.log("focus")}, name: "focus", node: window as any}, this._listeners)
 
-                if (entrance_found) {
-                    break;
-                }
-            }
+		// debug outputs -- {
+		this.scene_debug.run(this.player_character, this.camera_config);
+		this.scene_debug.camera_config_draw.addWrite(
+			"camera_fov",
+			() => this.scene_render.camera_base_fov,
+			(v) => {
+				this.scene_render.camera_base_fov = v;
+				this.scene_render.updateCameraAspect();
+			}
+		);
+		// debug outputs -- }
 
-            if (entrance_id && !entrance_found) {
-                console.warn(`SceneGame::run warn - entrance id set (${entrance_id}) but such element wasnt found`);
-            }
-        }
+		this.inplay = true;
+	}
 
-        // init player
-        let playerbox = new Box2().setFromCenterAndSize(startpos, new Vector2(0.5, 0.6));
-        const body = this.scene_collisions.createBoxBody("player_character", playerbox);
-        this.player_character = new Character(this.scene_collisions).init(body);
-        await this.player_character_render.run(this.player_character);
+	async _runCharacter(entrance_id?: string | null) {
+		// find start pos
+		const startpos = new Vector2(0.1, 4);
+		{
+			let entrance_found = false;
+			for (const k in this.scene_core.components) {
+				const el = this.scene_core.components[k];
+				if (!entrance_id && el.type == "mapentry") {
+					startpos.x = el.pos_x ?? 0;
+					startpos.y = el.pos_y ?? 0;
+					entrance_found = true;
+				} else if (entrance_id && el.id === entrance_id) {
+					startpos.x = el.pos_x ?? 0;
+					startpos.y = el.pos_y ?? 0;
+					entrance_found = true;
+				}
 
-        // teleport it at start
-        (this.player_character_render.character_scene as any).position.set(startpos.x, startpos.y, 0);
+				if (entrance_found) {
+					break;
+				}
+			}
 
-        // teleport camera
-        if (this.attach_camera_to_player) {
-            const pos = this.scene_render.cache.vec3_0.set(startpos.x, startpos.y, 10);
-            this.scene_render.setPos(this.scene_render.camera, pos);
-        }
-    }
+			if (entrance_id && !entrance_found) {
+				console.warn(
+					`SceneGame::run warn - entrance id set (${entrance_id}) but such element wasnt found`
+				);
+			}
+		}
 
-    stopPlay() {
-        this.inplay = false;
+		// init player
+		let playerbox = new Box2().setFromCenterAndSize(
+			startpos,
+			new Vector2(0.5, 0.6)
+		);
+		const body = this.scene_collisions.createBoxBody(
+			"player_character",
+			playerbox
+		);
+		this.player_character = new Character(this.scene_collisions).init(body);
+		await this.player_character_render.run(this.player_character);
 
-        if(this.player_character) {
-            this.player_character_render.stop();
-            this.scene_collisions.removeBody(this.player_character.body.id, true);
-        }
-    }
+		// teleport it at start
+		(this.player_character_render.character_scene as any).position.set(
+			startpos.x,
+			startpos.y,
+			0
+		);
 
-    stop() {
-        this.stopPlay();
+		// teleport camera
+		if (this.attach_camera_to_player) {
+			const pos = this.scene_render.cache.vec3_0.set(
+				startpos.x,
+				startpos.y,
+				10
+			);
+			this.scene_render.setPos(this.scene_render.camera, pos);
+		}
+	}
 
-        this.active = false;
-        this.requested_map_switch = null;
-        this.requested_map_entrance = null;
-        this.scene_debug.stop();
-        removeEventListeners(this._listeners);
-    }
+	stopPlay() {
+		this.inplay = false;
 
-    /**
-     * 
-     * @param dt 
-     * @param dr 
-     * @returns 
-     */
-    step(dt: number, forced: boolean = false) {
-        if (!this.active) {
-            return;
-        }
+		if (this.player_character) {
+			this.player_character_render.stop();
+			this.scene_collisions.removeBody(this.player_character.body.id, true);
+		}
+	}
 
-        if (!this.inplay) {
-            return;
-        }
-        if (!this.autostep && !forced) {
-            return
-        }
+	stop() {
+		this.stopPlay();
 
-        for(const k in this.scene_collisions.bodies) {
-            const body = this.scene_collisions.bodies[k];
-            body.velocity_y += this.gravity_y * dt * this.scene_collisions.forces_scale;
-        }
+		this.active = false;
+		this.requested_map_switch = null;
+		this.requested_map_entrance = null;
+		this.scene_debug.stop();
+		removeEventListeners(this._listeners);
+	}
 
-        this.player_character.step(dt);
-        this.scene_collisions.step(dt);
-        this.player_character_render.step(dt);
-        this.scene_debug.step();
-        this.system_objects_fall.step(dt);
-        this.system_render_bodiespos.step(dt);
+	/**
+	 *
+	 * @param dt
+	 * @param dr
+	 * @returns
+	 */
+	step(dt: number, forced: boolean = false) {
+		if (!this.active) {
+			return;
+		}
 
-        if (this.attach_camera_to_player && this.player_character_render.character_scene) {
-            const pos = this.scene_render.cache.vec3_0.copy((this.player_character_render.character_scene as any).position );
+		if (!this.inplay) {
+			return;
+		}
+		if (!this.autostep && !forced) {
+			return;
+		}
 
-            pos.z = this.camera_config.attach_camera_z;
-            const lposx = (this.scene_render.camera as any).position.x;
-            const lposy = (this.scene_render.camera as any).position.y;
-            const shift_y = this.camera_config.attach_camera_y;
-            const targ_y = pos.y + shift_y;
-            pos.x = distlerp(lposx, pos.x, 0.4, 3);
-            pos.y = distlerp(lposy, targ_y, 0.4, 3);
+		for (const k in this.scene_collisions.bodies) {
+			const body = this.scene_collisions.bodies[k];
+			body.velocity_y +=
+				this.gravity_y * dt * this.scene_collisions.forces_scale;
+		}
 
-            //pos.y = lerp(pos.y, pos.y - this.player_character.look_direction_y * 2, 0.1);
+		this.player_character.step(dt);
+		this.scene_collisions.step(dt);
+		this.player_character_render.step(dt);
+		this.scene_debug.step();
+		this.system_objects_fall.step(dt);
+		this.system_render_bodiespos.step(dt);
 
-            const targ = this.scene_render.cache.vec3_1.set(pos.x, targ_y - shift_y, pos.z - this.camera_config.attach_camera_z)
-            this.scene_render.setCameraPos(pos, targ);
-        }
+		if (
+			this.attach_camera_to_player &&
+			this.player_character_render.character_scene
+		) {
+			const pos = this.scene_render.cache.vec3_0.copy(
+				(this.player_character_render.character_scene as any).position
+			);
 
-        if (this.player_character.performed_actions.find((e) => e.tag == "hit")) { 
-            this._actionHit();
-        }
+			pos.z = this.camera_config.attach_camera_z;
+			const lposx = (this.scene_render.camera as any).position.x;
+			const lposy = (this.scene_render.camera as any).position.y;
+			const shift_y = this.camera_config.attach_camera_y;
+			const targ_y = pos.y + shift_y;
+			pos.x = distlerp(lposx, pos.x, 0.4, 3);
+			pos.y = distlerp(lposy, targ_y, 0.4, 3);
 
-        this.scene_map.setViewpoint(this.player_character.body.collider.x, this.player_character.body.collider.y);
+			//pos.y = lerp(pos.y, pos.y - this.player_character.look_direction_y * 2, 0.1);
 
-        this._stepCharacterInteractions(this.player_character);
-    }
+			const targ = this.scene_render.cache.vec3_1.set(
+				pos.x,
+				targ_y - shift_y,
+				pos.z - this.camera_config.attach_camera_z
+			);
+			this.scene_render.setCameraPos(pos, targ);
+		}
 
-    private _stepCharacterInteractions(cha: Character) {
-        let interacts = false;
+		if (this.player_character.performed_actions.find((e) => e.tag == "hit")) {
+			this._actionHit();
+		}
 
-        const proceedMapExitInteraction = (el: MapEntity) => {
-            if(this.player_character.performed_actions.find((e) => e.tag == "look_up")) {
-                const props = el?.components.trigger?.properties;
-                const signal = props.signal;
-                if (signal) {
-                    this.requestMapSwitch(signal);
-                }
-            }
-        }
+		this.scene_map.setViewpoint(
+			this.player_character.body.collider.x,
+			this.player_character.body.collider.y
+		);
 
-        for(const k in cha.body.contacts_list) {
-            const cid = cha.body.contacts_list[k].id;
-            if (!cid) {
-                continue;
-            }
-            const el = this.scene_core.components[k];
-            const props = el?.components.trigger?.properties;
-            if (props && props.type == "mapexit") {
-                interacts = true;
-                proceedMapExitInteraction(el);
-                break;
-            }
-        }
+		this._stepCharacterInteractions(this.player_character);
+	}
 
-        this.player_character_render.drawUiInteractSprite(interacts);
-    }
+	private _stepCharacterInteractions(cha: Character) {
+		let interacts = false;
 
-    requestMapSwitch(signal: string) {
-        // it gonna be handled in SceneMediator step
-        const args = signal.split(",");
-        const id = args[0];
-        const entrance_id = args[1] ?? null;
-        this.requested_map_switch = id;
-        this.requested_map_entrance = entrance_id;
-    }
+		const proceedMapExitInteraction = (el: MapEntity) => {
+			if (
+				this.player_character.performed_actions.find((e) => e.tag == "look_up")
+			) {
+				const props = el?.components.trigger?.properties;
+				const signal = props.signal;
+				if (signal) {
+					this.requestMapSwitch(signal);
+				}
+			}
+		};
 
+		for (const k in cha.body.contacts_list) {
+			const cid = cha.body.contacts_list[k].id;
+			if (!cid) {
+				continue;
+			}
+			const el = this.scene_core.components[k];
+			const props = el?.components.trigger?.properties;
+			if (props && props.type == "mapexit") {
+				interacts = true;
+				proceedMapExitInteraction(el);
+				break;
+			}
+		}
 
-    private _actionHit() {
-        const hit_result = this.system_objects_break._actionHitCollisionTest(this.player_character, this.scene_collisions.colliders);
-        if (!hit_result) {
-            return;
-        }
+		this.player_character_render.drawUiInteractSprite(interacts);
+	}
 
-        const broke = this.system_objects_break.hit(hit_result);
-        if (broke) {
-            // component is collider. owner is actual block object
-            const component = this.scene_core.matters.get(hit_result) as AssetContentTypeComponent;
-            if (!component?.owner) {
-                return;
-            }
-            // falling block activate
-            this.system_objects_fall.touchFallingBlock(component.id);
-            // remove breakable block
+	requestMapSwitch(signal: string) {
+		// it gonna be handled in SceneMediator step
+		const args = signal.split(",");
+		const id = args[0];
+		const entrance_id = args[1] ?? null;
+		this.requested_map_switch = id;
+		this.requested_map_entrance = entrance_id;
+	}
 
-            const owner = this.scene_core.matters.get(component.owner);
-            this.scene_core.remove(owner.id);
+	private _actionHit() {
+		const hit_result = this.system_objects_break._actionHitCollisionTest(
+			this.player_character,
+			this.scene_collisions.colliders
+		);
+		if (!hit_result) {
+			return;
+		}
 
-            // #debt-tilerefs: tileset creates two tile data object - one is persist tile reference, second one is actual tile instance
-            // here tile ref marked as destroyed and it should not be restored
-            if ((owner as any).tileref && owner.inherites) {
-                const ref = this.scene_core.matters.get(owner.inherites) as any;
-                ref.tiledestroyed = ref;
-            }  
-        }
-    }
+		const broke = this.system_objects_break.hit(hit_result);
+		if (broke) {
+			// component is collider. owner is actual block object
+			const component = this.scene_core.matters.get(
+				hit_result
+			) as AssetContentTypeComponent;
+			if (!component?.owner) {
+				return;
+			}
+			// falling block activate
+			this.system_objects_fall.touchFallingBlock(component.id);
+			// remove breakable block
 
-    
-    _keydown(event: KeyboardEvent) {
-        if (event.repeat) return;
+			const owner = this.scene_core.matters.get(component.owner);
+			this.scene_core.remove(owner.id);
 
-        const key = event.code;
-        if (key === 'Space') {
-            this.player_character.actionRequest("jump", CharacterActionCode.START);
-        } else if (key === "ShiftLeft") {
-            this.player_character.actionRequest("run", CharacterActionCode.START);
-        }
-        else if (key === 'ArrowLeft') {
-            this.player_character.actionRequest("move_left", CharacterActionCode.START);
-        } else if (key === 'ArrowRight') {
-            this.player_character.actionRequest("move_right", CharacterActionCode.START);
-        } else if (key === 'ArrowUp') {
-            this.player_character.actionRequest("look_up", CharacterActionCode.START);
-        } else if (key === 'ArrowDown') {
-            this.player_character.actionRequest("look_down", CharacterActionCode.START);
-        } else if (key === 'KeyA') {
-            this.player_character.actionRequest("hit", CharacterActionCode.START);
-        } else if (key === 'KeyW') {
-            this.player_character.actionRequest("hook", CharacterActionCode.START);
-        }
-        else if (key === 'KeyS') {
-            this.step(0.016, true);
-        } 
-    }
-    _keyup(event: KeyboardEvent) {
-        if (event.repeat) return;
-        
-        const key = event.code;
-        if (key === 'ArrowLeft') {
-            this.player_character.actionRequest("move_left", CharacterActionCode.END);
-        } else if (key === 'ArrowRight') {
-            this.player_character.actionRequest("move_right", CharacterActionCode.END);
-        } else if (key === 'ArrowUp') {
-            this.player_character.actionRequest("look_up", CharacterActionCode.END);
-        } else if (key === 'ArrowDown') {
-            this.player_character.actionRequest("look_down", CharacterActionCode.END);
-        } else if (key === "ShiftLeft") {
-            this.player_character.actionRequest("run", CharacterActionCode.END);
-        } else if (key === 'KeyW') {
-            this.player_character.actionRequest("hook", CharacterActionCode.END);
-        }
-    }
+			// #debt-tilerefs: tileset creates two tile data object - one is persist tile reference, second one is actual tile instance
+			// here tile ref marked as destroyed and it should not be restored
+			if ((owner as any).tileref && owner.inherites) {
+				const ref = this.scene_core.matters.get(owner.inherites) as any;
+				ref.tiledestroyed = ref;
+			}
+		}
+	}
+
+	_action(act: InputAction, code: CharacterActionCode) {
+		if (!this.inplay) {
+			return;
+		}
+
+		switch (act) {
+			case InputAction.left:
+				this.player_character.actionRequest("move_left", code);
+				break;
+			case InputAction.up:
+				this.player_character.actionRequest("look_up", code);
+				break;
+			case InputAction.right:
+				this.player_character.actionRequest("move_right", code);
+				break;
+			case InputAction.down:
+				this.player_character.actionRequest("look_down", code);
+				break;
+			case InputAction.acion_a:
+				this.player_character.actionRequest("jump", code);
+				break;
+			case InputAction.acion_b:
+				this.player_character.actionRequest("hit", code);
+				break;
+			case InputAction.acion_c:
+				this.player_character.actionRequest("hook", code);
+				break;
+			case InputAction.acion_d:
+				if (code == CharacterActionCode.START) {
+					this.step(0.016, true);
+				}
+				break;
+		}
+	}
 }

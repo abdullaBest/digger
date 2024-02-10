@@ -1,6 +1,7 @@
 @import "./style/dust.less";
 @import "./style/colors.less";
 @import "./style/conditionals.less";
+@import "./style/shell_game.less";
 
 html,
 body, 
@@ -167,6 +168,10 @@ body,
 
 .appcore .overflow-auto {
     overflow: auto;
+}
+
+.appcore .overflow-hide {
+    overflow: hidden;
 }
 
 .appcore .scroll-y {
@@ -479,7 +484,7 @@ body,
     border-left: 1px var(--border-color-a) solid;
 }
 
-.style-nest-nonfirst > *:not(:first-child) {
+.appcore .enable-snn .style-nest-nonfirst > *:not(:first-child) {
 	margin-left: var(--padding-minor);
 	padding-left: var(--padding-minor);
 	border-left: 1px var(--border-color-a) solid;

@@ -421,7 +421,7 @@ export default class SceneEditView {
 		const inherite = this.assets.matters.get(inherites);
 		const extension = inherite.get("type");
 		const global_id = await this.assets.uploadComponent(
-			{ inherites, owner: owner },
+			{ inherites, owner: owner, name: inherite.name },
 			extension
 		);
 

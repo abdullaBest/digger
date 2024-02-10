@@ -1,0 +1,28 @@
+container#gameui {
+	progressbar {
+		--progress: 0%;
+		height: 2em;	
+		background-color: #fff5;
+		border-radius: 8px;
+		overflow: hidden;
+
+		&::after {
+			height: 100%;
+			width: var(--progress);
+			content: "";
+			display: block;
+			background: linear-gradient(0deg,#026EF4 0%,#055cc9 49%,#026EF4 50%);
+		}
+	}
+
+	#gameloadingpage {
+		background-color: black;
+
+		progressbar#gameloadingbar {
+			width: 50%;
+			display: block;
+			margin: auto;
+		}
+	}
+}
+

@@ -105,6 +105,8 @@ class Asset {
 }
 
 class Assets {
+	status: AssetStatus;
+	loadprogress: number;
 	list: { [id: string]: Asset };
 
 	// Asset wich stores all components
@@ -118,6 +120,8 @@ class Assets {
 	constructor() {
 		this.events = new Events();
 		this.matters = new Matters();
+		this.status = AssetStatus.UNKNOWN;
+		this.loadprogress = 0;
 	}
 
 	init() {
@@ -276,6 +280,7 @@ class Assets {
 	 * @param onprogress callbacks on asset loaded
 	 */
 	async load() {
+		this.status = AssetStatus.LOADING;
 		const res = await fetch("/assets/list");
 		if (!res.ok) {
 			console.error("Assets loading error", res);
@@ -284,13 +289,20 @@ class Assets {
 		this.list = {};
 		this.bundles = {};
 		const data = await res.json();
+		const values = Object.values(data);
+		const toload = values.length - 1;
+		let loaded = 0;
 		for (const i in data) {
 			try {
 				await this.loadAsset(data[i]);
+				this.loadprogress = ++loaded / toload;
 			} catch (err) {
 				console.error(`Asset ${data[i]} loading error:`, err);
+				this.status = AssetStatus.ERROR;
 			}
 		}
+		this.status = AssetStatus.LOADED;
+		this.events.emit("loaded");
 	}
 
 	async uploadAsset(id: string, files?: Array<File>, custom?: any) {
@@ -428,6 +440,7 @@ import {
 export {
 	Assets,
 	Asset,
+	AssetStatus,
 	listenFormSubmit,
 	sendFiles,
 	AssetContentTypeComponent,

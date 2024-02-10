@@ -5,6 +5,8 @@ import AssetsLibraryView from "./views/assets_library_view";
 import SceneEditTools from "./render/scene_edit_tools";
 import SceneEditView from "./views/scene_edit_view";
 
+import ShellGame from "./views/shell_game";
+
 import Tabs from "./page/tabs";
 import ControlsContainerCollapse from "./page/controls_container_collapse";
 import {
@@ -16,7 +18,7 @@ import {
 import test from "./test/index";
 
 /**
- * @contains view classes
+ * holds view classes
  */
 export default class AppShell {
 	core: AppCore;
@@ -25,6 +27,8 @@ export default class AppShell {
 	assets_library_view: AssetsLibraryView;
 	scene_edit_tools: SceneEditTools;
 	scene_edit_view: SceneEditView;
+
+	shell_game: ShellGame;
 
 	constructor(core: AppCore, game: AppGame) {
 		this.core = core;
@@ -47,12 +51,16 @@ export default class AppShell {
 			this.core.scene_core,
 			this.scene_edit_tools
 		);
+
+		this.shell_game = new ShellGame(this.core, this.game);
 	}
 
 	init() {
 		this.assets_library_view.init();
 		this.scene_edit_tools.init();
 		this.scene_edit_view.init();
+
+		this.shell_game.init();
 
 		this.initPages();
 		this.initListeners();
@@ -62,7 +70,7 @@ export default class AppShell {
 		this.scene_edit_tools.step(dt);
 		this.scene_edit_tools.render();
 	}
-	
+
 	initPages() {
 		const maintabs = new Tabs(
 			querySelector("#header"),
@@ -71,16 +79,21 @@ export default class AppShell {
 			switch (id) {
 				case "play-tab":
 					this.core.scene_render.reattach(querySelector("#gameroot"));
+					this.shell_game.show();
 					break;
 				case "edit-tab":
-					this.core.scene_render.reattach(querySelector("#edit-section-canvas"));
+					this.core.scene_render.reattach(
+						querySelector("#edit-section-canvas")
+					);
 					break;
 				case "library-tab":
-					this.core.scene_render.reattach(querySelector("#asset-render-preview"));
+					this.core.scene_render.reattach(
+						querySelector("#asset-render-preview")
+					);
 					break;
 			}
 		});
-		maintabs.click("edit-tab");
+		maintabs.click("play-tab");
 
 		const debugWindows = ControlsContainerCollapse.construct(
 			querySelector("#debug-tab")
@@ -126,7 +139,8 @@ export default class AppShell {
 					this.game.scene_mediator.play();
 					break;
 				case "physics_toggle_autostep":
-					this.game.scene_game.autostep = target.classList.toggle("highlighted");
+					this.game.scene_game.autostep =
+						target.classList.toggle("highlighted");
 					break;
 				case "physics_toggle_camera_attach":
 					this.game.scene_game.attach_camera_to_player =

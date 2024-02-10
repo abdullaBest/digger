@@ -17,7 +17,7 @@ const SPRITE_DEFAULT_PATH = "./res/icons/";
 
 class SceneRender {
   canvas: HTMLCanvasElement;
-  private refSizeEl: HTMLElement | null | undefined;
+  canvas_container: HTMLElement | null | undefined;
 
   camera_base_fov: number;
 
@@ -56,7 +56,7 @@ class SceneRender {
       1000,
     );
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-    this.refSizeEl = canvas.parentElement;
+    this.canvas_container = canvas.parentElement;
     this.canvas = canvas;
 
     const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
@@ -284,22 +284,22 @@ class SceneRender {
    * @param newel new element to attach canvas
    */
   reattach(newel: HTMLElement) {
-    if (newel == this.refSizeEl) {
+    if (newel == this.canvas_container) {
       return;
     }
 
     this.canvas.parentElement?.removeChild(this.canvas);
     newel.appendChild(this.canvas);
-    this.refSizeEl = newel;
+    this.canvas_container = newel;
     this.updateSize();
   }
 
   getRenderWidth() {
-    return Math.floor(this.refSizeEl?.offsetWidth || 100);
+    return Math.floor(this.canvas_container?.offsetWidth || 100);
   }
 
   getRenderHeight() {
-    return Math.floor(this.refSizeEl?.offsetHeight || 100);
+    return Math.floor(this.canvas_container?.offsetHeight || 100);
   }
 
   private updateSize() {

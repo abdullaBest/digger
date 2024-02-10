@@ -163,7 +163,8 @@ class SceneEditTools {
 			this.scene_collisions.origin,
 			this.scene_collisions.normal
 		); //cache.vec3_0
-		if (pos) {
+
+		if (pos && this.isInTileEditMode()) {
 			pos.x = snap(pos.x, this.tileset_editor.tilesize_x);
 			pos.y = snap(pos.y, this.tileset_editor.tilesize_y);
 
@@ -177,10 +178,12 @@ class SceneEditTools {
 				}
 			}
 
-			this.mousepos_world.copy(pos);
-		}
-		if (pos && this.isInTileEditMode()) {
+
 			setObjectPos(this.cube, pos);
+		}
+
+		if (pos) {
+			this.mousepos_world.copy(pos);
 		}
 	}
 
@@ -409,7 +412,8 @@ class SceneEditTools {
 			case SceneEditToolMode.WIRES:
 				this.transform_controls.visible = false;
 				const wires_edit_system = new SceneEditEventWiresSystem(
-					this.scene_render
+					this.scene_render,
+					this.scene_core.matters
 				);
 				this.scene_core.addSystem("wires_edit", wires_edit_system);
 				break;
