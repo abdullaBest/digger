@@ -39,6 +39,7 @@ export default class AssetsLibraryView {
             this.listAsset(id);
         }, this._listeners)
 
+				// --
         listenClick(this.container_list, (ev) => {
             this.saveAsset(this.asset_selected?.id);
             const id = (ev.target as HTMLElement)?.id;
@@ -47,30 +48,45 @@ export default class AssetsLibraryView {
             }
         }, this._listeners)
         
+				// --
         listenClick("#asset-import-images", async (ev) => {
             await importImageSequence(this.assets);
         }, this._listeners);
+
+				// --
         listenClick("#asset-import-gltfs", async (ev) => {
             await importGltfSequence(this.assets);
         }, this._listeners)
+
+				// --
         listenClick("#assets-create-component", async (ev) => {
             await this._createComponent("component", null);
         }, this._listeners);
+
+				// --
         listenClick("#assets-create-collider", async (ev) => {
             await this._createComponent("collider", null);
         }, this._listeners);
+
+				// --
         listenClick("#assets-create-model", async (ev) => {
             const gltfid = await this._showSelectList("select gltf", {extension: /gltf/});
             const textureid = await this._showSelectList("select texture", {extension: /(png|jpg)/});
             await this._createComponent("model", { gltf: "**" + gltfid, texture: "**" + textureid });
         }, this._listeners)
+
+				// --
         listenClick("#assets-create-tileset", async (ev) => {
             const textureid = await this._showSelectList("select texture", {extension: /(png)/});
             await this._createComponent("tileset", { texture: "**" + textureid });
         }, this._listeners);
+
+				// --
         listenClick("#assets-create-space", async (ev) => {
             await this._createComponent("space");
         }, this._listeners);
+
+				// --
         listenClick("#asset-component-add", async (ev) => {
             const link_id = await this._showSelectList("select", {}, "component");
             if (!link_id) {
@@ -79,6 +95,8 @@ export default class AssetsLibraryView {
             const extension = this.assets.get(link_id).info.extension;
             this.addComponentLink(this.asset_selected.content as Matter, extension, link_id);
         }, this._listeners)
+
+				// --
         listenClick("#asset-collider-add", async (ev) => {
             let link_id = await this._showSelectList("select", {}, "collider", ["create"]);
             if (link_id == "create") {
@@ -90,6 +108,8 @@ export default class AssetsLibraryView {
             }
             this.addComponentLink(this.asset_selected.content as Matter, "collider", link_id);
         }, this._listeners);
+
+				// --
         listenClick("#asset-tile-add", async (ev) => {
             let link_id = await this._showSelectList("select", {}, "tile", ["create"]);
             if (link_id == "create") {
@@ -103,16 +123,22 @@ export default class AssetsLibraryView {
             }
             this.addComponentLink(this.asset_selected.content as Matter, "tile_" + link_id, link_id);
         }, this._listeners);
+
+				// --
         listenClick("#asset-gameprop-add", async (ev) => {
             const id = await this._createComponent("gameprop", { owner: this.asset_selected.id });
             const asset = this.asset_selected;
             this.addComponentLink(asset.content as Matter, "gameprop", id);
         }, this._listeners);
-        listenClick("#asset-events-add", async (ev) => {
-            const id = await this._createComponent("events", { owner: this.asset_selected.id });
+
+				// --
+        listenClick("#asset-trigger-add", async (ev) => {
+            const id = await this._createComponent("trigger", { owner: this.asset_selected.id });
             const asset = this.asset_selected;
-            this.addComponentLink(asset.content as Matter, "events", id);
+            this.addComponentLink(asset.content as Matter, "trigger", id);
         }, this._listeners);
+				
+				// --
         listenClick("#asset-manage-save", async (ev) => {
             if (this.asset_selected) {
                 this.saveAsset(this.asset_selected.id);
@@ -120,17 +146,23 @@ export default class AssetsLibraryView {
                 this.listAsset(this.asset_selected.id);
             }
         }, this._listeners)
+
+				// --
         listenClick("#asset-manage-wipe", async (ev) => {
             await Popup.instance.show().message("Do not use this. Use delete.", "");
             await Popup.instance.show().message("Really?", "Use delete.");
             return this._wipeAsset(this.asset_selected.id);
         }, this._listeners)
+				
+				// --
         listenClick("#asset-manage-delete", async (ev) => {
             const asset = this.asset_selected;
             const matter = this.assets.matters.get(asset.id)
             this._deleteComponentSequence(matter as AssetContentTypeComponent);
             
         }, this._listeners)
+
+				// --
         listenClick("#asset-manage-reimport", async (ev) => {
             const asset = this.asset_selected;
 						if (asset.info.extension === "gltf") {
@@ -295,6 +327,7 @@ export default class AssetsLibraryView {
             name_label = document.createElement("label");
             name_label.classList.add("label-name", "flex-grow-1");
             const id_label = document.createElement("label");
+            id_label.classList.add("label-id");
 
             id_label.innerHTML = `[${asset.id}:${asset.info.extension}]`;
 

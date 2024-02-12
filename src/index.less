@@ -459,11 +459,16 @@ body,
         cursor: pointer;
         display: flex;
         &::before {
-            content: "▼";
+						background-image: url("res/icons-stylesheets/circle-arrow-down.svg");
+						background-size: contain;
+						content: "";
+						margin: auto 0;
+
+            //content: "▼";
             width: 1em;
             height: 1em;
             margin-right: var(--padding-minimum);
-            transition: 70ms;
+            transition: 120ms;
         }
     }
 }
@@ -479,6 +484,10 @@ body,
 }
 
 .appcore container.style-nested > content {
+		& > container.style-nested {
+			margin-left: -0.5em;
+		}
+
     margin-left: var(--padding-minor);
     padding-left: var(--padding-minor);
     border-left: 1px var(--border-color-a) solid;

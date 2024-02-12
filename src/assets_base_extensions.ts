@@ -17,9 +17,10 @@ export interface AssetContentTypeComponent extends Matter {
 	pos_y?: number | null;
 }
 
-export interface AssetContentTypeEvents extends AssetContentTypeComponent {
-	user_interact?: string | null;
-	user_collide?: string | null;
+export interface AssetContentTypeTrigger extends AssetContentTypeComponent {
+	user_interact: boolean;
+	user_collide: boolean;
+	toggle: boolean;
 }
 
 export interface AssetContentTypeCollider extends AssetContentTypeComponent {
@@ -71,7 +72,7 @@ export interface AssetContentTypeTile extends AssetContentTypeComponent {
 export interface BaseContentExtensionsList {
 	component: AssetContentTypeComponent;
 	space: AssetContentTypeSpace;
-	events: AssetContentTypeEvents;
+	trigger: AssetContentTypeTrigger;
 	texture: AssetContentTypeTexture;
 	collider: AssetContentTypeCollider;
 	gameprop: AssetContentTypeGameprop;
@@ -85,10 +86,11 @@ export function cunstructBaseExtensionsData(
 ): BaseContentExtensionsList {
 	const base_asset_extension_component = { type: "component" };
 	const base_asset_extension_space = { type: "space", guids: 0 };
-	const base_asset_extension_event = {
-		type: "events",
-		user_interact: null,
-		user_collide: null,
+	const base_asset_extension_trigger = {
+		type: "trigger",
+		user_interact: false,
+		user_collide: false,
+		toggle: false
 	};
 	const base_asset_extension_texture = { type: "texture", asset: null };
 	const base_asset_extension_collider = {
@@ -133,11 +135,11 @@ export function cunstructBaseExtensionsData(
 			null,
 			"base_asset_type_component"
 		) as AssetContentTypeComponent,
-		events: matters.create(
-			base_asset_extension_event,
+		trigger: matters.create(
+			base_asset_extension_trigger,
 			"base_asset_type_component",
-			"base_asset_type_events"
-		) as AssetContentTypeEvents,
+			"base_asset_type_trigger"
+		) as AssetContentTypeTrigger,
 		space: matters.create(
 			base_asset_extension_space,
 			"base_asset_type_component",

@@ -430,7 +430,7 @@ export default Assets;
 import {
 	AssetContentTypeComponent,
 	AssetContentTypeCollider,
-	AssetContentTypeEvents,
+	AssetContentTypeTrigger,
 	AssetContentTypeModel,
 	AssetContentTypeTileset,
 	AssetContentTypeTile,
@@ -447,7 +447,7 @@ export {
 	AssetContentTypeGameprop,
 	AssetContentTypeComponent,
 	AssetContentTypeCollider,
-	AssetContentTypeEvents,
+	AssetContentTypeTrigger,
 	AssetContentTypeModel,
 	AssetContentTypeTileset,
 	AssetContentTypeTile,

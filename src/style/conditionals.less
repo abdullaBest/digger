@@ -1,7 +1,11 @@
-content#scene-content-list:empty {
-    &::after {
+content#scene-content-list {
+    &:empty::after {
         content: "Nothing here. Drop asset.";
     }
+
+		btn > .label-id {
+			display: none;
+		}
 }
 
 section#edit-sidebar.noselected {
