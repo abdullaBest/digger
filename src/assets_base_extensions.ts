@@ -18,6 +18,7 @@ export interface AssetContentTypeComponent extends Matter {
 
 	/**
 	 * Indicates that component should not be added into scene tree
+	 * probably should call it "static"
 	 */
 	abstract?: boolean | null;
 
@@ -52,6 +53,10 @@ export interface AssetContentTypeSpace extends AssetContentTypeComponent {
 
 export interface AssetContentTypeTexture extends AssetContentTypeComponent {
 	asset: HTMLImageElement;
+	url: string;
+}
+
+export interface AssetContentTypeGltf extends AssetContentTypeComponent {
 	url: string;
 }
 
@@ -99,6 +104,7 @@ export interface BaseContentExtensionsList {
 	collider: AssetContentTypeCollider;
 	gameprop: AssetContentTypeGameprop;
 	model: AssetContentTypeModel;
+	gltf: AssetContentTypeGltf;
 	animator: AssetContentTypeAnimator;
 	tileset: AssetContentTypeTileset;
 	tile: AssetContentTypeTile;
@@ -130,6 +136,11 @@ export function cunstructBaseExtensionsData(
 		resistence: 999,
 		falling: false,
 	};
+	const base_asset_extension_gltf = {
+		type: "gltf",
+		abstract: true,
+		url: "toset"
+	}
 	const base_asset_extension_model = {
 		type: "model",
 		gltf: "toset",
@@ -138,6 +149,7 @@ export function cunstructBaseExtensionsData(
 		matrix: null,
 	};
 	const base_asset_extension_animator = {
+		type: "animator",
 		initial: "",
 		idle: "",
 		active: "",
@@ -191,6 +203,11 @@ export function cunstructBaseExtensionsData(
 			"base_asset_type_component",
 			"base_asset_type_gameprop"
 		) as AssetContentTypeGameprop,
+		gltf: matters.create(
+			base_asset_extension_gltf,
+			"base_asset_type_component",
+			"base_asset_type_gltf"
+		) as AssetContentTypeGltf,
 		model: matters.create(
 			base_asset_extension_model,
 			"base_asset_type_component",

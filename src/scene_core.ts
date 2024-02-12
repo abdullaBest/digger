@@ -14,6 +14,7 @@ import {
 import SceneMath from "./scene_math";
 import { MapSystem, MapTilesetSystem } from "./systems";
 import MapDebugRenderCollidersSystem from "./render/map_debug_render_colliders_system";
+import ModelAnimatorRenderSystem from "./render/model_animator_render_system";
 
 /**
  * Just creates empties
@@ -179,6 +180,7 @@ class SceneCore {
 		this.components = {};
 		this.systems = {
 			model: new SceneRenderModelSystem(this.scene_render),
+			animator: new ModelAnimatorRenderSystem(this.scene_render),
 			component: new SceneRenderComponentSystem(this.scene_render),
 			collider: new SceneCollidersSystem(
 				this.scene_collisions,
