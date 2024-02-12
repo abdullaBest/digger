@@ -18,7 +18,11 @@ import SystemObjectsBreak from "./gameplay/SystemObjectsBreak";
 import SystemObjectsFall from "./gameplay/SystemObjectsFall";
 
 import SystemRenderBodiesPos from "./gameplay/SystemRenderBodiesPos";
-import { AssetContentTypeComponent, AssetContentTypeGameprop } from "./assets";
+import {
+	AssetContentTypeComponent,
+	AssetContentTypeGameprop,
+	AssetContentTypeTrigger,
+} from "./assets";
 import { GameInputs, InputAction } from "./game_inputs";
 
 export default class SceneGame {
@@ -305,7 +309,6 @@ export default class SceneGame {
 	}
 
 	updateCharacterDamageConditions() {
-
 		// crash by falling blocks
 		if (
 			this.player_character.collided_top &&
@@ -333,29 +336,35 @@ export default class SceneGame {
 
 		this.updateCharacterDamageConditions();
 
-		const proceedMapExitInteraction = (el: MapEntity) => {
+		const proceedMapExitInteraction = (trigger: AssetContentTypeTrigger) => {
 			if (
+				trigger.event.includes("mapexit") &&
 				this.player_character.performed_actions.find((e) => e.tag == "look_up")
 			) {
-				const props = el?.components.trigger?.properties;
-				const signal = props.signal;
+				const signal = trigger.event.split(",")[1];
 				if (signal) {
 					this.requestMapSwitch(signal);
 				}
 			}
 		};
 
-		for (const k in cha.body.contacts_list) {
-			const cid = cha.body.contacts_list[k].id;
+		for (const i in cha.body.contacts_list) {
+			const cid = cha.body.contacts_list[i].id;
 			if (!cid) {
 				continue;
 			}
-			const el = this.scene_core.components[k];
-			const props = el?.components.trigger?.properties;
-			if (props && props.type == "mapexit") {
-				interacts = true;
-				proceedMapExitInteraction(el);
-				break;
+			const collider = this.scene_core.components[cid];
+			const component = this.scene_core.components[collider?.owner];
+
+			const trigger =
+				component?.is_link("trigger") &&
+				(this.scene_core.matters.get(
+					component.get("trigger")
+				) as AssetContentTypeTrigger);
+
+			if (trigger) {
+				interacts = trigger.user_interact;
+				proceedMapExitInteraction(trigger);
 			}
 		}
 

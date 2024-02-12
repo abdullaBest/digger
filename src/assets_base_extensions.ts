@@ -20,6 +20,7 @@ export interface AssetContentTypeComponent extends Matter {
 export interface AssetContentTypeTrigger extends AssetContentTypeComponent {
 	user_interact: boolean;
 	user_collide: boolean;
+	event: string;
 	toggle: boolean;
 }
 
@@ -90,7 +91,8 @@ export function cunstructBaseExtensionsData(
 		type: "trigger",
 		user_interact: false,
 		user_collide: false,
-		toggle: false
+		toggle: false,
+		event: ""
 	};
 	const base_asset_extension_texture = { type: "texture", asset: null };
 	const base_asset_extension_collider = {

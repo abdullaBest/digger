@@ -419,9 +419,8 @@ export default class AssetsLibraryView {
 
         // dynamic mutators - generated for any link
         this.assets.matters.traverse(asset.id, (matter, key, value) => {
-            if (typeof value === "string" && value.startsWith("**")) {
-                const id = value.substring(2);
-                const link = this.assets.matters.get(id) as AssetContentTypeComponent;
+            if (matter.is_link(key)) {
+                const link = this.assets.matters.get(value) as AssetContentTypeComponent;
                 if (link && !mutators[key]) {
                     mutators[key] = this._makePropertySelectBtnCallback(matter.id, link.type, {}, link.type);
                 } 
@@ -466,7 +465,19 @@ export default class AssetsLibraryView {
 
     _makePropertySelectBtnCallback(id: string, name: string, filter: { [id: string] : string | RegExp}, extension?: string) {
         return (value: string, el?: HTMLElement) => {
+						if (typeof value !== "string") {
+							// it's possible to find property with same name
+							// but different type somwhere in subcomponents
+							// ...
+							// btw it also possible to find properties with both
+							// string types but no need for btn. I'll save this bug
+							// for later
+							return null;
+						}
             const ref = this.assets.matters.get(value);
+						if (!ref) {
+							return null;
+						}
             if (!el) {
                 const btn = document.createElement("btn");
                 btn.classList.add("btn-s1", "flex-grow-1", "flex-row", "flex-justify-end");
