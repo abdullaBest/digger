@@ -467,4 +467,4 @@ class Character {
 }
 
 export default Character;
-export { Character, CharacterActionCode };
+export { Character, CharacterAction, CharacterActionCode };

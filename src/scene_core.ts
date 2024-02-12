@@ -12,7 +12,7 @@ import {
 	AssetContentTypeCollider,
 } from "./assets";
 import SceneMath from "./scene_math";
-import { MapSystem, MapTilesetSystem } from "./systems";
+import { MapSystem, MapEvent, MapEventCode, MapTilesetSystem } from "./systems";
 import MapDebugRenderCollidersSystem from "./render/map_debug_render_colliders_system";
 import ModelAnimatorRenderSystem from "./render/model_animator_render_system";
 
@@ -302,6 +302,13 @@ class SceneCore {
 
 		this.matters.remove(id);
 		delete this.components[component.id];
+	}
+
+	// Calls event in systems
+	event(event: MapEvent) {
+		for(const k in this.systems) {
+			this.systems[k].event(event);
+		}
 	}
 
 	cleanup() {

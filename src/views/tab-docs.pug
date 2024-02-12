@@ -1,24 +1,39 @@
 tab#docs-tab.hidden.display-block.size-fill
-    .flex-row.size-fill
-        #docs-sidebar.flex-column.width-medium-x2.no-shrink.bg-default.frame-s1-right.buttons-list-s1.padding-minor.fontsize-bigger
-            btn(data-tab="docs-notes1-tab").tab-switch notes
-            btn(data-tab="docs-styles-tab").tab-switch styles
-        section#docs-section.flex-column.size-fill
-            section#docs-notes1-tab.display-block.bg-default.padding-minimum
-                .splitter игра
-                ul
-                    li ---
-                .splitter запросы
-                ul
-                    li GET /, /editor - alias для папки сборки ./dist
-                    li POST /assets/upload - загрузка новых файлов. Возвращает массив новых id
-                    li POST /assets/upload/:id - обновление параметров уже существующих файлов
-                    li GET /assets/list - массив id всех загруженных файлов
-                    li GET /assets/get/:id - объект информации о ассете
-                    li GET /assets/load/:id/:revision - отправляет файл по id ассета. revision - номер ревизии. revision ставить last для загрузки последней версии
-                    li GET /assets/load?name=something - ищет в ассетах тот что соответствует всем параметрам в query. Временное решение
-                .splitter заметки
-            section#docs-styles-tab.flex-column.bg-default.padding-minimum
-                .splitter d
-                .frame-s1.interactive abs
-                .frame-s2 abs
+	.flex-row.size-fill
+		#docs-sidebar.flex-column.width-medium-x2.no-shrink.bg-default.frame-s1-right.buttons-list-s1.padding-minor.fontsize-bigger
+			btn(data-tab="docs-notes1-tab").tab-switch notes
+			btn(data-tab="docs-styles-tab").tab-switch styles
+		section#docs-section.flex-column.size-fill
+			section#docs-notes1-tab.display-block.bg-default.padding-minor
+				.splitter компоненты
+				h4 animator
+				t Анимантор крепится к model компоненту. gltf должен содержать необходимые анимации
+				ul
+					li initial - анимация, устанавливаемая при создании модели. Анимация не проигрывается, только ставится в начальное положение
+					li idle (uniplemented) - анимация, проигрываемая после создания модели
+					li active (uniplemented) - анимация, проигрываемая в состоянии "активно"
+					li activate - анимация, проигрываемая при переключения из unactive
+					li deactivate - анимация, проигрываемая при переключении из active. Если не установлено, проигрывает activate в реверсе
+				h4 trigger
+				t Активирует компонент по колайду или взаимодействию с персонажем
+				ul
+					li user_interact - активация по нажатию кнопки пользователем
+					li user_collide (uniplemented) - активация по коллайду с персонажем пользователя
+					li toggle - сохранение состояния после активации
+					li event - кастомный эвент, например mapexit для выхода на другую карту
+				h4 wirebox
+				t Передает состояние активации на подсоединенные компоненты
+				.splitter запросы
+				ul
+						li GET /, /editor - alias для папки сборки ./dist
+						li POST /assets/upload - загрузка новых файлов. Возвращает массив новых id
+						li POST /assets/upload/:id - обновление параметров уже существующих файлов
+						li GET /assets/list - массив id всех загруженных файлов
+						li GET /assets/get/:id - объект информации о ассете
+						li GET /assets/load/:id/:revision - отправляет файл по id ассета. revision - номер ревизии. revision ставить last для загрузки последней версии
+						li GET /assets/load?name=something - ищет в ассетах тот что соответствует всем параметрам в query. Временное решение
+				.splitter заметки
+			section#docs-styles-tab.flex-column.bg-default.padding-minimum
+				.splitter d
+				.frame-s1.interactive abs
+				.frame-s2 abs

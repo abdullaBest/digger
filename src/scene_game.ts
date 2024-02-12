@@ -1,5 +1,5 @@
 import Events from "./events";
-import { Character, CharacterActionCode } from "./character";
+import { Character, CharacterAction, CharacterActionCode } from "./character";
 import { SceneCollisions, BoxColliderC } from "./scene_collisions";
 import { Box2, Vector2 } from "./lib/three.module";
 import {
@@ -24,6 +24,7 @@ import {
 	AssetContentTypeTrigger,
 } from "./assets";
 import { GameInputs, InputAction } from "./game_inputs";
+import { MapEventCode } from "./systems";
 
 export default class SceneGame {
 	events: Events;
@@ -336,14 +337,40 @@ export default class SceneGame {
 
 		this.updateCharacterDamageConditions();
 
-		const proceedMapExitInteraction = (trigger: AssetContentTypeTrigger) => {
-			if (
-				trigger.event.includes("mapexit") &&
-				this.player_character.performed_actions.find((e) => e.tag == "look_up")
-			) {
-				const signal = trigger.event.split(",")[1];
-				if (signal) {
-					this.requestMapSwitch(signal);
+		const proceedCharacterInteraction = (trigger: AssetContentTypeTrigger) => {
+			const action = this.player_character.performed_actions.find(
+				(e) => e.tag == "look_up"
+			);
+			if (action) {
+				// if trigger toggles it sends DEFAULT code
+				// if trigger not toggling it sends START and END codes
+				let code = MapEventCode.DEFAULT;
+				if (!trigger.toggle) {
+					// #mcd
+					code =
+						MapEventCode[
+							CharacterActionCode[action.code] as keyof typeof MapEventCode
+						];
+				}
+
+				if (
+					code !== MapEventCode.DEFAULT ||
+					action.code === CharacterActionCode.START
+				) {
+					this.scene_map.event({
+						code,
+						component: trigger.owner,
+					});
+				}
+
+				if (
+					action.code == CharacterActionCode.START &&
+					trigger.event.includes("mapexit")
+				) {
+					const signal = trigger.event.split(",")[1];
+					if (signal) {
+						this.requestMapSwitch(signal);
+					}
 				}
 			}
 		};
@@ -364,7 +391,7 @@ export default class SceneGame {
 
 			if (trigger) {
 				interacts = trigger.user_interact;
-				proceedMapExitInteraction(trigger);
+				proceedCharacterInteraction(trigger);
 			}
 		}
 

@@ -1,20 +1,109 @@
-import * as THREE from '../lib/three.module.js';
-import { MapSystem } from "../systems";
+import * as THREE from "../lib/three.module.js";
+import { MapSystem, MapEvent, MapEventCode } from "../systems";
 import SceneRender from "./scene_render";
 import {
 	AssetContentTypeAnimator,
 	AssetContentTypeModel,
 } from "../assets_base_extensions";
 
+class AnimatorNode {
+	animator: AssetContentTypeAnimator;
+	model: AssetContentTypeModel;
+	mixer: THREE.AnimationMixer;
+	gltf: any;
+	activated: boolean;
+	action: THREE.AnimationAction;
+
+	constructor(
+		animator: AssetContentTypeAnimator,
+		model: AssetContentTypeModel,
+		mixer: THREE.AnimationMixer,
+		gltf: any
+	) {
+		this.animator = animator;
+		this.model = model;
+		this.mixer = mixer;
+		this.gltf = gltf;
+		this.activated = false;
+	}
+
+	init() {
+		if (this.animator.initial) {
+			const action = this.play(this.animator.initial);
+			this.mixer.update(1e-64);
+			action.timeScale = 0;
+		}
+	}
+
+	play(name: string): THREE.AnimationAction {
+		const action = this.mixer.clipAction(
+			THREE.AnimationClip.findByName(this.gltf, name)
+		);
+		if (this.action && this.action !== action) {
+			this.setWeight(this.action, 0);
+			this.action.stop();
+		}
+		if (!action) {
+			return;
+		}
+
+		this.action = action;
+		action.play();
+		action.paused = false;
+		this.setWeight(action, 1);
+
+		return action;
+	}
+
+	activate() {
+		this.activated = true;
+		if (this.animator.activate) {
+			const action = this.play(this.animator.activate);
+			action.timeScale = 1;
+			action.clampWhenFinished = true;
+			action.setLoop(THREE.LoopOnce, 1);
+		}
+	}
+
+	deactivate() {
+		this.activated = false;
+		if (this.animator.deactivate) {
+			const action = this.play(this.animator.deactivate);
+			action.timeScale = 1;
+			action.setLoop(THREE.LoopOnce, 1);
+			action.clampWhenFinished = true;
+		} else if (this.animator.activate) {
+			const action = this.play(this.animator.activate);
+			action.timeScale = -1;
+			action.clampWhenFinished = true;
+			action.setLoop(THREE.LoopOnce, 1);
+		}
+	}
+
+	toggle() {
+		if (this.activated) {
+			this.deactivate();
+		} else {
+			this.activate();
+		}
+	}
+
+	setWeight(action: THREE.AnimationAction, weight: number) {
+		action.enabled = true;
+		action.setEffectiveTimeScale(1);
+		action.setEffectiveWeight(weight);
+	}
+}
+
 export default class ModelAnimatorRenderSystem extends MapSystem {
 	private scene_render: SceneRender;
-	mixers: { [id: string] : THREE.AnimationMixer };
+	nodes: { [id: string]: AnimatorNode };
 
 	constructor(scene_render: SceneRender) {
 		super();
 		this.priority = 0;
 		this.scene_render = scene_render;
-		this.mixers = {};
+		this.nodes = {};
 	}
 
 	filter(
@@ -35,25 +124,35 @@ export default class ModelAnimatorRenderSystem extends MapSystem {
 		const mixer = new THREE.AnimationMixer(object);
 		const gltf = this.scene_render.cache.gltfs[owner.gltf];
 
-		if (component.initial) {
-			const action = mixer.clipAction(THREE.AnimationClip.findByName(gltf, component.initial));
-			console.log(action);
-			action.play();
-			mixer.update(1e-64);
-			mixer.timeScale = 0;
-		}
-		this.mixers[component.id] = mixer;
+		const node = new AnimatorNode(component, owner, mixer, gltf);
+		node.init();
+
+		this.nodes[owner.id] = node;
 	}
-	remove(component: AssetContentTypeAnimator) {}
+
+	remove(component: AssetContentTypeAnimator) {
+		delete this.nodes[component.owner];
+	}
+
 	step(dt: number) {
-		for(const k in this.mixers) {
-			this.mixers[k].update(dt);
+		for (const k in this.nodes) {
+			this.nodes[k].mixer.update(dt);
 		}
 	}
 
-	setWeight( action: THREE.AnimationAction, weight: number ) {
-		action.enabled = true;
-		action.setEffectiveTimeScale( 1 );
-		action.setEffectiveWeight( weight );
+	event(event: MapEvent) {
+		const node = this.nodes[event.component];
+		if (node) {
+			switch (event.code) {
+				case MapEventCode.START:
+					node.activate();
+					break;
+				case MapEventCode.END:
+					node.deactivate();
+					break;
+				default:
+					node.toggle();
+			}
+		}
 	}
 }
