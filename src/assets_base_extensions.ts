@@ -1,5 +1,14 @@
 import { Matters, Matter } from "./matters";
 
+// New component types has to be placed:
+// a. new ts interface type
+// b. ts interface listed in BaseContentExtensionsList 
+// c. new base object with all default data
+// d. object returned by cunstructBaseExtensionsData
+// --- also
+// 1. in views/tab-library button should be added
+// 2. in views/asset_library_view button callback should be added
+
 export interface AssetContentTypeComponent extends Matter {
 	type: string;
 	/**
@@ -52,6 +61,18 @@ export interface AssetContentTypeModel extends AssetContentTypeComponent {
 	texture: string;
 }
 
+export interface AssetContentTypeAnimator extends AssetContentTypeComponent {
+	// animation name that will be set to 0 on component creation
+	initial: string;
+	// animation name that will be played on idle
+	idle: string;
+	// animation name that will be played in active
+	active: string;
+	// animation name thiat will be played on activation
+	activate: string;
+	deactivate: string;
+}
+
 export interface AssetContentTypeTileset extends AssetContentTypeComponent {
 	guids: number;
 	texture: string;
@@ -78,6 +99,7 @@ export interface BaseContentExtensionsList {
 	collider: AssetContentTypeCollider;
 	gameprop: AssetContentTypeGameprop;
 	model: AssetContentTypeModel;
+	animator: AssetContentTypeAnimator;
 	tileset: AssetContentTypeTileset;
 	tile: AssetContentTypeTile;
 }
@@ -115,6 +137,13 @@ export function cunstructBaseExtensionsData(
 		texture: "toset",
 		matrix: null,
 	};
+	const base_asset_extension_animator = {
+		initial: "",
+		idle: "",
+		active: "",
+		activate: "",
+		deactivate: "",
+	}
 	const base_asset_extension_tileset = {
 		type: "tileset",
 		texture: "toset",
@@ -167,6 +196,11 @@ export function cunstructBaseExtensionsData(
 			"base_asset_type_component",
 			"base_asset_type_model"
 		) as AssetContentTypeModel,
+		animator: matters.create(
+			base_asset_extension_animator,
+			"base_asset_type_component",
+			"base_asset_type_animator"
+		) as AssetContentTypeAnimator,
 		tileset: matters.create(
 			base_asset_extension_tileset,
 			"base_asset_type_component",
