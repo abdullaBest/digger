@@ -439,8 +439,7 @@ class SceneEditTools {
 		this.transform_controls.visible = false;
 		const wires_edit_system = new SceneEditWireplugsSystem(
 			this.scene_render,
-			this.scene_core.matters,
-			this.assets
+			this.scene_core.matters
 		);
 		this.scene_core.addSystem("wires_edit", wires_edit_system);
 		let wirefrom = "";

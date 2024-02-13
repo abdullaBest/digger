@@ -80,7 +80,7 @@ class Matter {
 }
 
 class Matters {
-    list: { [id: string]: any };
+    list: { [id: string]: Matter };
     guids: number;
     base_matter: Matter;
 
