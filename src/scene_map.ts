@@ -26,11 +26,11 @@ export default class SceneMap {
 		component: AssetContentTypeComponent,
 		owner?: AssetContentTypeComponent
 	) {
-		await this.scene_core.add(component, owner);
+		return await this.scene_core.add(component, owner);
 	}
 
 	remove(component: AssetContentTypeComponent) {
-		this.scene_core.remove(component.id);
+		return this.scene_core.remove(component.id);
 	}
 
 	event(event: MapEvent) {

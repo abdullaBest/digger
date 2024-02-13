@@ -35,7 +35,8 @@ export class EditWireplugNode {
 	}
 
 	constructContainer(component: AssetContentTypeWireplug) {
-		const container = document.createElement("el");
+		const container = this.container ?? document.createElement("el");
+		container.innerHTML = "";
 		container.classList.add(
 			"flex-column",
 			"buttons-list-s1",
@@ -62,6 +63,16 @@ export class EditWireplugNode {
 			name: "mouseup",
 			node: newplug,
 		});
+
+		for(let i = component.get("guids") - 1; i >= 0; i--) {
+			const id = "e_" + i;
+			const k = component.get(id);
+			if (k) {
+				const e = document.createElement("entry");
+				e.innerHTML = `${k}->`;
+				container.appendChild(e);
+			}
+		}
 
 		return container;
 	}
@@ -116,28 +127,27 @@ export default class SceneEditWireplugsSystem extends MapSystem {
 		this.scene_render.canvas_container.appendChild(node.container);
 	}
 
+	/**
+	 * @param from {AssetContentTypeWireplug} wireplug component that has to be changed. Components added into system by instance but instance source has to be used here
+	 * @param to {AssetContentTypeComponent} component that has to be linked. Also source has to be used
+	*/
 	async setwire(from: AssetContentTypeWireplug, to: AssetContentTypeComponent) {
+		// ignore links to self
 		if (from.owner == to.id) {
 			return;
 		}
 
-		console.log(from, to);
+		// igronre link dupes
+		for(let i = from.get("guids") - 1; i >= 0; i--) {
+			const k = from.get("e_" + i);
+			if (k && k == to.id) {
+				return;
+			}
+		}
 
-		/*
-		const wireplug_instance = this.matters.get(
-			from
-		) as AssetContentTypeComponent;
-		const wireplug = this.matters.get(
-			wireplug_instance.inherites
-		) as AssetContentTypeComponent;
-
-		const otherplug_instance = this.matters.get(to);
-		const otherplug = this.matters.get(otherplug_instance.inherites);
-		console.log(wireplug_instance, otherplug_instance);
-
-		const local_id = omatter.get("guids") ?? 0;
-		omatter.set("guids", local_id + 1);
-	 */
+		const plug_index = from.get("guids") ?? 0;
+		from.set("guids", plug_index + 1);
+		from.set("e_" + plug_index, to.id);
 	}
 
 	remove(component: AssetContentTypeComponent) {

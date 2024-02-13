@@ -43,7 +43,7 @@ export default class AppShell {
 		this.scene_edit_tools = new SceneEditTools(
 			this.core.scene_render,
 			this.core.scene_collisions,
-			this.core.scene_core,
+			this.core.scene_map,
 			this.core.assets
 		);
 

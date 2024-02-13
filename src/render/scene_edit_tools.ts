@@ -5,7 +5,9 @@ import SceneRender from "./scene_render";
 import TilesetEditor from "./tileset_editor";
 import { setObjectPos } from "./render_utils";
 import { snap } from "../math";
-import { SceneCore, MapComponent, MapEntity } from "../scene_core";
+import { SceneCore, MapComponent } from "../scene_core";
+import SceneMap from "../scene_map";
+
 import {
 	Assets,
 	AssetContentTypeComponent,
@@ -48,6 +50,7 @@ class SceneEditTools {
 	tileset_editor: TilesetEditor;
 	scene_collisions: SceneCollisions;
 	scene_core: SceneCore;
+	scene_map: SceneMap;
 
 	wireset_line?: THREE.Line | null;
 
@@ -58,12 +61,13 @@ class SceneEditTools {
 	constructor(
 		scene_render: SceneRender,
 		scene_collisions: SceneCollisions,
-		scene_core: SceneCore,
+		scene_map: SceneMap,
 		assets: Assets
 	) {
 		this.scene_render = scene_render;
 		this.scene_collisions = scene_collisions;
-		this.scene_core = scene_core;
+		this.scene_map = scene_map;
+		this.scene_core = scene_map.scene_core;
 		this.assets = assets;
 
 		this.mousepos = new THREE.Vector2();
@@ -72,7 +76,7 @@ class SceneEditTools {
 		this.raycaster = new THREE.Raycaster();
 		this.mousepressed = false;
 		this.tileset_editor = new TilesetEditor(
-			scene_core,
+			this.scene_core,
 			this.scene_render.loader
 		);
 		this.editmode = SceneEditToolMode.DEFAULT;
@@ -505,6 +509,12 @@ class SceneEditTools {
 		const a = matters.get(wireplug_instance.owner);
 		// b. component asset (the one that added into scene)
 		const b = matters.get(a.inherites);
+
+
+		// remove instance before setting new subcomponents
+		// or changing any data
+		this.scene_core.remove(a.id);
+
 		// c. owner of wireplug component differs
 		// means that new component has to be added onto scene
 		if (wireplug.owner !== b.id) {
@@ -519,20 +529,16 @@ class SceneEditTools {
 				extension
 			);
 
-			// remove instance before setting new subcomponents
-			this.scene_core.remove(a.id);
 
 			// add new link into component
 			b.set_link("wireplug", global_id);
 
-			// add component back into scene
-			this.scene_core.add(b as AssetContentTypeComponent);
 			wireplug = matters.get(global_id) as AssetContentTypeWireplug;
 		}
 
 		// a. subcomponent (wireplug) instance
 		const otherplug_instance = matters.get(to) as AssetContentTypeComponent;
-		// b. owner of that wireplug
+		// b. owner of that wireplug instance
 		const opi_owner_instance = matters.get(otherplug_instance.owner);
 		// c. source asset component
 		const other_component = matters.get(
@@ -543,6 +549,9 @@ class SceneEditTools {
 			"wires_edit"
 		] as SceneEditWireplugsSystem;
 		wires_edit_system.setwire(wireplug, other_component);
+
+		// add component back into scene
+		this.scene_core.add(b as AssetContentTypeComponent);
 	}
 
 	isInTileEditMode() {
