@@ -242,6 +242,19 @@ export default class AssetsLibraryView {
 
 		// --
 		listenClick(
+			"#asset-wireplug-add",
+			async (ev) => {
+				const id = await this._createComponent("wireplug", {
+					owner: this.asset_selected.id,
+				});
+				const asset = this.asset_selected;
+				this.addComponentLink(asset.content as Matter, "wireplug", id);
+			},
+			this._listeners
+		);
+
+		// --
+		listenClick(
 			"#asset-animator-add",
 			async (ev) => {
 				const id = await this._createComponent("animator", {

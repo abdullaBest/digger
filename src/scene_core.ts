@@ -144,8 +144,8 @@ class SceneCollidersSystem extends MapSystem {
 		} else {
 			const collider = this.scene_collisions.createBoxColliderByPos(
 				component.id,
-				owner.pos_x ?? 0,
-				owner.pos_y ?? 0,
+				owner.pos_x ?? 0 + component.x,
+				owner.pos_y ?? 0 + component.y,
 				component.width,
 				component.height,
 				collider_type

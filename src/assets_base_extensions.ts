@@ -34,11 +34,17 @@ export interface AssetContentTypeTrigger extends AssetContentTypeComponent {
 	toggle: boolean;
 }
 
+export interface AssetContentTypeWireplug extends AssetContentTypeComponent {
+	guids: number;
+}
+
 export interface AssetContentTypeCollider extends AssetContentTypeComponent {
 	trigger: boolean;
 	autosize: boolean;
 	width: number;
 	height: number;
+	x: number;
+	y: number;
 }
 
 export interface AssetContentTypeGameprop extends AssetContentTypeComponent {
@@ -100,6 +106,7 @@ export interface BaseContentExtensionsList {
 	component: AssetContentTypeComponent;
 	space: AssetContentTypeSpace;
 	trigger: AssetContentTypeTrigger;
+	wireplug: AssetContentTypeWireplug;
 	texture: AssetContentTypeTexture;
 	collider: AssetContentTypeCollider;
 	gameprop: AssetContentTypeGameprop;
@@ -122,6 +129,10 @@ export function cunstructBaseExtensionsData(
 		toggle: false,
 		event: ""
 	};
+	const base_asset_extension_wireplug = {
+		type: "wireplug",
+		guids: 0
+	}
 	const base_asset_extension_texture = { type: "texture", asset: null };
 	const base_asset_extension_collider = {
 		type: "collider",
@@ -129,6 +140,8 @@ export function cunstructBaseExtensionsData(
 		trigger: false,
 		width: 0,
 		height: 0,
+		x: 0,
+		y: 0
 	};
 	const base_asset_extension_gameprop = {
 		type: "gameprop",
@@ -183,6 +196,11 @@ export function cunstructBaseExtensionsData(
 			"base_asset_type_component",
 			"base_asset_type_trigger"
 		) as AssetContentTypeTrigger,
+		wireplug: matters.create(
+			base_asset_extension_wireplug,
+			"base_asset_type_component",
+			"base_asset_type_wireplug"
+		) as AssetContentTypeWireplug,
 		space: matters.create(
 			base_asset_extension_space,
 			"base_asset_type_component",

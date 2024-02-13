@@ -6,11 +6,11 @@ import TilesetEditor from "./tileset_editor.js";
 import { setObjectPos } from "./render_utils.js";
 import { snap } from "../math.js";
 import { SceneCore, MapComponent, MapEntity } from "../scene_core.js";
-import { AssetContentTypeComponent } from "../assets.js";
+import { Assets, AssetContentTypeComponent } from "../assets.js";
 import {
 	MapTilesetSystem,
 	MapSystem,
-	SceneEditEventWiresSystem,
+	SceneEditWireplugsSystem,
 } from "../systems/index";
 
 enum SceneEditToolMode {
@@ -39,10 +39,13 @@ class SceneEditTools {
 	transform_controls: TransformControls;
 	private raycaster: THREE.Raycaster;
 
+	assets: Assets;
 	scene_render: SceneRender;
 	tileset_editor: TilesetEditor;
 	scene_collisions: SceneCollisions;
 	scene_core: SceneCore;
+
+	wireset_line?: THREE.Line | null;
 
 	editmode: SceneEditToolMode;
 
@@ -51,11 +54,13 @@ class SceneEditTools {
 	constructor(
 		scene_render: SceneRender,
 		scene_collisions: SceneCollisions,
-		scene_core: SceneCore
+		scene_core: SceneCore,
+		assets: Assets
 	) {
 		this.scene_render = scene_render;
 		this.scene_collisions = scene_collisions;
 		this.scene_core = scene_core;
+		this.assets = assets;
 
 		this.mousepos = new THREE.Vector2();
 		this.mousepos_world = new THREE.Vector3();
@@ -109,6 +114,7 @@ class SceneEditTools {
 			}
 			this.mousepressed = false;
 			this.scene_render.controls.enableRotate = true;
+			this.onMouseUp(ev);
 		});
 
 		this.scene_render.canvas.addEventListener("mousemove", (ev: MouseEvent) => {
@@ -178,13 +184,18 @@ class SceneEditTools {
 				}
 			}
 
-
 			setObjectPos(this.cube, pos);
 		}
 
 		if (pos) {
 			this.mousepos_world.copy(pos);
 		}
+
+		this.moveWireDrag();
+	}
+
+	onMouseUp(ev: MouseEvent) {
+		this.stopWireDrag();
 	}
 
 	onMouseClick(ev: MouseEvent) {
@@ -236,6 +247,7 @@ class SceneEditTools {
 			}
 		} else if (this.isInTileEditMode()) {
 			this.tilesetDraw();
+		} else if (this.editmode == SceneEditToolMode.WIRES) {
 		}
 	}
 
@@ -410,13 +422,66 @@ class SceneEditTools {
 				this.cube.visible = true;
 				break;
 			case SceneEditToolMode.WIRES:
-				this.transform_controls.visible = false;
-				const wires_edit_system = new SceneEditEventWiresSystem(
-					this.scene_render,
-					this.scene_core.matters
-				);
-				this.scene_core.addSystem("wires_edit", wires_edit_system);
+				this.setEditModeWires();
 				break;
+		}
+	}
+
+	setEditModeWires() {
+		this.transform_controls.visible = false;
+		const wires_edit_system = new SceneEditWireplugsSystem(
+			this.scene_render,
+			this.scene_core.matters,
+			this.assets
+		);
+		this.scene_core.addSystem("wires_edit", wires_edit_system);
+		let wirefrom = "";
+		wires_edit_system.events.on("dragstart", (id) => {
+			this.startWireDrag(id);
+			wirefrom = id;
+		});
+		wires_edit_system.events.on("dragend", (id) => {
+			this.stopWireDrag();
+			wires_edit_system.setwire(wirefrom, id);
+		});
+	}
+
+	moveWireDrag() {
+		if (!this.wireset_line) {
+			return;
+		}
+		const positions = this.wireset_line.geometry.attributes.position.array;
+		positions[3] = this.mousepos_world.x;
+		positions[4] = this.mousepos_world.y;
+		positions[5] = 0;
+		this.wireset_line.geometry.attributes.position.needsUpdate = true;
+	}
+
+	startWireDrag(id: string) {
+		const wireplug = this.scene_core.components[id];
+		const object = this.scene_render.cache.objects[wireplug.owner];
+		const pos = object.getWorldPosition(this.scene_render.cache.vec3_0);
+		const vertices = [pos.x, pos.y, pos.z, pos.x, pos.y, 0];
+		const geometry = new THREE.BufferGeometry();
+		geometry.setAttribute(
+			"position",
+			new THREE.Float32BufferAttribute(vertices, 3)
+		);
+		const material = new THREE.LineBasicMaterial({
+			color: 0xffffff,
+			linewidth: 10,
+			depthTest: false,
+		});
+		const line = new THREE.Line(geometry, material);
+		line.renderOrder = 1;
+		this.scene_render.addObject("wireset_line", line);
+		this.wireset_line = line;
+	}
+
+	stopWireDrag() {
+		if (this.wireset_line) {
+			this.wireset_line.removeFromParent();
+			this.wireset_line = null;
 		}
 	}
 
@@ -428,5 +493,5 @@ class SceneEditTools {
 	}
 }
 
-export { SceneEditToolMode, SceneEditTools, SceneEditEventWiresSystem };
+export { SceneEditToolMode, SceneEditTools, SceneEditWireplugsSystem };
 export default SceneEditTools;
