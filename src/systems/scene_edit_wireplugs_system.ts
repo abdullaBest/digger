@@ -63,7 +63,6 @@ export class EditWireplugNode {
 			node: newplug,
 		});
 
-
 		return container;
 	}
 }
@@ -117,14 +116,28 @@ export default class SceneEditWireplugsSystem extends MapSystem {
 		this.scene_render.canvas_container.appendChild(node.container);
 	}
 
-	setwire(from: string, to: string) {
-		const wireplug_instance = this.matters.get(from);
-		const wireplug = this.matters.get(wireplug_instance.inherites);
+	async setwire(from: AssetContentTypeWireplug, to: AssetContentTypeComponent) {
+		if (from.owner == to.id) {
+			return;
+		}
+
+		console.log(from, to);
+
+		/*
+		const wireplug_instance = this.matters.get(
+			from
+		) as AssetContentTypeComponent;
+		const wireplug = this.matters.get(
+			wireplug_instance.inherites
+		) as AssetContentTypeComponent;
+
 		const otherplug_instance = this.matters.get(to);
 		const otherplug = this.matters.get(otherplug_instance.inherites);
 		console.log(wireplug_instance, otherplug_instance);
 
-		// by default 
+		const local_id = omatter.get("guids") ?? 0;
+		omatter.set("guids", local_id + 1);
+	 */
 	}
 
 	remove(component: AssetContentTypeComponent) {
