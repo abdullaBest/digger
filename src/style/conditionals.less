@@ -41,3 +41,31 @@ section#asset-manage-section {
 		}
 	}
 }
+
+#edit-section-canvas {
+	.wireplugs-edit-frame {
+		& > * {
+			text-overflow: clip;
+			overflow: hidden;
+			white-space: nowrap;
+		}
+		max-width: 1em;
+		max-height: 1em;
+		overflow: hidden;
+		transition-property: max-width, max-height;
+		transition-duration: 0.1s;
+
+		&:hover {
+			max-width: 12ch;
+			max-height: 100%;
+		}
+
+		.wireplug-connect-btn {
+			flex-shrink: 0;
+		}
+
+		input {
+			width: 5ch;
+		}
+	}
+}

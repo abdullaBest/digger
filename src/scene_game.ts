@@ -55,6 +55,9 @@ export default class SceneGame {
 	gravity_x: number;
 	gravity_y: number;
 
+	// tmp
+	_character_trigger_collisions: { [id: string]: AssetContentTypeTrigger };
+
 	constructor(
 		scene_collisions: SceneCollisions,
 		scene_render: SceneRender,
@@ -158,6 +161,8 @@ export default class SceneGame {
 	}
 
 	async _runCharacter(entrance_id?: string | null) {
+		this._character_trigger_collisions = {};
+
 		// find start pos
 		const startpos = new Vector2(0.1, 4);
 		{
@@ -338,42 +343,88 @@ export default class SceneGame {
 		this.updateCharacterDamageConditions();
 
 		const proceedCharacterInteraction = (trigger: AssetContentTypeTrigger) => {
+			if (!trigger.user_interact) {
+				return;
+			}
+
 			const action = this.player_character.performed_actions.find(
 				(e) => e.tag == "look_up"
 			);
-			if (action) {
-				// if trigger toggles it sends DEFAULT code
-				// if trigger not toggling it sends START and END codes
-				let code = MapEventCode.DEFAULT;
-				if (!trigger.toggle) {
-					// #mcd
-					code =
-						MapEventCode[
-							CharacterActionCode[action.code] as keyof typeof MapEventCode
-						];
-				}
 
-				if (
-					code !== MapEventCode.DEFAULT ||
-					action.code === CharacterActionCode.START
-				) {
-					this.scene_map.event({
-						code,
-						component: trigger.owner,
-					});
-				}
+			if (!action) {
+				return;
+			}
 
-				if (
-					action.code == CharacterActionCode.START &&
-					trigger.event.includes("mapexit")
-				) {
-					const signal = trigger.event.split(",")[1];
-					if (signal) {
-						this.requestMapSwitch(signal);
-					}
+			// if trigger toggles it sends DEFAULT code
+			// if trigger not toggling it sends START and END codes
+			let code = MapEventCode.DEFAULT;
+			if (trigger.toggle ) {
+				if (action.code === CharacterActionCode.START) {
+					const activated = !trigger.get("activated");
+					code = activated ? MapEventCode.START : MapEventCode.END;
+				}
+			} else {
+				// #mcd
+				code =
+					MapEventCode[
+						CharacterActionCode[action.code] as keyof typeof MapEventCode
+					];
+			}
+
+
+			if (code !== MapEventCode.DEFAULT) {
+				trigger.set("activated", code == MapEventCode.START);
+				this.scene_map.event({
+					code,
+					component: trigger.owner,
+				});
+			}
+
+			if (
+				action.code == CharacterActionCode.START &&
+				trigger.event.includes("mapexit")
+			) {
+				const signal = trigger.event.split(",")[1];
+				if (signal) {
+					this.requestMapSwitch(signal);
 				}
 			}
 		};
+
+		const proceedCharacterCollisionsStart = (
+			trigger: AssetContentTypeTrigger
+		) => {
+			if (
+				!trigger.user_collide ||
+				this._character_trigger_collisions[trigger.id]
+			) {
+				return;
+			}
+
+			trigger.set("activated", true);
+			this._character_trigger_collisions[trigger.id] = trigger;
+			this.scene_map.event({
+				code: MapEventCode.START,
+				component: trigger.owner,
+			});
+		};
+
+		const proceedCharacterCollisionsEnd = (
+			trigger: AssetContentTypeTrigger
+		) => {
+			if (!this._character_trigger_collisions[trigger.id]) {
+				return;
+			}
+
+			trigger.set("activated", false);
+			delete this._character_trigger_collisions[trigger.id];
+			this.scene_map.event({
+				code: MapEventCode.END,
+				component: trigger.owner,
+			});
+		};
+
+		const collisions_by_id = [];
 
 		for (let i = 0; i < cha.body.contacts; i++) {
 			const cid = cha.body.contacts_list[i].id;
@@ -392,10 +443,18 @@ export default class SceneGame {
 			if (trigger) {
 				interacts = trigger.user_interact;
 				proceedCharacterInteraction(trigger);
+				proceedCharacterCollisionsStart(trigger);
+				collisions_by_id[trigger.id] = trigger;
 			}
 		}
 
 		this.player_character_render.drawUiInteractSprite(interacts);
+
+		for (const k in this._character_trigger_collisions) {
+			if (!collisions_by_id[k]) {
+				proceedCharacterCollisionsEnd(this._character_trigger_collisions[k]);
+			}
+		}
 	}
 
 	requestMapSwitch(signal: string) {

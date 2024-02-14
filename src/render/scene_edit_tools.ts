@@ -450,6 +450,12 @@ class SceneEditTools {
 		wires_edit_system.events.on("dragend", async (id) => {
 			await this.finishWireDrag(wirefrom, id);
 		});
+		wires_edit_system.events.on(
+			"propchange",
+			async ({ key, value, component }) => {
+				console.log(key, value, component);
+			}
+		);
 	}
 
 	moveWireDrag() {
@@ -484,6 +490,64 @@ class SceneEditTools {
 		this.wireset_line = line;
 	}
 
+	/**
+	 * @brief use that function for making savable changes on scene
+	 * if component instance inherited directly from asset source it creates new asset so it safe to edit.
+	 * deletes prev instance on scene, calls change function argument and readds new instance into scene
+	 *
+	 * @param id {string} component id. Has to be at scene at that moment
+	 * @param change {Function<void>} function that should apply changes
+	 * @return
+	 */
+	async applyComponentChanges(
+		id: string,
+		change: (component: AssetContentTypeComponent) => void
+	) {
+		const matters = this.scene_core.matters;
+
+		const component_instance = matters.get(id) as AssetContentTypeComponent;
+		let component = matters.get(
+			component_instance.inherites
+		) as AssetContentTypeWireplug;
+
+		// so.. by default subcomponents intances inherited directly
+		// from asset matter.
+		// New asset has to be created if required.
+		// ---
+		// a. instance owner (main component instance)
+		const a = matters.get(component_instance.owner);
+		// b. component asset (the one that added into scene)
+		const b = matters.get(a.inherites);
+
+		// remove instance before setting new subcomponents
+		// or changing any data
+		this.scene_core.remove(a.id);
+
+		// c. owner of wireplug component differs
+		// means that new component has to be added onto scene
+		if (component.owner !== b.id) {
+			// same approach as in SceneEditView.addComponent
+			const extension = component.get("type");
+			const global_id = await this.assets.uploadComponent(
+				{
+					inherites: component.inherites,
+					owner: b.id,
+					name: "c-" + component.name,
+				},
+				extension
+			);
+
+			// add new link into component
+			b.set_link("wireplug", global_id);
+
+			component = matters.get(global_id) as AssetContentTypeWireplug;
+		}
+
+		change(component);
+
+		this.scene_core.add(b as AssetContentTypeComponent);
+	}
+
 	async finishWireDrag(from?: string, to?: string) {
 		if (this.wireset_line) {
 			this.wireset_line.removeFromParent();
@@ -495,62 +559,21 @@ class SceneEditTools {
 		}
 
 		const matters = this.scene_core.matters;
-		const wireplug_instance = matters.get(from) as AssetContentTypeComponent;
-		let wireplug = matters.get(
-			wireplug_instance.inherites
-		) as AssetContentTypeWireplug;
+		this.applyComponentChanges(from, (wireplug: AssetContentTypeWireplug) => {
+			// a. subcomponent (wireplug) instance
+			const otherplug_instance = matters.get(to) as AssetContentTypeComponent;
+			// b. owner of that wireplug instance
+			const opi_owner_instance = matters.get(otherplug_instance.owner);
+			// c. source asset component
+			const other_component = matters.get(
+				opi_owner_instance.inherites
+			) as AssetContentTypeComponent;
 
-		// so.. by default subcomponents intances inherited directly
-		// from asset matter.
-		// New asset has to be created if required.
-		// ---
-		// a. instance owner (main component instance)
-		const a = matters.get(wireplug_instance.owner);
-		// b. component asset (the one that added into scene)
-		const b = matters.get(a.inherites);
-
-
-		// remove instance before setting new subcomponents
-		// or changing any data
-		this.scene_core.remove(a.id);
-
-		// c. owner of wireplug component differs
-		// means that new component has to be added onto scene
-		if (wireplug.owner !== b.id) {
-			// same approach as in SceneEditView.addComponent
-			const extension = wireplug.get("type");
-			const global_id = await this.assets.uploadComponent(
-				{
-					inherites: wireplug.inherites,
-					owner: b.id,
-					name: "c-" + wireplug.name,
-				},
-				extension
-			);
-
-
-			// add new link into component
-			b.set_link("wireplug", global_id);
-
-			wireplug = matters.get(global_id) as AssetContentTypeWireplug;
-		}
-
-		// a. subcomponent (wireplug) instance
-		const otherplug_instance = matters.get(to) as AssetContentTypeComponent;
-		// b. owner of that wireplug instance
-		const opi_owner_instance = matters.get(otherplug_instance.owner);
-		// c. source asset component
-		const other_component = matters.get(
-			opi_owner_instance.inherites
-		) as AssetContentTypeComponent;
-
-		const wires_edit_system = this.scene_core.systems[
-			"wires_edit"
-		] as SceneEditWireplugsSystem;
-		wires_edit_system.setwire(wireplug, other_component);
-
-		// add component back into scene
-		this.scene_core.add(b as AssetContentTypeComponent);
+			const wires_edit_system = this.scene_core.systems[
+				"wires_edit"
+			] as SceneEditWireplugsSystem;
+			wires_edit_system.setwire(wireplug, other_component);
+		});
 	}
 
 	isInTileEditMode() {

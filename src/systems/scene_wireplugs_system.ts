@@ -40,7 +40,7 @@ export default class SceneWireplugsSystem extends MapSystem {
 			const elapsed = timer.set("elapsed", timer.get("elapsed") + dt) as number;
 			if (timer.delay && timer.delay <= elapsed) {
 				this.event(
-					{ component: timer.owner, code: MapEventCode.DEFAULT },
+					{ component: timer.owner, code: timer.get("event_code") },
 					false
 				);
 				delete this.timers[k];
@@ -60,13 +60,13 @@ export default class SceneWireplugsSystem extends MapSystem {
 
 		const timer = matters.get(component.get("timer")) as AssetContentTypeTimer;
 		if (wireplug) {
-			if (!check_timers || !this._runTimer(timer)) {
+			if (!check_timers || !this._runTimer(timer, event)) {
 				this._propagate(wireplug, event);
 			}
 		}
 	}
 
-	_runTimer(timer?: AssetContentTypeTimer): boolean {
+	_runTimer(timer: AssetContentTypeTimer | null, event: MapEvent): boolean {
 		if (!timer) {
 			return false;
 		}
@@ -74,6 +74,7 @@ export default class SceneWireplugsSystem extends MapSystem {
 		if (timer.interval || timer.delay) {
 			this.timers[timer.id] = timer;
 			timer.set("elapsed", 0);
+			timer.set("event_code", event.code);
 			return true;
 		}
 

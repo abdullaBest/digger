@@ -8,6 +8,7 @@ import SceneRender from "../render/scene_render";
 import { listenClick, addEventListener } from "../document";
 import * as THREE from "../lib/three.module";
 import Events from "../events";
+import { PropertyInput } from "../page/property_input";
 
 export class EditWireplugNode {
 	root: THREE.Object3D;
@@ -47,7 +48,7 @@ export class EditWireplugNode {
 				});
 		}
 
-		this.container = this.constructContainer(component);
+		this.container = this.constructFrame(component);
 		this.constructLines(component);
 
 		return this;
@@ -108,7 +109,7 @@ export class EditWireplugNode {
 		}
 	}
 
-	constructContainer(component: AssetContentTypeWireplug) {
+	constructFrame(component: AssetContentTypeWireplug) {
 		const container = this.container ?? document.createElement("el");
 		container.innerHTML = "";
 		container.classList.add(
@@ -116,11 +117,13 @@ export class EditWireplugNode {
 			"buttons-list-s1",
 			"position-absolute",
 			"z-index-1",
-			"frame-s1"
+			"frame-s1",
+			"wireplugs-edit-frame"
 		);
 
+		// -- plug btn
 		const newplug = document.createElement("btn");
-		newplug.innerHTML = "connect";
+		newplug.classList.add("wireplug-connect-btn", "fittext", "img-plug");
 		container.appendChild(newplug);
 
 		addEventListener({
@@ -138,13 +141,14 @@ export class EditWireplugNode {
 			node: newplug,
 		});
 
+		// current plugs btn
 		for (let i = component.get("guids") - 1; i >= 0; i--) {
 			const id = "e_" + i;
 			const k = component.get(id);
 			if (k) {
 				const e = document.createElement("entry");
 				e.classList.add("flex-row", "font-style-minor");
-				e.innerHTML = `<t>${k}-></t>`;
+				e.innerHTML = `<t class="flex-grow-1">${k}-></t>`;
 				container.appendChild(e);
 				const delbtn = document.createElement("icon");
 				delbtn.classList.add("img-delete", "fittext");
@@ -174,6 +178,27 @@ export class EditWireplugNode {
 				});
 			}
 		}
+
+		// ---
+		// property inputs
+		const addSplitter = (name: string) => {
+			const splitter = document.createElement("splitter");
+			splitter.innerHTML = name;
+			container.appendChild(splitter);
+		}
+		const addInput = (name: string, key: string = name) => {
+			const input = new PropertyInput();
+			const input_el = input.init(component.get(key), (value) => {
+				this.events.emit("propchange", { key, value, component });
+			});
+			const text = document.createElement("t");
+			text.innerHTML = name;
+			input_el.insertBefore(text, input_el.firstChild);
+			container.appendChild(input_el);
+		}
+
+		addSplitter("wires");
+		addInput("filter");
 
 		return container;
 	}

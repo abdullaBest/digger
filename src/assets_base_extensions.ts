@@ -137,12 +137,13 @@ export function cunstructBaseExtensionsData(
 	};
 	const base_asset_extension_wireplug = {
 		type: "wireplug",
+		filter: "",
 		guids: 0
 	}
 	const base_asset_extension_timer = {
 		type: "timer",
 		delay: 0,
-		interval: 0
+		//interval: 0
 	}
 	const base_asset_extension_texture = { type: "texture", asset: null };
 	const base_asset_extension_collider = {

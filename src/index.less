@@ -606,19 +606,21 @@ body,
 }
 
 
-.appcore .splitter {
-    margin: 2px;
-    display: flex;
-    gap: 8px;
-    color: var(--border-color-a);
-    &::before, &::after {
-      background-color: var(--border-color-a);
-      content: '';
-      flex-grow: 1;
-      height: 2px;
-      border-radius: 2px;
-      margin: auto;
-    }
+.appcore {
+	splitter, .splitter {
+		margin: 2px;
+		display: flex;
+		gap: 8px;
+		color: var(--border-color-a);
+		&::before, &::after {
+			background-color: var(--border-color-a);
+			content: '';
+			flex-grow: 1;
+			height: 2px;
+			border-radius: 2px;
+			margin: auto;
+		}
+	}
 }
 
 .appcore .frame-s1-right {

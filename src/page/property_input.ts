@@ -20,7 +20,7 @@ class PropertyInput {
         this.mutator = mutator ?? null;
     }
     
-    init(value: string, onchange: (value: any) => void, listeners: Array<EventListenerDetails>) : HTMLElement  {
+    init(value: string, onchange: (value: any) => void, listeners?: Array<EventListenerDetails>) : HTMLElement  {
         this.canvas = querySelector("db#cache canvas#cache_canvas") as HTMLCanvasElement
 
         const container = document.createElement("wrap");
