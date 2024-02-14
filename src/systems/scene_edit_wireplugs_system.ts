@@ -29,13 +29,23 @@ export class EditWireplugNode {
 		this.root = new THREE.Object3D();
 		const owner_obj = this.scene_render.cache.objects[component.owner];
 		owner_obj.add(this.root);
-		const size = 0.1;
-		const color = 0xffffff;
+		const size = 0.03;
+		const color = 0xdddddd;
 		const geometry = new THREE.SphereGeometry(size);
 		const material = new THREE.MeshBasicMaterial({ color, depthTest: false });
 		const sphere = new THREE.Mesh(geometry, material);
 		sphere.renderOrder = 1;
 		this.root.add(sphere);
+
+		const owner = this.matters.get(component.owner);
+		const timer = this.matters.get(owner.get("timer"));
+		if (timer) {
+			const sprite = this.scene_render
+				.makeSprite("timer_CW_75", this.root)
+				.then((s) => {
+					s.scale.multiplyScalar(0.1);
+				});
+		}
 
 		this.container = this.constructContainer(component);
 		this.constructLines(component);
@@ -71,7 +81,7 @@ export class EditWireplugNode {
 			line.renderOrder = 1;
 			line.name = id;
 			this.root.add(line);
-		}
+		};
 
 		const owner_obj = this.scene_render.cache.objects[component.owner];
 		for (let i = component.get("guids") - 1; i >= 0; i--) {

@@ -40,11 +40,13 @@ class SceneRenderComponentSystem extends MapSystem {
 		}
 		const parent = (owner && this.scene_render.cache.objects[owner.id]) ?? null;
 		const obj = this.scene_render.addEmptyObject(component.id, parent);
-		/*
-        if (component.matrix && component.matrix.length) {
-            obj.applyMatrix4(component.matrix);
-        }
-        */
+		if (
+			typeof component.pos_x !== "undefined" &&
+			typeof component.pos_y !== "undefined"
+		) {
+			(obj as any).position.x = component.pos_x;
+			(obj as any).position.y = component.pos_y;
+		}
 	}
 
 	remove(component: AssetContentTypeModel) {
@@ -314,22 +316,6 @@ class SceneCore {
 	event(event: MapEvent) {
 		for (const k in this.systems) {
 			this.systems[k].event(event);
-		}
-
-		// propagate event on wires
-		const component = this.components[event.component];
-		const wireplug = this.matters.get(component.get("wireplug"));
-		if (wireplug) {
-			for (let i = wireplug.get("guids") - 1; i >= 0; i--) {
-				const key = "e_" + i;
-				const id = wireplug.get(key);
-				const ncomponent = this.csources[id];
-				if (ncomponent) {
-					const e = Object.create(event);
-					e.component = ncomponent.id;
-					this.event(e);
-				}
-			}
 		}
 	}
 

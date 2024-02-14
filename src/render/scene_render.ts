@@ -161,15 +161,21 @@ class SceneRender {
     }
   }
 
-  async makeSprite(name: string): Promise<THREE.Sprite> {
+  async makeSprite(name: string, parent?: THREE.Object3D): Promise<THREE.Sprite> {
     const spritepath = SPRITE_DEFAULT_PATH + name + ".png";
-    return new THREE.Sprite(
+    const sprite = new THREE.Sprite(
       (await this.getMaterial(
         "sprite",
         spritepath,
         true,
       )) as THREE.SpriteMaterial,
     );
+
+		if (parent) {
+			parent.add(sprite);
+		}
+
+		return sprite;
   }
 
   clearCached() {

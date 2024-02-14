@@ -24,6 +24,18 @@ body,
     --size-medium-x4: 512px;
 }
 
+.appcore #popup-default {
+	max-height: 50%;
+	overflow: hidden;
+	& > content {
+		overflow: hidden;
+	}
+
+	#popup-content {
+		overflow: scroll;
+	}
+}
+
 .appcore .hidden {
     display: none;
 }
