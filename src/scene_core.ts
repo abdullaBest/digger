@@ -166,6 +166,9 @@ class SceneCore {
 
 	// list of component instances.
 	components: { [id: string]: AssetContentTypeComponent };
+	// list of instances but keys is source id's
+	// ofc several instances of same source gonna produce only one entry here
+	csources: { [id: string]: AssetContentTypeComponent };
 
 	systems: { [id: string]: MapSystem };
 
@@ -178,6 +181,7 @@ class SceneCore {
 		this.scene_collisions = scene_collisions;
 		this.scene_render = scene_render;
 		this.components = {};
+		this.csources = {};
 		this.systems = {
 			model: new SceneRenderModelSystem(this.scene_render),
 			animator: new ModelAnimatorRenderSystem(this.scene_render),
@@ -257,6 +261,7 @@ class SceneCore {
 		}
 
 		this.components[cinstace.id] = cinstace;
+		this.csources[cinstace.inherites] = cinstace;
 
 		return cinstace;
 	}
@@ -302,12 +307,29 @@ class SceneCore {
 
 		this.matters.remove(id);
 		delete this.components[component.id];
+		delete this.csources[component.inherites];
 	}
 
 	// Calls event in systems
 	event(event: MapEvent) {
-		for(const k in this.systems) {
+		for (const k in this.systems) {
 			this.systems[k].event(event);
+		}
+
+		// propagate event on wires
+		const component = this.components[event.component];
+		const wireplug = this.matters.get(component.get("wireplug"));
+		if (wireplug) {
+			for (let i = wireplug.get("guids") - 1; i >= 0; i--) {
+				const key = "e_" + i;
+				const id = wireplug.get(key);
+				const ncomponent = this.csources[id];
+				if (ncomponent) {
+					const e = Object.create(event);
+					e.component = ncomponent.id;
+					this.event(e);
+				}
+			}
 		}
 	}
 

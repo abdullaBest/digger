@@ -375,7 +375,7 @@ export default class SceneGame {
 			}
 		};
 
-		for (const i in cha.body.contacts_list) {
+		for (let i = 0; i < cha.body.contacts; i++) {
 			const cid = cha.body.contacts_list[i].id;
 			if (!cid) {
 				continue;
