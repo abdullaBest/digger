@@ -185,20 +185,33 @@ export class EditWireplugNode {
 			const splitter = document.createElement("splitter");
 			splitter.innerHTML = name;
 			container.appendChild(splitter);
-		}
-		const addInput = (name: string, key: string = name) => {
+		};
+		const addInput = (
+			name: string,
+			component: AssetContentTypeComponent,
+			key: string = name
+		) => {
 			const input = new PropertyInput();
-			const input_el = input.init(component.get(key), (value) => {
-				this.events.emit("propchange", { key, value, component });
+			const value = component.get(key);
+			const input_el = input.init(value, (value) => {
+				this.events.emit("propchange", { key, value, id: component.id });
 			});
+			input.draw(value);
 			const text = document.createElement("t");
 			text.innerHTML = name;
 			input_el.insertBefore(text, input_el.firstChild);
 			container.appendChild(input_el);
-		}
+		};
 
 		addSplitter("wires");
-		addInput("filter");
+		addInput("filter", component);
+
+		const owner = this.matters.get(component.owner);
+		const timer = this.matters.get(owner.get("timer"));
+		if (timer) {
+			addSplitter("timer");
+			addInput("delay", timer as AssetContentTypeComponent);
+		}
 
 		return container;
 	}
@@ -244,6 +257,9 @@ export default class SceneEditWireplugsSystem extends MapSystem {
 		});
 		node.events.on("dragend", () => {
 			this.events.emit("dragend", component.id);
+		});
+		node.events.on("propchange", (opts) => {
+			this.events.emit("propchange", opts);
 		});
 
 		this.scene_render.canvas_container.appendChild(node.container);

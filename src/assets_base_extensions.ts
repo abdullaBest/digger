@@ -36,6 +36,7 @@ export interface AssetContentTypeTrigger extends AssetContentTypeComponent {
 
 export interface AssetContentTypeWireplug extends AssetContentTypeComponent {
 	guids: number;
+	filter: string;
 }
 
 export interface AssetContentTypeTimer extends AssetContentTypeComponent {

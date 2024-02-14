@@ -452,8 +452,11 @@ class SceneEditTools {
 		});
 		wires_edit_system.events.on(
 			"propchange",
-			async ({ key, value, component }) => {
-				console.log(key, value, component);
+			async ({ key, value, id }) => {
+				this.applyComponentChanges(id, (component) => {
+					component.set(key, value);
+					console.log(key, value, id, component);
+				});
 			}
 		);
 	}
@@ -497,11 +500,13 @@ class SceneEditTools {
 	 *
 	 * @param id {string} component id. Has to be at scene at that moment
 	 * @param change {Function<void>} function that should apply changes
+	 * @param name {string} subcomponent name (field key) in owner component
 	 * @return
 	 */
 	async applyComponentChanges(
 		id: string,
-		change: (component: AssetContentTypeComponent) => void
+		change: (component: AssetContentTypeComponent) => void,
+		name?: string
 	) {
 		const matters = this.scene_core.matters;
 
@@ -538,7 +543,7 @@ class SceneEditTools {
 			);
 
 			// add new link into component
-			b.set_link("wireplug", global_id);
+			b.set_link(name || extension, global_id);
 
 			component = matters.get(global_id) as AssetContentTypeWireplug;
 		}

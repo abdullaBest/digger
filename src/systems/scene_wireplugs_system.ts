@@ -34,6 +34,7 @@ export default class SceneWireplugsSystem extends MapSystem {
 	): boolean {
 		return component.type === "wireplug";
 	}
+
 	step(dt: number) {
 		for (const k in this.timers) {
 			const timer = this.timers[k];
@@ -57,6 +58,24 @@ export default class SceneWireplugsSystem extends MapSystem {
 		const wireplug = matters.get(
 			component.get("wireplug")
 		) as AssetContentTypeWireplug;
+
+		if (wireplug.filter) {
+			const f = wireplug.filter.toLowerCase();
+			switch(f) {
+				case "on":
+					if (event.code != MapEventCode.START) {
+						return;
+					}
+					break;
+				case "off":
+					if (event.code != MapEventCode.END) {
+						return;
+					}
+					break;
+				default:
+					break;
+			}
+		}
 
 		const timer = matters.get(component.get("timer")) as AssetContentTypeTimer;
 		if (wireplug) {
