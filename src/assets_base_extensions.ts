@@ -37,6 +37,8 @@ export interface AssetContentTypeTrigger extends AssetContentTypeComponent {
 export interface AssetContentTypeWireplug extends AssetContentTypeComponent {
 	guids: number;
 	filter: string;
+	hold: number;
+	release: number;
 }
 
 export interface AssetContentTypeTimer extends AssetContentTypeComponent {
@@ -139,6 +141,8 @@ export function cunstructBaseExtensionsData(
 	const base_asset_extension_wireplug = {
 		type: "wireplug",
 		filter: "",
+		hold: 0,
+		release: 0,
 		guids: 0
 	}
 	const base_asset_extension_timer = {

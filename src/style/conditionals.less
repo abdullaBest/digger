@@ -49,13 +49,14 @@ section#asset-manage-section {
 			overflow: hidden;
 			white-space: nowrap;
 		}
+
 		max-width: 1em;
 		max-height: 1em;
 		overflow: hidden;
 		transition-property: max-width, max-height;
 		transition-duration: 0.1s;
 
-		&:hover {
+		&:hover, &:has(input:focus) {
 			max-width: 12ch;
 			max-height: 100%;
 		}

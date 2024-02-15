@@ -80,7 +80,7 @@ export default class SceneEditView {
 					return;
 				}
 
-				let instance = matter;
+				let instance = matter as AssetContentTypeComponent;
 				for (const k in this.scene_core.components) {
 					const c = this.scene_core.components[k];
 					if (c.inherites == matter.id) {

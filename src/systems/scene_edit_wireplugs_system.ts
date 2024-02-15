@@ -112,6 +112,7 @@ export class EditWireplugNode {
 	constructFrame(component: AssetContentTypeWireplug) {
 		const container = this.container ?? document.createElement("el");
 		container.innerHTML = "";
+		container.id = "frame-edit-wireplug-" + component.owner;
 		container.classList.add(
 			"flex-column",
 			"buttons-list-s1",
@@ -200,17 +201,20 @@ export class EditWireplugNode {
 			const text = document.createElement("t");
 			text.innerHTML = name;
 			input_el.insertBefore(text, input_el.firstChild);
+			input_el.id = "input-edit-wireplug-" + key;
 			container.appendChild(input_el);
 		};
 
 		addSplitter("wires");
 		addInput("filter", component);
+		addInput("hold", component);
+		addInput("release", component);
 
 		const owner = this.matters.get(component.owner);
 		const timer = this.matters.get(owner.get("timer"));
 		if (timer) {
-			addSplitter("timer");
-			addInput("delay", timer as AssetContentTypeComponent);
+			//addSplitter("timer");
+			//addInput("delay", timer as AssetContentTypeComponent);
 		}
 
 		return container;

@@ -12,6 +12,7 @@ class AnimatorNode {
 	mixer: THREE.AnimationMixer;
 	gltf: any;
 	activated: boolean;
+	activations: number;
 	action: THREE.AnimationAction;
 
 	constructor(
@@ -25,6 +26,7 @@ class AnimatorNode {
 		this.mixer = mixer;
 		this.gltf = gltf;
 		this.activated = false;
+		this.activations = 0;
 	}
 
 	init() {
@@ -143,12 +145,19 @@ export default class ModelAnimatorRenderSystem extends MapSystem {
 	event(event: MapEvent) {
 		const node = this.nodes[event.component];
 		if (node) {
+			console.log(event, node.activations);
 			switch (event.code) {
 				case MapEventCode.START:
-					node.activate();
+					node.activations += 1;
+					if (node.activations == 1) {
+						node.activate();
+					}
 					break;
 				case MapEventCode.END:
-					node.deactivate();
+					node.activations -= 1;
+					if (node.activations == 0) {
+						node.deactivate();
+					}
 					break;
 				default:
 					node.toggle();

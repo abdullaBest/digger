@@ -450,15 +450,20 @@ class SceneEditTools {
 		wires_edit_system.events.on("dragend", async (id) => {
 			await this.finishWireDrag(wirefrom, id);
 		});
-		wires_edit_system.events.on(
-			"propchange",
-			async ({ key, value, id }) => {
-				this.applyComponentChanges(id, (component) => {
-					component.set(key, value);
-					console.log(key, value, id, component);
-				});
+		wires_edit_system.events.on("propchange", async ({ key, value, id }) => {
+			const newinstance = await this.applyComponentChanges(id, (component) => {
+				component.set(key, value);
+			});
+
+			// restore input selection (cause it was recreated)
+			if (newinstance) {
+				const query = `#frame-edit-wireplug-${newinstance.id} #input-edit-wireplug-${key} input`;
+				const input = document.querySelector(query) as HTMLInputElement;
+				if (input) {
+					input.focus();
+				}
 			}
-		);
+		});
 	}
 
 	moveWireDrag() {
@@ -507,7 +512,7 @@ class SceneEditTools {
 		id: string,
 		change: (component: AssetContentTypeComponent) => void,
 		name?: string
-	) {
+	) : Promise<AssetContentTypeComponent | null> {
 		const matters = this.scene_core.matters;
 
 		const component_instance = matters.get(id) as AssetContentTypeComponent;
@@ -550,7 +555,7 @@ class SceneEditTools {
 
 		change(component);
 
-		this.scene_core.add(b as AssetContentTypeComponent);
+		return this.scene_core.add(b as AssetContentTypeComponent);
 	}
 
 	async finishWireDrag(from?: string, to?: string) {
