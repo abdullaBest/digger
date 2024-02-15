@@ -14,6 +14,7 @@ import { MapEvent, MapEventCode } from "./map_event";
 export class EditWireplugNode {
 	root: THREE.Object3D;
 	sphere: THREE.Mesh;
+	line_material: THREE.LineBasicMaterial;
 	container: HTMLElement;
 	events: Events;
 	matters: Matters;
@@ -32,7 +33,7 @@ export class EditWireplugNode {
 		this.root = new THREE.Object3D();
 		const owner_obj = this.scene_render.cache.objects[component.owner];
 		owner_obj.add(this.root);
-		const size = 0.03;
+		const size = 0.05;
 		const color = 0xdddddd;
 		const geometry = new THREE.SphereGeometry(size);
 		const material = new THREE.MeshBasicMaterial({ color, depthTest: false });
@@ -43,7 +44,7 @@ export class EditWireplugNode {
 
 		const owner = this.matters.get(component.owner);
 		const timer = this.matters.get(owner.get("timer"));
-		if (timer) {
+		if (false && timer) {
 			const sprite = this.scene_render
 				.makeSprite("timer_CW_75", this.root)
 				.then((s) => {
@@ -69,6 +70,12 @@ export class EditWireplugNode {
 			return null;
 		};
 
+		const line_material = new THREE.LineBasicMaterial({
+			color: 0xffffff,
+			linewidth: 10,
+			depthTest: false,
+		});
+		this.line_material = line_material;
 		const make_line = (id: string, pos: THREE.Vector3) => {
 			const vertices = [0, 0, 0, pos.x, pos.y, pos.z];
 			const geometry = new THREE.BufferGeometry();
@@ -76,12 +83,7 @@ export class EditWireplugNode {
 				"position",
 				new THREE.Float32BufferAttribute(vertices, 3)
 			);
-			const material = new THREE.LineBasicMaterial({
-				color: 0xffffff,
-				linewidth: 10,
-				depthTest: false,
-			});
-			const line = new THREE.Line(geometry, material);
+			const line = new THREE.Line(geometry, line_material);
 			line.renderOrder = 1;
 			line.name = id;
 			this.root.add(line);
@@ -337,7 +339,8 @@ export default class SceneEditWireplugsSystem extends MapSystem {
 			return;
 		}
 
-		const color = event.code == MapEventCode.START ? 0x00ff00 : 0xffffff;
+		const color = event.code == MapEventCode.START ? 0x00ff00 : 0xdddddd;
 		node.sphere.material.color.set(color);
+		node.line_material.color.set(color);
 	}
 }
