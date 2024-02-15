@@ -65,6 +65,24 @@ export default class AssetsLibraryView {
 		);
 
 		// --
+		const listmodes = ["disabled-content-hide", "disabled-content-apply", ""];
+		let listmode = 0;
+		listenClick(
+			"#assets-switch-list-mode",
+			(ev) => {
+				ev.stopPropagation();
+				if (listmodes[listmode]) {
+					this.container_list.classList.remove(listmodes[listmode]);
+				}
+				listmode = (listmode + 1) % listmodes.length;
+				if (listmodes[listmode]) {
+					this.container_list.classList.add(listmodes[listmode]);
+				}
+			},
+			this._listeners
+		);
+
+		// --
 		listenClick(
 			"#asset-import-images",
 			async (ev) => {
@@ -616,7 +634,7 @@ export default class AssetsLibraryView {
 				expandedContainers.forEach((c) => {
 					if (c.id) {
 						const el = container.querySelector("#" + c.id);
-						el.classList.remove("collapsed");
+						el?.classList.remove("collapsed");
 					}
 				});
 			}

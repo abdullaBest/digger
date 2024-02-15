@@ -4,24 +4,24 @@
 @import "./style/shell_game.less";
 
 html,
-body, 
-.appcore  {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  overflow: clip;
-  margin: 0;
+body,
+.appcore {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	overflow: clip;
+	margin: 0;
 }
 
 :root {
-    --gap-minimum: 2px;
-    --gap-minor: 4px;
-    --padding-minor: 8px;
-    --padding-minimum: 2px;
-    --size-small: 32px;
-    --size-medium: 128px;
-    --size-medium-x2: 256px;
-    --size-medium-x4: 512px;
+	--gap-minimum: 2px;
+	--gap-minor: 4px;
+	--padding-minor: 8px;
+	--padding-minimum: 2px;
+	--size-small: 32px;
+	--size-medium: 128px;
+	--size-medium-x2: 256px;
+	--size-medium-x4: 512px;
 }
 
 .appcore #popup-default {
@@ -37,472 +37,479 @@ body,
 }
 
 .appcore .hidden {
-    display: none;
+	display: none;
 }
 
 .appcore .fade {
-    opacity: 0.5;
-    filter: blur(1px);
+	opacity: 0.5;
+	filter: blur(1px);
 }
 
 .appcore .disabled {
-    color: var(--fade-color-a);
-    opacity: 0.7;
-    pointer-events: none;
+	color: var(--fade-color-a);
+	opacity: 0.7;
+	pointer-events: none;
 }
 
 .appcore .disabled-content-apply {
-    .disabled-optional {
-        color: var(--fade-color-a);
-        opacity: 0.7;
-        pointer-events: none;
-    }
+	.disabled-optional {
+		color: var(--fade-color-a);
+		opacity: 0.7;
+		pointer-events: none;
+	}
 }
 
 .appcore .disabled-content-hide {
-    .disabled-optional {
-        display: none;
-    }
+	.disabled-optional {
+		display: none;
+	}
 }
 
 .appcore .display-block {
-    display: block;
+	display: block;
 }
 
 .appcore .position-absolute {
-    position: absolute;
+	position: absolute;
 }
 
 .appcore .position-relative {
-    position: relative;
+	position: relative;
 }
 
 .appcore .flex-row {
-    display: flex;
-    flex-direction: row;
+	display: flex;
+	flex-direction: row;
 }
 
 .appcore .flex-column {
-    display: flex;
-    flex-direction: column;
+	display: flex;
+	flex-direction: column;
 }
 
 .appcore .flex-grow-1 {
-    flex-grow: 1;
+	flex-grow: 1;
 }
 
 .appcore .no-shrink {
-    flex-shrink: 0;
+	flex-shrink: 0;
 }
 
-.appcore .flex-row, .appcore .flex-column {
-    &.gap-minor {
-        gap: var(--gap-minor);
-    }
+.appcore .flex-row,
+.appcore .flex-column {
+	&.gap-minor {
+		gap: var(--gap-minor);
+	}
 
-    &.gap-minimum {
-        gap: var(--gap-minimum);
-    }
+	&.gap-minimum {
+		gap: var(--gap-minimum);
+	}
 }
 
 .appcore .flex-wrap {
-    flex-wrap: wrap;
+	flex-wrap: wrap;
 }
 
 .appcore .flex-justify-end {
-    justify-content: flex-end;
+	justify-content: flex-end;
 }
 
 .appcore .margin-auto {
-    margin: auto;
+	margin: auto;
 }
 
 .appcore .padding-minor {
-    padding: var(--padding-minor);
+	padding: var(--padding-minor);
 }
 
 .appcore .padding-minimum {
-    padding: var(--padding-minimum);
+	padding: var(--padding-minimum);
 }
 
 .appcore .width-half {
-    width: 50%;
+	width: 50%;
 }
 
 .appcore .height-half {
-    height: 50%;
+	height: 50%;
 }
 
 .appcore .height-quart {
-    height: 25%;
+	height: 25%;
 }
 
 .appcore .max-height-quart {
-    max-height: 25%;
+	max-height: 25%;
 }
 
 .appcore .width-medium {
-    width: var(--size-medium);
+	width: var(--size-medium);
 }
 
 .appcore .width-medium-x2 {
-    width: var(--size-medium-x2);
+	width: var(--size-medium-x2);
 }
 
 .appcore .width-content-medium-x2 {
-    min-width: var(--size-medium-x2);
-    width: max-content;
+	min-width: var(--size-medium-x2);
+	width: max-content;
 }
 
 .appcore .width-medium-x4 {
-    width: var(--size-medium-x4);
+	width: var(--size-medium-x4);
 }
 
 .appcore .size-square-medium {
-    width: var(--size-medium);
-    height: var(--size-medium);
+	width: var(--size-medium);
+	height: var(--size-medium);
 }
 
 .appcore .size-square-medium-x4 {
-    width: var(--size-medium-x4);
-    height: var(--size-medium-x4);
+	width: var(--size-medium-x4);
+	height: var(--size-medium-x4);
 }
 
 .appcore .size-fill {
-    width: 100%;
-    height: 100%;
+	width: 100%;
+	height: 100%;
 }
 
 .appcore .size-limit {
-    max-width: 100%;
-    max-height: 100%;
+	max-width: 100%;
+	max-height: 100%;
 }
 
 .appcore .overflow-auto {
-    overflow: auto;
+	overflow: auto;
 }
 
 .appcore .overflow-hide {
-    overflow: hidden;
+	overflow: hidden;
 }
 
 .appcore .scroll-y {
-    overflow-y: auto;
+	overflow-y: auto;
 }
 
 .appcore .scroll-y-limit {
-    overflow-y: auto;
-    max-height: 100%;
+	overflow-y: auto;
+	max-height: 100%;
 }
 
 .appcore .z-index-1 {
-    z-index: 1;
+	z-index: 1;
 }
 
 .appcore btn {
-    user-select: none;
-    cursor: pointer;
+	user-select: none;
+	cursor: pointer;
 }
 
 .appcore .pos-abs-centered {
-    position: absolute;
-    margin: auto;
-    transform: translate(-50%, -50%);
-    top: 50%;
-    left: 50%;
-    z-index: 1;
+	position: absolute;
+	margin: auto;
+	transform: translate(-50%, -50%);
+	top: 50%;
+	left: 50%;
+	z-index: 1;
 }
 
 .appcore .pixelated {
-    image-rendering: pixelated;
+	image-rendering: pixelated;
 }
 
 .appcore {
-    icon, .icon, btn {
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
+	icon,
+	.icon,
+	btn {
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: center;
 
-        &.fittext {
-            width: 1em;
-            height: 1em;
-            margin: auto 0;
-        }
-    }
+		&.fittext {
+			width: 1em;
+			height: 1em;
+			margin: auto 0;
+		}
+	}
 }
 
 .appcore .icons-s1 {
-    .icon {
-        width: 100%;
-        height: var(--size-small);
-        display: block;
-        cursor: pointer;
-        transition: 70ms;
-    }
-    .icon:hover {
-        border-left: 2px solid var(--highlight-color-a);
-    }
+	.icon {
+		width: 100%;
+		height: var(--size-small);
+		display: block;
+		cursor: pointer;
+		transition: 70ms;
+	}
+	.icon:hover {
+		border-left: 2px solid var(--highlight-color-a);
+	}
 
-    .icon.highlighted {
-        border-left: 4px solid var(--highlight-color-a);
-    }
+	.icon.highlighted {
+		border-left: 4px solid var(--highlight-color-a);
+	}
 }
 
 .appcore {
-    .img-play {
-        background-image: url("res/icons-stylesheets/player-play.svg");
-    }
+	.img-play {
+		background-image: url("res/icons-stylesheets/player-play.svg");
+	}
 
-    .img-library {
-        background-image: url("res/icons-stylesheets/books.svg");
-    }
+	.img-library {
+		background-image: url("res/icons-stylesheets/books.svg");
+	}
 
-    .img-debug {
-        background-image: url("res/icons-stylesheets/bug.svg");
-    }
+	.img-debug {
+		background-image: url("res/icons-stylesheets/bug.svg");
+	}
 
-    .img-docs {
-        background-image: url("res/icons-stylesheets/book.svg");
-    }
+	.img-docs {
+		background-image: url("res/icons-stylesheets/book.svg");
+	}
 
-    .img-external {
-        background-image: url("res/icons-stylesheets/external-link.svg");
-    }
+	.img-external {
+		background-image: url("res/icons-stylesheets/external-link.svg");
+	}
 
-    .img-external-code {
-        background-image: url("res/icons-stylesheets/cloud-code.svg");
-    }
+	.img-external-code {
+		background-image: url("res/icons-stylesheets/cloud-code.svg");
+	}
 
-    .img-discard {
-        background-image: url("res/icons-stylesheets/rotate-2.svg");
-    }
+	.img-discard {
+		background-image: url("res/icons-stylesheets/rotate-2.svg");
+	}
 
-    .img-delete {
-        background-image: url("res/icons-stylesheets/trash-x.svg");
-    }
+	.img-delete {
+		background-image: url("res/icons-stylesheets/trash-x.svg");
+	}
 
-    .img-remove {
-        background-image: url("res/icons-stylesheets/circle-minus.svg");
-    }
+	.img-remove {
+		background-image: url("res/icons-stylesheets/circle-minus.svg");
+	}
 
-    .img-copy {
-        background-image: url("res/icons-stylesheets/copy.svg");
-    }
+	.img-copy {
+		background-image: url("res/icons-stylesheets/copy.svg");
+	}
 
-    .img-link-add {
-        background-image: url("res/icons-stylesheets/link-plus.svg");
-    }
+	.img-link-add {
+		background-image: url("res/icons-stylesheets/link-plus.svg");
+	}
 
-    .img-plug {
-        background-image: url("res/icons-stylesheets/plug.svg");
-    }
+	.img-plug {
+		background-image: url("res/icons-stylesheets/plug.svg");
+	}
 
-    .img-edit {
-        background-image: url("res/icons-stylesheets/edit.svg");
-    }
+	.img-edit {
+		background-image: url("res/icons-stylesheets/edit.svg");
+	}
 
-    .img-close {
-        background-image: url("res/icons-stylesheets/x.svg");
-    }
+	.img-close {
+		background-image: url("res/icons-stylesheets/x.svg");
+	}
 
-    .img-save {
-        background-image: url("res/icons-stylesheets/device-floppy.svg");
-    }
+	.img-save {
+		background-image: url("res/icons-stylesheets/device-floppy.svg");
+	}
 
-    .img-close-window {
-        background-image: url("res/icons-stylesheets/browser-x.svg");
-    }
+	.img-close-window {
+		background-image: url("res/icons-stylesheets/browser-x.svg");
+	}
 
-    .img-translate {
-        background-image: url("res/icons-stylesheets/arrows-move.svg");
-    }
+	.img-translate {
+		background-image: url("res/icons-stylesheets/arrows-move.svg");
+	}
 
-    .img-rotate {
-        background-image: url("res/icons-stylesheets/rotate-360.svg");
-    }
+	.img-rotate {
+		background-image: url("res/icons-stylesheets/rotate-360.svg");
+	}
 
-    .img-scale {
-        background-image: url("res/icons-stylesheets/resize.svg");
-    }
+	.img-scale {
+		background-image: url("res/icons-stylesheets/resize.svg");
+	}
 
-    .img-transform-mode {
-        background-image: url("res/icons-stylesheets/world.svg");
-        &.highlighted {
-            background-image: url("res/icons-stylesheets/world-check.svg");
-        }
-    }
-
-    .img-draw {
-        background-image: url("res/icons-stylesheets/pencil.svg");
-    }
-
-    .img-erase {
-        background-image: url("res/icons-stylesheets/eraser.svg");
-    }
-
-
-    .img-play {
-        background-image: url("res/icons-stylesheets/player-play.svg");
-    }
-
-    .img-clip-tileset {
-        background-image: url("res/icons-stylesheets/box-align-bottom-right.svg");
-    }
-
-    .img-play-timer {
-        background-image: url("res/icons-stylesheets/clock-play.svg");
-    }
-
-    .img-attach_camera {
-        background-image: url("res/icons-stylesheets/video.svg");
-    }
-
-    .img-information {
-        background-image: url("res/icons-stylesheets/information.png");
-    }
-
-    .img-screenshoot {
-        background-image: url("res/icons-stylesheets/camera-star.svg");
-    }
-
-    .img-center-camera {
-        background-image: url("res/icons-stylesheets/focus-centered.svg");
-    }
-
-    .img-physdebug {
-        background-image: url("res/icons-stylesheets/chart-grid-dots.svg");
-    }
-
-    .img-line {
-        background-image: url("res/icons-stylesheets/line.svg");
-    }
-
-    btn#controls_mode_transform_toggle_snap {
-        background-image: url("res/icons-stylesheets/lock-open.svg");
-        &.highlighted {
-            background-image: url("res/icons-stylesheets/lock.svg");
-        }
-    }
-    btn#scene_toggle_lights {
-        background-image: url("res/icons-stylesheets/sun-off.svg");
-        &.highlighted {
-            background-image: url("res/icons-stylesheets/sun.svg");
-        }
+	.img-transform-mode {
+		background-image: url("res/icons-stylesheets/world.svg");
+		&.highlighted {
+			background-image: url("res/icons-stylesheets/world-check.svg");
 		}
+	}
+
+	.img-draw {
+		background-image: url("res/icons-stylesheets/pencil.svg");
+	}
+
+	.img-erase {
+		background-image: url("res/icons-stylesheets/eraser.svg");
+	}
+
+	.img-play {
+		background-image: url("res/icons-stylesheets/player-play.svg");
+	}
+
+	.img-clip-tileset {
+		background-image: url("res/icons-stylesheets/box-align-bottom-right.svg");
+	}
+
+	.img-play-timer {
+		background-image: url("res/icons-stylesheets/clock-play.svg");
+	}
+
+	.img-attach_camera {
+		background-image: url("res/icons-stylesheets/video.svg");
+	}
+
+	.img-information {
+		background-image: url("res/icons-stylesheets/information.png");
+	}
+
+	.img-screenshoot {
+		background-image: url("res/icons-stylesheets/camera-star.svg");
+	}
+
+	.img-center-camera {
+		background-image: url("res/icons-stylesheets/focus-centered.svg");
+	}
+
+	.img-physdebug {
+		background-image: url("res/icons-stylesheets/chart-grid-dots.svg");
+	}
+
+	.img-line {
+		background-image: url("res/icons-stylesheets/line.svg");
+	}
+
+	.img-eye-edit {
+		background-image: url("res/icons-stylesheets/eye-edit.svg");
+	}
+
+	btn#controls_mode_transform_toggle_snap {
+		background-image: url("res/icons-stylesheets/lock-open.svg");
+		&.highlighted {
+			background-image: url("res/icons-stylesheets/lock.svg");
+		}
+	}
+	btn#scene_toggle_lights {
+		background-image: url("res/icons-stylesheets/sun-off.svg");
+		&.highlighted {
+			background-image: url("res/icons-stylesheets/sun.svg");
+		}
+	}
 }
 
-.appcore  {
-    .dropzone {
-        &.dropallow {
-            //box-shadow: inset 0px 0px 0px 2px var(--highlight-color-a);
+.appcore {
+	.dropzone {
+		&.dropallow {
+			//box-shadow: inset 0px 0px 0px 2px var(--highlight-color-a);
 
-            &::after {
-                margin: var(--padding-minimum);
-                border: dashed var(--highlight-color-a) 2px;
-                content: "+";
-                text-align: center;
-            }
-        }
-       
-    }
-    .buttons-list-draggable {
-        [draggable=true] {
-            cursor: grab;
-        }
+			&::after {
+				margin: var(--padding-minimum);
+				border: dashed var(--highlight-color-a) 2px;
+				content: "+";
+				text-align: center;
+			}
+		}
+	}
+	.buttons-list-draggable {
+		[draggable="true"] {
+			cursor: grab;
+		}
 
-        .dragged {
-            opacity: 0.7;
-            border-bottom: 2px var(--highlight-color-a) dashed;
-        }
-    }
-    .buttons-list-s1 btn, .btn-s1 {
-        border-bottom: 2px var(--border-color-a) solid;
-        transition: 70ms;
-        label {
-            pointer-events: none;
-        }
+		.dragged {
+			opacity: 0.7;
+			border-bottom: 2px var(--highlight-color-a) dashed;
+		}
+	}
+	.buttons-list-s1 btn,
+	.btn-s1 {
+		border-bottom: 2px var(--border-color-a) solid;
+		transition: 70ms;
+		label {
+			pointer-events: none;
+		}
 
-        &.highlighted {
-            border-bottom: 2px var(--highlight-color-a) solid;
-        }
+		&.highlighted {
+			border-bottom: 2px var(--highlight-color-a) solid;
+		}
 
-        &:hover {
-            padding-left: var(--padding-minimum);
-        }
-    }
+		&:hover {
+			padding-left: var(--padding-minimum);
+		}
+	}
 
-    .buttons-list-s2 btn {
-        background-color: var(--background-color-b);
-        box-shadow: 0px 0px 2px 0px #3333;
-        border: 1px solid var(--border-color-a);
-        border-radius: 4px;
-        width: 32px;
-        height: 32px;
+	.buttons-list-s2 btn {
+		background-color: var(--background-color-b);
+		box-shadow: 0px 0px 2px 0px #3333;
+		border: 1px solid var(--border-color-a);
+		border-radius: 4px;
+		width: 32px;
+		height: 32px;
 
-        transition: 70ms;
-        background-size: 90%;
+		transition: 70ms;
+		background-size: 90%;
 
-        &.highlighted {
-            box-shadow: inset 0px 0px 0px 1px var(--highlight-color-a);
-        }
+		&.highlighted {
+			box-shadow: inset 0px 0px 0px 1px var(--highlight-color-a);
+		}
 
-        &:hover {
-            box-shadow: 0px 0px 4px 0px #3331;
-            background-size: 100%;
-    }   
-        &:active {
-            box-shadow: 0px 0px 1px 0px #3339;
-            background-size: 85%;
-        }
-    }
+		&:hover {
+			box-shadow: 0px 0px 4px 0px #3331;
+			background-size: 100%;
+		}
+		&:active {
+			box-shadow: 0px 0px 1px 0px #3339;
+			background-size: 85%;
+		}
+	}
 }
 
 .appcore container.behave-collapsing {
-    &.collapsed {
-        content {
-            display: none;
-        }
-        .header::before {
-            transform: rotate(-90deg);
-        }
-    }
-    .header {
-        user-select: none;
-        cursor: pointer;
-        display: flex;
-        &::before {
-						background-image: url("res/icons-stylesheets/circle-arrow-down.svg");
-						background-size: contain;
-						content: "";
-						margin: auto 0;
+	&.collapsed {
+		content {
+			display: none;
+		}
+		.header::before {
+			transform: rotate(-90deg);
+		}
+	}
+	.header {
+		user-select: none;
+		cursor: pointer;
+		display: flex;
+		&::before {
+			background-image: url("res/icons-stylesheets/circle-arrow-down.svg");
+			background-size: contain;
+			content: "";
+			margin: auto 0;
 
-            //content: "▼";
-            width: 1em;
-            height: 1em;
-            margin-right: var(--padding-minimum);
-            transition: 120ms;
-        }
-    }
+			//content: "▼";
+			width: 1em;
+			height: 1em;
+			margin-right: var(--padding-minimum);
+			transition: 120ms;
+		}
+	}
 }
 
 .appcore container.style-window {
-    &, & > .header {
-        background-color: var(--background-color-a);
-        padding: 0 var(--padding-minimum);
-    }
-    //border-radius: 4px;
-    border: 1px solid var(--border-color-a);
-    box-shadow: 0 0 2px #3333;
+	&,
+	& > .header {
+		background-color: var(--background-color-a);
+		padding: 0 var(--padding-minimum);
+	}
+	//border-radius: 4px;
+	border: 1px solid var(--border-color-a);
+	box-shadow: 0 0 2px #3333;
 }
 
 .appcore container.style-nested > content {
-		& > container.style-nested {
-			margin-left: -0.5em;
-		}
+	& > container.style-nested {
+		margin-left: -0.5em;
+	}
 
-    margin-left: var(--padding-minor);
-    padding-left: var(--padding-minor);
-    border-left: 1px var(--border-color-a) solid;
+	margin-left: var(--padding-minor);
+	padding-left: var(--padding-minor);
+	border-left: 1px var(--border-color-a) solid;
 }
 
 .appcore .enable-snn .style-nest-nonfirst > *:not(:first-child) {
@@ -512,109 +519,124 @@ body,
 }
 
 .appcore .styleset-a {
-    input {
-        background-color: #0000;
-        border: none;
-        text-align: right;
-        border-bottom: 1px var(--border-color-a) solid;
-    }
-    input:focus {
-        outline: none;
-        border-bottom: 1px var(--highlight-color-a) solid;
-    }
-    input.error {
-        border-bottom: 1px var(--highlight-color-error) solid;
-        color: var(--highlight-color-error);
-    }
+	input {
+		background-color: #0000;
+		border: none;
+		text-align: right;
+		border-bottom: 1px var(--border-color-a) solid;
+	}
+	input:focus {
+		outline: none;
+		border-bottom: 1px var(--highlight-color-a) solid;
+	}
+	input.error {
+		border-bottom: 1px var(--highlight-color-error) solid;
+		color: var(--highlight-color-error);
+	}
 
-    .img-color {
-        border: 1px solid var(--border-color-a);
-    }
+	.img-color {
+		border: 1px solid var(--border-color-a);
+	}
 }
 
 #approot {
-
 }
 
-.appcore .btn.icon, btn.icon {
-    &[tooltip] {
-      position: relative;
-      &::after {
-        transition: all 0.3s;
-        opacity: 0;
-        transform: translate(-50%, 100%);
-        bottom: 0;
-        left: 50%;
-        content: attr(tooltip);
-        position: absolute;
-        background-color: #000a;
-        color: white;
-        padding: 2px 4px;
-        border-radius: 2px;
-        z-index: 1;
-        pointer-events: none;
-      }
-    }
+.appcore .btn.icon,
+btn.icon {
+	&[tooltip] {
+		position: relative;
+		&::after {
+			transition: all 0.3s;
+			opacity: 0;
+			transform: translate(-50%, 100%);
+			bottom: 0;
+			left: 50%;
+			content: attr(tooltip);
+			position: absolute;
+			background-color: #000a;
+			color: white;
+			padding: 2px 4px;
+			border-radius: 2px;
+			z-index: 1;
+			pointer-events: none;
+		}
+	}
 
-    &[tooltip]:hover {
-      &::after {
-        opacity: 1;
-        bottom: -.5em;
-      }
-    }
+	&[tooltip]:hover {
+		&::after {
+			opacity: 1;
+			bottom: -0.5em;
+		}
+	}
 }
 
 // decor 
 
 .style-d1 {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+	font-family:
+		system-ui,
+		-apple-system,
+		BlinkMacSystemFont,
+		"Segoe UI",
+		"Roboto",
+		"Oxygen",
+		"Ubuntu",
+		"Cantarell",
+		"Fira Sans",
+		"Droid Sans",
+		"Helvetica Neue",
+		"Segoe UI Emoji",
+		"Apple Color Emoji",
+		"Noto Color Emoji",
+		sans-serif;
 
-  .fontsize-bigger {
-    font-size: 1.2em;
-  }
+	.fontsize-bigger {
+		font-size: 1.2em;
+	}
 
-  .frame-s1 {
-    background-color: var(--background-color-b);
-    box-shadow: 0px 0px 2px 0px #3333;
-    border: 1px solid var(--border-color-a);
-    border-radius: 4px;
+	.frame-s1 {
+		background-color: var(--background-color-b);
+		box-shadow: 0px 0px 2px 0px #3333;
+		border: 1px solid var(--border-color-a);
+		border-radius: 4px;
 
-    &.interactive {
-        transition: 70ms;
-        cursor: pointer;
-        &:hover {
-            box-shadow: 0px 0px 4px 0px #3331;
-            transform: scale(1.01);
-        }
-        &:active {
-            box-shadow: 0px 0px 1px 0px #3339;
-            transform: scale(0.99);
-        }
-    }
-  }
+		&.interactive {
+			transition: 70ms;
+			cursor: pointer;
+			&:hover {
+				box-shadow: 0px 0px 4px 0px #3331;
+				transform: scale(1.01);
+			}
+			&:active {
+				box-shadow: 0px 0px 1px 0px #3339;
+				transform: scale(0.99);
+			}
+		}
+	}
 
-  .frame-s2 {
-    background-color: var(--background-color-0);
-    border-radius: 4px;
-  }
+	.frame-s2 {
+		background-color: var(--background-color-0);
+		border-radius: 4px;
+	}
 }
-
 
 .appcore .font-style-minor {
 	font-size: 0.7em;
 	color: #000a;
 }
 
-
 .appcore {
-	splitter, .splitter {
+	splitter,
+	.splitter {
 		margin: 2px;
 		display: flex;
 		gap: 8px;
 		color: var(--border-color-a);
-		&::before, &::after {
+		&::before,
+		&::after {
 			background-color: var(--border-color-a);
-			content: '';
+			content: "";
 			flex-grow: 1;
 			height: 2px;
 			border-radius: 2px;
@@ -624,10 +646,9 @@ body,
 }
 
 .appcore .frame-s1-right {
-    border-right: 1px solid var(--border-color-a);
+	border-right: 1px solid var(--border-color-a);
 }
 
 // dust
 #rootlayout {
-    
 }
