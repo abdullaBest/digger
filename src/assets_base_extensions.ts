@@ -59,6 +59,7 @@ export interface AssetContentTypeGameprop extends AssetContentTypeComponent {
 	durability: number;
 	resistance: number;
 	falling: boolean;
+	damage: number;
 }
 
 export interface AssetContentTypeSpace extends AssetContentTypeComponent {
@@ -168,8 +169,9 @@ export function cunstructBaseExtensionsData(
 	const base_asset_extension_gameprop = {
 		type: "gameprop",
 		durability: 1,
-		resistence: 999,
+		resistance: 999,
 		falling: false,
+		damage: 0
 	};
 	const base_asset_extension_gltf = {
 		type: "gltf",

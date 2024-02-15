@@ -19,7 +19,6 @@ export default class SystemObjectsBreak {
      * @returns true if objet durability set and it less/equals zero
      */
     hit(id: string) : boolean {
-        
         const hit_damage = 1;
         const hit_strength = 1;
 
@@ -40,7 +39,7 @@ export default class SystemObjectsBreak {
         if (hit_strength < resistance) {
             return false;
         }
-        
+
         durability -= hit_damage;
 
         component.durability = Math.max(0, durability);

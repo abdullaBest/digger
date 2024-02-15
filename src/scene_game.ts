@@ -10,7 +10,6 @@ import {
 import CharacterRender from "./render/character_render";
 import SceneRender from "./render/scene_render";
 import { distlerp, lerp } from "./math";
-import { SceneElement } from "./scene_edit";
 import SceneDebug from "./scene_debug";
 import { SceneCore, MapEntity, MapComponent } from "./scene_core";
 import SceneMap from "./scene_map";
@@ -335,6 +334,27 @@ export default class SceneGame {
 				}
 			}
 		}
+
+		// damage by damaging blocks
+		for (let i = 0; i < this.player_character.body.contacts; i++) {
+			const c = this.player_character.body.contacts_list[i];
+			const cid = c.id;
+			if (!cid) {
+				continue;
+			}
+			const collider = this.scene_core.components[cid];
+			const component = this.scene_core.components[collider?.owner];
+
+			const gameprop =
+				component?.is_link("gameprop") &&
+				(this.scene_core.matters.get(
+					component.get("gameprop")
+				) as AssetContentTypeGameprop);
+
+			if (gameprop && gameprop.damage) {
+				this.player_character.damage(gameprop.damage);
+			}
+		}
 	}
 
 	private _stepCharacterInteractions(cha: Character) {
@@ -358,7 +378,7 @@ export default class SceneGame {
 			// if trigger toggles it sends DEFAULT code
 			// if trigger not toggling it sends START and END codes
 			let code = MapEventCode.DEFAULT;
-			if (trigger.toggle ) {
+			if (trigger.toggle) {
 				if (action.code === CharacterActionCode.START) {
 					const activated = !trigger.get("activated");
 					code = activated ? MapEventCode.START : MapEventCode.END;
@@ -370,7 +390,6 @@ export default class SceneGame {
 						CharacterActionCode[action.code] as keyof typeof MapEventCode
 					];
 			}
-
 
 			if (code !== MapEventCode.DEFAULT) {
 				trigger.set("activated", code == MapEventCode.START);
