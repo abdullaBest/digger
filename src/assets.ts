@@ -437,7 +437,8 @@ import {
 	AssetContentTypeTexture,
 	AssetContentTypeGameprop,
 	AssetContentTypeWireplug,
-	AssetContentTypeTimer
+	AssetContentTypeTimer,
+	AssetContentTypeController
 } from "./assets_base_extensions";
 
 export {
@@ -455,5 +456,6 @@ export {
 	AssetContentTypeTile,
 	AssetContentTypeTexture,
 	AssetContentTypeWireplug,
-	AssetContentTypeTimer
+	AssetContentTypeTimer,
+	AssetContentTypeController
 };

@@ -206,7 +206,7 @@ export class EditWireplugNode {
 		};
 
 		addSplitter("wires");
-		addInput("filter", component);
+		//addInput("filter", component);
 		addInput("hold", component);
 		addInput("release", component);
 

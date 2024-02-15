@@ -146,8 +146,8 @@ class SceneCollidersSystem extends MapSystem {
 		} else {
 			const collider = this.scene_collisions.createBoxColliderByPos(
 				component.id,
-				owner.pos_x ?? 0 + component.x,
-				owner.pos_y ?? 0 + component.y,
+				(owner.pos_x ?? 0) + component.x,
+				(owner.pos_y ?? 0) + component.y,
 				component.width,
 				component.height,
 				collider_type
@@ -276,6 +276,8 @@ class SceneCore {
 	 */
 	remove(id: string) {
 		let component = this.components[id] as AssetContentTypeComponent;
+
+		// not sure that it should be here
 		if (!component) {
 			for (const k in this.components) {
 				const _c = this.components[k];
@@ -310,6 +312,53 @@ class SceneCore {
 		this.matters.remove(id);
 		delete this.components[component.id];
 		delete this.csources[component.inherites];
+	}
+
+	/**
+	 * @brief removes component from systems but not from scene
+	 *
+	 * @param id {string}
+	 */
+	hide(id: string) {
+		const component = this.components[id];
+		for (const key in component) {
+			if (component.is_link(key)) {
+				const _component = this.matters.get(component.get(key));
+				if (_component) {
+					this.hide(_component.id);
+				}
+			}
+		}
+
+		for (const k in this.systems) {
+			const system = this.systems[k];
+			system.remove(component);
+		}
+	}
+
+	/**
+	 * @brief returns component into systems but not from scene
+	 *
+	 * @param id {string}
+	 */
+	show(id: string) {
+		const component = this.components[id];
+		for (const key in component) {
+			if (component.is_link(key)) {
+				const _component = this.matters.get(component.get(key));
+				if (_component) {
+					this.show(_component.id);
+				}
+			}
+		}
+
+		const owner = this.matters.get(
+			component.owner
+		) as AssetContentTypeComponent;
+		for (const k in this.systems) {
+			const system = this.systems[k];
+			system.add(component, owner);
+		}
 	}
 
 	// Calls event in systems

@@ -44,6 +44,9 @@ export default class MapDebugRenderCollidersSystem extends MapSystem {
 
     drawColliderDebug(id: string, collider: BoxColliderC, color?: number, shift?: THREE.Vector2) {
         let plane = this.debug_colliders[id];
+				if (!collider) {
+					return;
+				}
         color = color ?? collider.type == ColliderType.RIGID ? 0x00ffff : 0xff00ff;
 
         if (!plane) {

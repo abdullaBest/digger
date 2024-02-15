@@ -92,6 +92,10 @@ export interface AssetContentTypeAnimator extends AssetContentTypeComponent {
 	deactivate: string;
 }
 
+export interface AssetContentTypeController extends AssetContentTypeComponent {
+	hide: string;
+}
+
 export interface AssetContentTypeTileset extends AssetContentTypeComponent {
 	guids: number;
 	texture: string;
@@ -122,6 +126,7 @@ export interface BaseContentExtensionsList {
 	model: AssetContentTypeModel;
 	gltf: AssetContentTypeGltf;
 	animator: AssetContentTypeAnimator;
+	controller: AssetContentTypeController;
 	tileset: AssetContentTypeTileset;
 	tile: AssetContentTypeTile;
 }
@@ -185,6 +190,10 @@ export function cunstructBaseExtensionsData(
 		active: "",
 		activate: "",
 		deactivate: "",
+	}
+	const base_asset_extension_controller = {
+		type: "controller",
+		hide: ""
 	}
 	const base_asset_extension_tileset = {
 		type: "tileset",
@@ -258,6 +267,11 @@ export function cunstructBaseExtensionsData(
 			"base_asset_type_component",
 			"base_asset_type_animator"
 		) as AssetContentTypeAnimator,
+		controller: matters.create(
+			base_asset_extension_controller,
+			"base_asset_type_component",
+			"base_asset_type_controller"
+		) as AssetContentTypeController,
 		tileset: matters.create(
 			base_asset_extension_tileset,
 			"base_asset_type_component",

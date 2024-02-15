@@ -1,5 +1,9 @@
 import { SceneCore } from "./scene_core";
-import { SceneWireplugsSystem, MapEvent } from "./systems";
+import {
+	SceneControllersSystem,
+	SceneWireplugsSystem,
+	MapEvent,
+} from "./systems";
 import { AssetContentTypeComponent } from "./assets";
 import { RenderTilesetSystem } from "./render/tileset_render_system";
 
@@ -23,6 +27,10 @@ export default class SceneMap {
 		this.scene_core.addSystem(
 			"wireplugs",
 			new SceneWireplugsSystem(this.scene_core)
+		);
+		this.scene_core.addSystem(
+			"controllers",
+			new SceneControllersSystem(this.scene_core)
 		);
 	}
 

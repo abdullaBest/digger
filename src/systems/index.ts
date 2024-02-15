@@ -4,6 +4,7 @@ import { MapEventCode } from "./map_event";
 import { MapTilesetSystem } from "./map_tileset_system";
 import SceneEditWireplugsSystem from "./scene_edit_wireplugs_system";
 import SceneWireplugsSystem from "./scene_wireplugs_system";
+import SceneControllersSystem from "./scene_controllers_system";
 
 export {
 	MapSystem,
@@ -12,4 +13,5 @@ export {
 	MapTilesetSystem,
 	SceneWireplugsSystem,
 	SceneEditWireplugsSystem,
+	SceneControllersSystem
 };

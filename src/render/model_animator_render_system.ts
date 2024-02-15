@@ -133,6 +133,10 @@ export default class ModelAnimatorRenderSystem extends MapSystem {
 	}
 
 	remove(component: AssetContentTypeAnimator) {
+		if (!this.filter(component)) {
+			return;
+		}
+
 		delete this.nodes[component.owner];
 	}
 
@@ -145,7 +149,6 @@ export default class ModelAnimatorRenderSystem extends MapSystem {
 	event(event: MapEvent) {
 		const node = this.nodes[event.component];
 		if (node) {
-			console.log(event, node.activations);
 			switch (event.code) {
 				case MapEventCode.START:
 					node.activations += 1;

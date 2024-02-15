@@ -8,16 +8,16 @@ import MapSystem from "./map_system";
 import { MapEvent, MapEventCode } from "./map_event";
 
 interface AssetRuntimeTypeWireplug extends AssetContentTypeWireplug {
-	activated: boolean;
-	activations: number;
-	timer_elapsed: number;
-	timer_event_code: MapEventCode;
+	activated?: boolean;
+	activations?: number;
+	timer_elapsed?: number;
+	timer_event_code?: MapEventCode;
 }
 
 export default class SceneWireplugsSystem extends MapSystem {
 	priority: number;
 	scene_core: SceneCore;
-	timers: { [id: string]: AssetContentTypeWireplug };
+	timers: { [id: string]: AssetRuntimeTypeWireplug };
 
 	constructor(scene_core: SceneCore) {
 		super();
@@ -65,7 +65,7 @@ export default class SceneWireplugsSystem extends MapSystem {
 		}
 	}
 
-	event(event: MapEvent, check_timers: boolean = true) {
+	event(event: MapEvent) {
 		// wireplugs does not accept default event codes
 		if (event.code === MapEventCode.DEFAULT) {
 			return;
@@ -77,7 +77,7 @@ export default class SceneWireplugsSystem extends MapSystem {
 		const component = components[event.component];
 		const wireplug = matters.get(
 			component.get("wireplug")
-		) as AssetContentTypeWireplug;
+		) as AssetRuntimeTypeWireplug;
 
 		if (!wireplug) {
 			return;
@@ -125,15 +125,14 @@ export default class SceneWireplugsSystem extends MapSystem {
 	 */
 	}
 
-	_finishTimer(wireplug: AssetContentTypeWireplug, event: MapEvent) {
+	_finishTimer(wireplug: AssetRuntimeTypeWireplug, event: MapEvent) {
 		// count input activations
 		const was_activated = wireplug.get("activated") ?? false;
 		const now_activated = wireplug.set(
 			"activated",
 			wireplug.get("activations") && event.code === MapEventCode.START
+			// || !wireplug.get("activations") && event.code === MapEventCode.END
 		);
-
-		console.log(was_activated, now_activated);
 
 		if (was_activated == now_activated) {
 			return;
@@ -142,7 +141,7 @@ export default class SceneWireplugsSystem extends MapSystem {
 		this._propagate(wireplug, event);
 	}
 
-	_runTimer(wireplug: AssetContentTypeWireplug, event: MapEvent): boolean {
+	_runTimer(wireplug: AssetRuntimeTypeWireplug, event: MapEvent): boolean {
 		if (!wireplug) {
 			return false;
 		}
@@ -163,7 +162,7 @@ export default class SceneWireplugsSystem extends MapSystem {
 		return false;
 	}
 
-	_propagate(wireplug: AssetContentTypeWireplug, event: MapEvent) {
+	_propagate(wireplug: AssetRuntimeTypeWireplug, event: MapEvent) {
 		const csources = this.scene_core.csources;
 		for (let i = wireplug.get("guids") - 1; i >= 0; i--) {
 			const key = "e_" + i;

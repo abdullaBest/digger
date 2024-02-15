@@ -281,6 +281,19 @@ export default class AssetsLibraryView {
 
 		// --
 		listenClick(
+			"#asset-controller-add",
+			async (ev) => {
+				const id = await this._createComponent("controller", {
+					owner: this.asset_selected.id,
+				});
+				const asset = this.asset_selected;
+				this.addComponentLink(asset.content as Matter, "controller", id);
+			},
+			this._listeners
+		);
+
+		// --
+		listenClick(
 			"#asset-manage-save",
 			async (ev) => {
 				if (this.asset_selected) {
