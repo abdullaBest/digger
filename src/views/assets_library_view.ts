@@ -590,6 +590,15 @@ export default class AssetsLibraryView {
 			sectionel.classList.remove("type-" + this.asset_selected.info.extension);
 		}
 
+
+		const container = querySelector("#assets-library-details content");
+
+		// store elements that was expanded and reexpand it later
+		const expandedContainers = container.querySelectorAll(
+			"container.style-nested.behave-collapsing:not(.collapsed)"
+		);
+
+		// dispose inspector
 		const asset = this.assets.get(id);
 		this.asset_selected = asset;
 		if (this.asset_inspector) {
@@ -598,11 +607,18 @@ export default class AssetsLibraryView {
 
 		sectionel.classList.add("type-" + asset.info.extension);
 
-		const container = querySelector("#assets-library-details content");
 		container.innerHTML = "";
 		try {
 			if (asset.content) {
 				this._drawAssetInspector(asset, container);
+
+				// restore expanded containers
+				expandedContainers.forEach((c) => {
+					if (c.id) {
+						const el = container.querySelector("#" + c.id);
+						el.classList.remove("collapsed");
+					}
+				});
 			}
 
 			this.renderAsset(id);
