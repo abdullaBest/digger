@@ -71,6 +71,11 @@ export default class SceneWireplugsSystem extends MapSystem {
 			return;
 		}
 
+		// this event triggered by component itself.
+		if (event.tag === "self-activation") {
+			return;
+		}
+
 		const components = this.scene_core.components;
 		const matters = this.scene_core.matters;
 
@@ -128,15 +133,37 @@ export default class SceneWireplugsSystem extends MapSystem {
 	_finishTimer(wireplug: AssetRuntimeTypeWireplug, event: MapEvent) {
 		// count input activations
 		const was_activated = wireplug.get("activated") ?? false;
+
+		// do not reactivate
+		// hmmm.. ugly
+		if (
+			was_activated &&
+			wireplug.get("activations") &&
+			event.code === MapEventCode.START
+		) {
+			return;
+		}
+		if (
+			!was_activated &&
+			!wireplug.get("activations") &&
+			event.code === MapEventCode.END
+		) {
+			return;
+		}
+
 		const now_activated = wireplug.set(
 			"activated",
-			wireplug.get("activations") && event.code === MapEventCode.START
-			// || !wireplug.get("activations") && event.code === MapEventCode.END
+			wireplug.get("activations")
 		);
 
 		if (was_activated == now_activated) {
 			return;
 		}
+
+		// emit one event on self with "activation" tag - this event triggers animator and controller subcomponents
+		const selfevent = Object.create(event);
+		selfevent.tag = "self-activation";
+		this.scene_core.event(selfevent);
 
 		this._propagate(wireplug, event);
 	}

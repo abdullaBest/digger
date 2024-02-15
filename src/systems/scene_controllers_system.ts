@@ -36,6 +36,10 @@ export default class SceneControllersSystem extends MapSystem {
 		return component.type === "controller";
 	}
 	event(event: MapEvent) {
+		if (event.tag !== "self-activation") {
+			return;
+		}
+
 		const component = this.scene_core.components[event.component];
 		const controller = this.scene_core.matters.get(
 			component.get("controller")

@@ -147,6 +147,9 @@ export default class ModelAnimatorRenderSystem extends MapSystem {
 	}
 
 	event(event: MapEvent) {
+		if (event.tag !== "self-activation") {
+			return;
+		}
 		const node = this.nodes[event.component];
 		if (node) {
 			switch (event.code) {

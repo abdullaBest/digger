@@ -9,9 +9,11 @@ import { listenClick, addEventListener } from "../document";
 import * as THREE from "../lib/three.module";
 import Events from "../events";
 import { PropertyInput } from "../page/property_input";
+import { MapEvent, MapEventCode } from "./map_event";
 
 export class EditWireplugNode {
 	root: THREE.Object3D;
+	sphere: THREE.Mesh;
 	container: HTMLElement;
 	events: Events;
 	matters: Matters;
@@ -37,6 +39,7 @@ export class EditWireplugNode {
 		const sphere = new THREE.Mesh(geometry, material);
 		sphere.renderOrder = 1;
 		this.root.add(sphere);
+		this.sphere = sphere;
 
 		const owner = this.matters.get(component.owner);
 		const timer = this.matters.get(owner.get("timer"));
@@ -302,6 +305,7 @@ export default class SceneEditWireplugsSystem extends MapSystem {
 		node.container.parentElement.removeChild(node.container);
 		delete this.nodes[component.id];
 	}
+
 	step(dt: number) {
 		for (const k in this.nodes) {
 			const node = this.nodes[k];
@@ -319,5 +323,21 @@ export default class SceneEditWireplugsSystem extends MapSystem {
 			node.container.style.top = pos.y + "px";
 			node.container.style.left = pos.x + "px";
 		}
+	}
+
+	event(event: MapEvent) {
+		if (event.tag !== "self-activation") {
+			return;
+		}
+
+		const component = this.matters.get(event.component);
+		const wireplug = this.matters.get(component?.get("wireplug"));
+		const node = this.nodes[wireplug?.id];
+		if (!node) {
+			return;
+		}
+
+		const color = event.code == MapEventCode.START ? 0x00ff00 : 0xffffff;
+		node.sphere.material.color.set(color);
 	}
 }
