@@ -1,44 +1,47 @@
 tab#edit-tab.hidden
-    .flex-row.size-fill
-        section#edit-sidebar.flex-column.width-medium-x2.no-shrink.bg-default.frame-s1-right.buttons-list-s1.padding-minor.noselected.gap-minimum.padding-minor
-            section#edit-sidebar-controls.frame-s2.flex-row.gap-minimum.buttons-list-s2.padding-minimum
-                btn#edit-controls-save-asset.icon.img-save(tooltip="save")
-                btn#edit-controls-make-thumbnail.icon.img-screenshoot(tooltip="make thumbnail")
-            container#edit-sidebar-list-root.behave-collapsing.flex-column.padding-minimum.style-window
-                .header#scene-content-list-header ...
-                content#scene-content-list.dropzone.flex-column
-        section#edit-section.flex-column.size-fill
-            section#edit-section-canvas.display-block.bg-zero.flex-grow-1.position-relative.style-d1.overflow-hide.styleset-a
-                container#scene_edit_tools.position-absolute.buttons-list-s2.z-index-1.gap-minimum.flex-column
-                    container.frame-s2.flex-row.padding-minimum.gap-minimum
-                        btn#controls_mode_transform_translate.icon.img-translate(tooltip="translate")
-                        btn#controls_mode_transform_rotate.icon.img-rotate(tooltip="rotate")
-                        btn#controls_mode_transform_scale.icon.img-scale(tooltip="scale")
-                        btn#controls_mode_transform_toggle_snap.icon(tooltip="snap")
-                        btn#controls_mode_transform_toggle_world.icon.img-transform-mode(tooltip="transform local/world")
-                        btn#controls_mode_draw_tiles.icon.img-draw(tooltip="draw tiles")
-                        btn#controls_mode_erase_tiles.icon.img-erase(tooltip="erase tiles")
-                        btn#controls_mode_edit_wires.icon.img-line(tooltip="edit wires")
-                    container#scene_game_controls.frame-s2.flex-row.padding-minimum.gap-minimum
-                        btn#play_scene_btn.icon.img-play(tooltip="play")
-                        btn#physics_toggle_autostep.highlighted.icon.img-play-timer(tooltip="physics autostep")
-                        btn#physics_toggle_camera_attach.icon.img-attach_camera(tooltip="attach camera")
-                        btn#physics_toggle_collision_debug.icon.img-physdebug(tooltip="debug physics")
-                        btn#game_center_camera.icon.img-center-camera(tooltip="center camera")
-                        btn#game_clip_tilesets.icon.img-clip-tileset.highlighted(tooltip="clip tilesets")
-                        btn#scene_toggle_lights.icon.highlighted(tooltip="toggle global lights")
-                    container#scene_game_details.frame-s2.bg-secondary.flex-column.hidden
-                        .splitter#app_state_details-toggle.cursor-pointer app state
-                        container#app_state_details.flex-column.hidden
-                        .splitter#scene_state_details-toggle.cursor-pointer scene state
-                        container#scene_state_details.flex-column.hidden
-                        .splitter#game_config_details-toggle.cursor-pointer game confing
-                        container#game_config_details.flex-column.hidden
-                        .splitter#character_config_details-toggle.cursor-pointer character confing
-                        container#character_config_details.flex-column.hidden
-                        .splitter#character_state_details-toggle.cursor-pointer character state
-                        container#character_state_details.flex-column.hidden
-                canvas#rootcanvas.position-absolute
-            container#edit-assets-section.bg-default.style-window.behave-collapsing.max-height-quart.scroll-y
-                .header asset library
-                content.flex-column.buttons-list-s1.disabled-content-hide.buttons-list-draggable
+		.flex-row.size-fill
+				section#edit-sidebar.flex-column.width-medium-x2.no-shrink.bg-default.frame-s1-right.buttons-list-s1.padding-minor.noselected.gap-minimum.padding-minor
+						section#edit-sidebar-controls.frame-s2.flex-row.gap-minimum.buttons-list-s2.padding-minimum
+								btn#edit-controls-save-asset.icon.img-save(tooltip="save")
+								btn#edit-controls-make-thumbnail.icon.img-screenshoot(tooltip="make thumbnail")
+						container#edit-sidebar-list-root.behave-collapsing.flex-column.padding-minimum.style-window
+								.header#scene-content-list-header ...
+								content#scene-content-list.dropzone.flex-column
+				section#edit-section.flex-column.size-fill
+						section#edit-section-canvas.display-block.bg-zero.flex-grow-1.position-relative.style-d1.overflow-hide.styleset-a
+								container#scene_edit_tools.position-absolute.buttons-list-s2.z-index-1.gap-minimum.flex-column
+										container.frame-s2.flex-row.padding-minimum.gap-minimum
+												btn#controls_mode_transform_translate.icon.img-translate(tooltip="translate")
+												btn#controls_mode_transform_rotate.icon.img-rotate(tooltip="rotate")
+												btn#controls_mode_transform_scale.icon.img-scale(tooltip="scale")
+												btn#controls_mode_transform_toggle_snap.icon(tooltip="snap")
+												btn#controls_mode_transform_toggle_world.icon.img-transform-mode(tooltip="transform local/world")
+												btn#controls_mode_draw_tiles.icon.img-draw(tooltip="draw tiles")
+												btn#controls_mode_erase_tiles.icon.img-erase(tooltip="erase tiles")
+												btn#controls_mode_edit_wires.icon.img-line(tooltip="edit wires")
+										container#scene_game_controls.frame-s2.flex-row.padding-minimum.gap-minimum
+												btn#play_scene_btn.icon.img-play(tooltip="play")
+												btn#physics_toggle_autostep.highlighted.icon.img-play-timer(tooltip="physics autostep")
+												btn#physics_toggle_camera_attach.icon.img-attach_camera(tooltip="attach camera")
+												btn#physics_toggle_collision_debug.icon.img-physdebug(tooltip="debug physics")
+												btn#game_center_camera.icon.img-center-camera(tooltip="center camera")
+												btn#game_clip_tilesets.icon.img-clip-tileset.highlighted(tooltip="clip tilesets")
+												btn#scene_toggle_lights.icon.highlighted(tooltip="toggle global lights")
+										container.flex-column.padding-minimum.style-window.behave-collapsing.margin-minimum.width-medium-x2.collapsed
+												.header ...
+												content
+													container#scene_game_details.flex-column.padding-minimum
+														.splitter#app_state_details-toggle.cursor-pointer app state
+														container#app_state_details.flex-column.hidden
+														.splitter#scene_state_details-toggle.cursor-pointer scene state
+														container#scene_state_details.flex-column.hidden
+														.splitter#game_config_details-toggle.cursor-pointer game confing
+														container#game_config_details.flex-column.hidden
+														.splitter#character_config_details-toggle.cursor-pointer character confing
+														container#character_config_details.flex-column.hidden
+														.splitter#character_state_details-toggle.cursor-pointer character state
+														container#character_state_details.flex-column.hidden
+								canvas#rootcanvas.position-absolute
+						container#edit-assets-section.bg-default.style-window.behave-collapsing.max-height-quart.scroll-y
+								.header asset library
+								content.flex-column.buttons-list-s1.disabled-content-hide.buttons-list-draggable

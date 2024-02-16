@@ -126,6 +126,10 @@ body,
 	padding: var(--padding-minimum);
 }
 
+.appcore .margin-minimum {
+	margin: var(--padding-minimum);
+}
+
 .appcore .width-half {
 	width: 50%;
 }
@@ -200,9 +204,11 @@ body,
 	z-index: 1;
 }
 
-.appcore btn {
-	user-select: none;
-	cursor: pointer;
+.appcore {
+	btn, .cursor-pointer {
+		user-select: none;
+		cursor: pointer;
+	}
 }
 
 .appcore .pos-abs-centered {
