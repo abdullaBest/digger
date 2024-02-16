@@ -71,7 +71,7 @@ class GameInputs {
 				this.events.emit("action_start", InputAction.acion_d);
 				break;
 			case "ShiftLeft":
-				this.events.emit("action_shift", InputAction.action_shift);
+				this.events.emit("action_start", InputAction.action_shift);
 				break;
 		}
 	}

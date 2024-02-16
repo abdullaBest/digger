@@ -537,6 +537,9 @@ export default class SceneGame {
 			case InputAction.down:
 				this.player_character.actionRequest("look_down", code);
 				break;
+			case InputAction.action_shift:
+				this.player_character.actionRequest("run", code);
+				break;
 			case InputAction.acion_a:
 				this.player_character.actionRequest("jump", code);
 				break;
