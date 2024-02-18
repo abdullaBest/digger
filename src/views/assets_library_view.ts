@@ -135,6 +135,31 @@ export default class AssetsLibraryView {
 			},
 			this._listeners
 		);
+		// --
+		listenClick(
+			"#assets-create-model-ninestack",
+			async (ev) => {
+				const modeid = await this._showSelectList("select model", {
+					extension: /model/,
+				});
+				const link_id = "**" + modeid;
+				await this._createComponent("model_ninestack", {
+					type: "model_ninestack", 
+					inherites: "base_asset_type_component",
+					abstract: true,
+					model_tl: link_id,
+					model_tm: link_id,
+					model_tr: link_id,
+					model_ml: link_id,
+					model_mm: link_id,
+					model_mr: link_id,
+					model_bl: link_id,
+					model_bm: link_id,
+					model_br: link_id,
+				});
+			},
+			this._listeners
+		);
 
 		// --
 		listenClick(
