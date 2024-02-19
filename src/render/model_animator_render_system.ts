@@ -115,7 +115,7 @@ export default class ModelAnimatorRenderSystem extends MapSystem {
 		return component.type == "animator" && owner?.type == "model";
 	}
 
-	async add(
+	add(
 		component: AssetContentTypeAnimator,
 		owner?: AssetContentTypeModel | null
 	) {

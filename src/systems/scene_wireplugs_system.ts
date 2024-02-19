@@ -26,7 +26,7 @@ export default class SceneWireplugsSystem extends MapSystem {
 		this.timers = {};
 		this.priority = 0;
 	}
-	async add(
+	add(
 		component: AssetContentTypeComponent,
 		owner?: AssetContentTypeComponent | null
 	) {

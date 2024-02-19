@@ -130,7 +130,7 @@ class Matters {
 			if (callback_values) {
 				callback_values(matter, k, value);
 			}
-			if (typeof value == "string" && value.startsWith("**")) {
+			if (matter.is_link(k)) {
 				this.traverse(value, callback_values, callback_links);
 			}
 		}

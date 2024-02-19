@@ -21,7 +21,7 @@ export default class MapDebugRenderCollidersSystem extends MapSystem {
         return component.type == "collider";
     }
 
-    async add(component: AssetContentTypeModel, owner?: AssetContentTypeComponent) {
+    add(component: AssetContentTypeModel, owner?: AssetContentTypeComponent) {
         if (!this.filter(component, owner)) {
             return;
         }

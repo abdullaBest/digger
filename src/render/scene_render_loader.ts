@@ -1,12 +1,14 @@
 import {
-	Assets,
+	AssetContentTypeGltf,
 	AssetContentTypeModel,
 	AssetContentTypeTexture,
+	Assets,
 } from "../assets.js";
-import SceneRenderCache from "./scene_render_cache.js";
-import * as THREE from "../lib/three.module.js";
-import * as SkeletonUtils from "../lib/SkeletonUtils.js";
 import { GLTFLoader } from "../lib/GLTFLoader.js";
+import * as SkeletonUtils from "../lib/SkeletonUtils.js";
+import * as THREE from "../lib/three.module.js";
+
+import SceneRenderCache from "./scene_render_cache.js";
 
 export default class SceneRenderLoader {
 	assets: Assets;
@@ -17,114 +19,140 @@ export default class SceneRenderLoader {
 		this.cache = cache;
 	}
 
-	/**
-	 * "model" works only with "imported" gltf's wich does not have any internal links
-	 * @param id model asset id
-	 * @returns gltf data
-	 */
-	async getModel(id: string, model: AssetContentTypeModel): Promise<any> {
+	async loadModel(model: AssetContentTypeModel): Promise<void> {
 		const gltfurl = (
-			this.assets.matters.get(model.gltf) as AssetContentTypeTexture
+			this.assets.matters.get(model.gltf) as AssetContentTypeGltf
 		).url;
 		const textureurl = (
 			this.assets.matters.get(model.texture) as AssetContentTypeTexture
 		).url;
+
 		if (!gltfurl || !textureurl) {
-			throw new Error(
-				`Load model errors: wrong ids 
+			throw new Error(`Load model errors: wrong ids 
                 gltf = [${model.gltf}:${gltfurl}], 
-                texture = [${model.texture}:${textureurl}]`
+                texture = [${model.texture}:${textureurl}]`);
+		}
+
+		if (!this.cache.gltfs[model.gltf]) {
+			await this.loadGltf(gltfurl, model.gltf);
+		}
+
+		if (!this.cache.textures[textureurl]) {
+			await this.loadTexture(textureurl, model.texture);
+		}
+	}
+
+	async loadGltf(url: string, id: string) {
+		const loading_manager = new THREE.LoadingManager();
+		const loader = new GLTFLoader(loading_manager);
+		loading_manager.setURLModifier((path: string) => {
+			// 0. blobbed data. Leave as it is
+			if (
+				path.includes("data:application/octet-stream") ||
+				path.includes("data:image") ||
+				path.includes("blob")
+			) {
+				return path;
+			}
+			// 1. Loads model itself. Same
+			if (path.includes(url)) {
+				return path;
+			}
+
+			// 2. Loads model dependencies. Replace it with custom path
+			// Works with model names so this could produce errors
+			console.warn(
+				`SceneRender::loadGltf: gltf ${url} has internal '${path}' dependency. Please reimport`
+			);
+
+			const name = path.split("/").pop();
+			return `/assets/load?name=${name}`;
+		});
+
+		return new Promise((resolve, reject) => {
+			loader.load(
+				url,
+				async (gltf) => {
+					this.cache.gltfs[id] = gltf;
+					resolve(gltf);
+				},
+				undefined,
+				reject
+			);
+		});
+	}
+
+	async loadTexture(url: string, id: string, flipY: boolean = false) {
+		let texture = this.getTexture(id);
+		if (texture) {
+			return texture;
+		}
+
+		texture = (await new Promise((resolve, reject) => {
+			new THREE.TextureLoader().load(url, resolve, reject);
+		})) as THREE.Texture;
+		texture.colorSpace = THREE.SRGBColorSpace;
+		texture.flipY = flipY;
+		this.cache.textures[id] = texture;
+	}
+
+	getTexture(id: string) {
+		return this.cache.textures[id];
+	}
+
+	getGltf(id: string) {
+		return this.cache.gltfs[id];
+	}
+
+	/**
+	 * "model" works only with "imported" gltf's wich does not have any internal
+	 * links
+	 * @param id model asset id
+	 * @returns gltf data
+	 */
+	getModel(id: string, model: AssetContentTypeModel): any {
+		const gltf = this.getGltf(model.gltf);
+		if (!gltf) {
+			throw new Error(
+				`SceneRenderLoader::getModel error - ${model.gltf} was not preloaded`
 			);
 		}
 
-		const afterload = async (scene: THREE.Object3D) => {
-			scene.name = id;
+		const scene = SkeletonUtils.clone(gltf.scene);
 
-			if (model.matrix?.length) {
-				(scene as THREE.Object3D).applyMatrix4(
-					new THREE.Matrix4().fromArray(model.matrix)
-				);
-			}
-			if (
-				typeof model.pos_x !== "undefined" &&
-				typeof model.pos_y !== "undefined"
-			) {
-				(scene as any).position.x = model.pos_x;
-				(scene as any).position.y = model.pos_y;
-			}
-			const material = await this.getMaterial(model.material, textureurl);
-			scene.traverse((o) => {
-				if (!o.isMesh) {
-					return;
-				}
+		scene.name = id;
 
-				o.material = material;
-			});
-
-			//console.log(dumpObject(scene).join('\n'));
-		};
-
-		let gltf = this.cache.gltfs[model.gltf];
-		if (gltf) {
-			const scene = SkeletonUtils.clone(gltf.scene);
-			await afterload(scene);
-			return scene;
+		if (model.matrix?.length) {
+			(scene as THREE.Object3D).applyMatrix4(
+				new THREE.Matrix4().fromArray(model.matrix)
+			);
+		}
+		if (
+			typeof model.pos_x !== "undefined" &&
+			typeof model.pos_y !== "undefined"
+		) {
+			(scene as any).position.x = model.pos_x;
+			(scene as any).position.y = model.pos_y;
 		}
 
-		const loading_manager = new THREE.LoadingManager();
-		const loader = new GLTFLoader(loading_manager);
-		loading_manager.setURLModifier((path: string, s: any, r: any) => {
-			if (path.includes(".bin")) {
-				console.warn(
-					`SceneRender::addModel: model ${model.gltf} has internal '.bin' dependency. Please reimport`
-				);
-				const name = path.split("/").pop();
-				return `/assets/load?name=${name}`;
-			} else if (path.includes(".png")) {
-				console.warn(
-					`SceneRender::addModel: model ${model.gltf} has internal '.png' dependency. Please reimport`
-				);
-				return textureurl;
-			} else if (path.includes(gltfurl)) {
-				return gltfurl;
+		const material = this.getMaterial(model.material, model.texture);
+		scene.traverse((o) => {
+			if (!o.isMesh) {
+				return;
 			}
 
-			return path;
+			o.material = material;
 		});
 
-		const load = () => {
-			return new Promise((resolve, reject) => {
-				loader.load(
-					gltfurl,
-					async (gltf) => {
-						this.cache.gltfs[model.gltf] = gltf;
-						const scene = SkeletonUtils.clone(gltf.scene);
-						await afterload(scene);
-						resolve(scene);
-					},
-					undefined,
-					reject
-				);
-			});
-		};
-
-		return load();
-	}
-
-	unloadModel(model: AssetContentTypeModel) {
-		delete this.cache.gltfs[model.gltf];
+		return scene;
 	}
 
 	/**
 	 * Creates new material or finds it in cache
 	 * @param name material name
-	 * @param texture_url path to lexture
+	 * @param texture_id preloaded texture id
 	 */
-	async getMaterial(
-		name: string,
-		texture_url: string,
-		flipY: boolean = false
-	): Promise<THREE.Material> {
+	getMaterial(name: string, texture_id: string): THREE.Material {
 		const materialTypes = {
 			basic: THREE.MeshBasicMaterial,
 			standart: THREE.MeshStandardMaterial,
@@ -139,19 +167,18 @@ export default class SceneRenderLoader {
 			name = "standart";
 		}
 
-		const id = `${name}_${texture_url}`;
+		const id = `${name}_${texture_id}`;
 		if (this.cache.materials[id]) {
 			return this.cache.materials[id];
 		}
 
-		const texture =
-			this.cache.textures[texture_url] ??
-			(await new Promise((resolve, reject) => {
-				new THREE.TextureLoader().load(texture_url, resolve, reject);
-			}));
-		this.cache.textures[texture_url] = texture;
+		const texture = this.cache.textures[texture_id];
+		if (!texture) {
+			throw new Error(
+				`SceneRenderLoader::getMaterial error - ${texture_id} was not preloaded`
+			);
+		}
 		texture.colorSpace = THREE.SRGBColorSpace;
-		texture.flipY = flipY;
 
 		const materialOptions = {
 			standart: { roughness: 0.7 },
@@ -169,22 +196,22 @@ export default class SceneRenderLoader {
 }
 
 function dumpObject(
-  obj,
-  lines: Array<string> = [],
-  isLast = true,
-  prefix = "",
+	obj,
+	lines: Array<string> = [],
+	isLast = true,
+	prefix = ""
 ) {
-  const localPrefix = isLast ? "└─" : "├─";
-  lines.push(
-    `${prefix}${prefix ? localPrefix : ""}${obj.name || "*no-name*"} [${
-      obj.type
-    }]`,
-  );
-  const newPrefix = prefix + (isLast ? "  " : "│ ");
-  const lastNdx = obj.children.length - 1;
-  obj.children.forEach((child, ndx) => {
-    const isLast = ndx === lastNdx;
-    dumpObject(child, lines, isLast, newPrefix);
-  });
-  return lines;
+	const localPrefix = isLast ? "└─" : "├─";
+	lines.push(
+		`${prefix}${prefix ? localPrefix : ""}${obj.name || "*no-name*"} [${
+			obj.type
+		}]`
+	);
+	const newPrefix = prefix + (isLast ? "  " : "│ ");
+	const lastNdx = obj.children.length - 1;
+	obj.children.forEach((child, ndx) => {
+		const isLast = ndx === lastNdx;
+		dumpObject(child, lines, isLast, newPrefix);
+	});
+	return lines;
 }

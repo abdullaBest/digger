@@ -7,7 +7,7 @@ class MapSystem {
 		this.priority = 0;
 	}
 	async load(component: AssetContentTypeComponent) {}
-	async add(
+	add(
 		component: AssetContentTypeComponent,
 		owner?: AssetContentTypeComponent | null
 	) {}

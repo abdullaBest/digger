@@ -16,7 +16,7 @@ export default class SceneControllersSystem extends MapSystem {
 		this.components = {};
 	}
 
-	async add(
+	add(
 		component: AssetContentTypeComponent,
 		owner?: AssetContentTypeComponent | null
 	) {

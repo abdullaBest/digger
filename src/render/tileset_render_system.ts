@@ -150,15 +150,14 @@ class TilesetRender {
 			const pos_y = tile.pos_y ?? 0;
 			const id = "i" + tile.id;
 			if (this._isPosInClipbounds(pos_x, pos_y) && !this.matters.get(id)) {
-				this.scene_core.add(tile, null, id).then((instance) => {
-					if (!instance) {
-						return;
-					}
-					if (!this.tiles[tileset]) {
-						this.tiles[tileset] = [];
-					}
-					this.tiles[tileset].push(instance);
-				});
+				const instance = this.scene_core.add(tile, null, id);
+				if (!instance) {
+					return;
+				}
+				if (!this.tiles[tileset]) {
+					this.tiles[tileset] = [];
+				}
+				this.tiles[tileset].push(instance);
 			}
 			delete this.queue[k];
 			this.queued -= 1;
@@ -267,10 +266,7 @@ class RenderTilesetSystem extends MapSystem {
 		return component.type == "tileset";
 	}
 
-	async add(
-		component: AssetContentTypeTileset,
-		owner?: AssetContentTypeComponent
-	) {
+	add(component: AssetContentTypeTileset, owner?: AssetContentTypeComponent) {
 		if (!this.filter(component)) {
 			return;
 		}

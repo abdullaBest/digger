@@ -31,7 +31,7 @@ class SceneRenderComponentSystem extends MapSystem {
 		return component.type == "component";
 	}
 
-	async add(
+	add(
 		component: AssetContentTypeComponent,
 		owner?: AssetContentTypeComponent
 	) {
@@ -71,10 +71,10 @@ class SceneRenderModelSystem extends MapSystem {
 			return;
 		}
 
-		await this.scene_render.loader.getModel(component.id, component);
+		await this.scene_render.loader.loadModel(component);
 	}
 
-	async add(
+	add(
 		component: AssetContentTypeModel,
 		owner?: AssetContentTypeComponent
 	) {
@@ -82,7 +82,7 @@ class SceneRenderModelSystem extends MapSystem {
 			return;
 		}
 		const parent = (owner && this.scene_render.cache.objects[owner.id]) ?? null;
-		const obj = await this.scene_render.addModel(
+		const obj = this.scene_render.addModel(
 			component.id,
 			component,
 			parent
@@ -111,7 +111,7 @@ class SceneCollidersSystem extends MapSystem {
 		return component.type == "collider" && !!owner;
 	}
 
-	async add(
+	add(
 		component: AssetContentTypeCollider,
 		owner?: AssetContentTypeComponent
 	) {
@@ -201,19 +201,35 @@ class SceneCore {
 		};
 	}
 
+	async load(component: AssetContentTypeComponent) {
+		const promises = [];
+		this.matters.traverse(
+			component.id,
+			null,
+			(matter: AssetContentTypeComponent) => {
+				for (const k in this.systems) {
+					const system = this.systems[k];
+					promises.push(system.load(matter));
+				}
+			}
+		);
+
+		return Promise.all(promises);
+	}
+
 	/**
 	 * Creates separate component instance and registers it in systems
 	 *
 	 * @param component component to add on scene
 	 * @param owner upper-tree component. do not mess up with AssetContentTypeComponent.owner
 	 * @param id new instance id
-	 * @returns instance id
+	 * @returns {AssetContentTypeComponent} instance
 	 */
-	async add(
+	add(
 		component: AssetContentTypeComponent,
 		owner?: AssetContentTypeComponent | null,
 		id?: string | null
-	): Promise<AssetContentTypeComponent | null> {
+	): AssetContentTypeComponent {
 		if (component.abstract) {
 			return null;
 		}
@@ -226,8 +242,7 @@ class SceneCore {
 
 		for (const k in this.systems) {
 			const system = this.systems[k];
-			//await system.load(component);
-			await system.add(cinstace, owner);
+			system.add(cinstace, owner);
 		}
 
 		const subcomponents: Array<{
@@ -256,7 +271,7 @@ class SceneCore {
 
 		for (const i in subcomponents) {
 			const subc = subcomponents[i];
-			const subcomponent = await this.add(subc.component, cinstace);
+			const subcomponent = this.add(subc.component, cinstace);
 			if (subcomponent) {
 				cinstace.set_link(subc.key, subcomponent.id);
 			}

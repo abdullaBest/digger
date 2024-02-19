@@ -249,7 +249,7 @@ export default class SceneEditWireplugsSystem extends MapSystem {
 		return component.type === "wireplug";
 	}
 
-	async add(
+	add(
 		component: AssetContentTypeWireplug,
 		owner?: AssetContentTypeComponent | null
 	) {

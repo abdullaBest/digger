@@ -15,7 +15,6 @@ import {
 } from "../assets";
 import {
 	MapTilesetSystem,
-	MapSystem,
 	SceneEditWireplugsSystem,
 } from "../systems/index";
 

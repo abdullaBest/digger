@@ -38,7 +38,8 @@ export default class SceneMap {
 		component: AssetContentTypeComponent,
 		owner?: AssetContentTypeComponent
 	) {
-		return await this.scene_core.add(component, owner);
+		await this.scene_core.load(component);
+		return this.scene_core.add(component, owner);
 	}
 
 	remove(component: AssetContentTypeComponent) {
