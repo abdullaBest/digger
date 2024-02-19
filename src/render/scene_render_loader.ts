@@ -126,6 +126,7 @@ export default class SceneRenderLoader {
 		flipY: boolean = false
 	): Promise<THREE.Material> {
 		const materialTypes = {
+			basic: THREE.MeshBasicMaterial,
 			standart: THREE.MeshStandardMaterial,
 			toon: THREE.MeshToonMaterial,
 			sprite: THREE.SpriteMaterial,
