@@ -6,6 +6,9 @@ import MapSystem from "./map_system";
 import SceneCore from "../app/scene_core";
 import { MapEvent, MapEventCode } from "./map_event";
 
+/**
+ * Controller component manages ingame component state such visibility and maybe something else
+ */
 export default class SceneControllersSystem extends MapSystem {
 	scene_core: SceneCore;
 	components: { [id: string]: AssetContentTypeController };
