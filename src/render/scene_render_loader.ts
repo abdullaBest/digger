@@ -43,6 +43,10 @@ export default class SceneRenderLoader {
 	}
 
 	async loadGltf(url: string, id: string) {
+		if (this.cache.gltfs[id]) {
+			return this.cache.gltfs[id];
+		}
+
 		const loading_manager = new THREE.LoadingManager();
 		const loader = new GLTFLoader(loading_manager);
 		loading_manager.setURLModifier((path: string) => {
@@ -59,8 +63,8 @@ export default class SceneRenderLoader {
 				return path;
 			}
 
-			// 2. Loads model dependencies. Replace it with custom path
-			// Works with model names so this could produce errors
+			// 2. Loads model dependencies. Replaces it with custom path
+			// Works with model names so this could produce errors if name was changed on assets base
 			console.warn(
 				`SceneRender::loadGltf: gltf ${url} has internal '${path}' dependency. Please reimport`
 			);
