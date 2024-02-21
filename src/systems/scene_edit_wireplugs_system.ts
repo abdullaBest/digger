@@ -1,14 +1,14 @@
-import { Matters } from "../matters";
+import { Matters } from "../core/matters";
 import MapSystem from "./map_system";
 import {
 	AssetContentTypeComponent,
 	AssetContentTypeWireplug,
-} from "../assets_base_extensions";
+} from "../app/assets_base_extensions";
 import SceneRender from "../render/scene_render";
-import { listenClick, addEventListener } from "../document";
+import { listenClick, addEventListener } from "../document/utils";
 import * as THREE from "../lib/three.module";
-import Events from "../events";
-import { PropertyInput } from "../page/property_input";
+import Events from "../core/events";
+import { PropertyInput } from "../document/controls_property_input";
 import { MapEvent, MapEventCode } from "./map_event";
 
 export class EditWireplugNode {

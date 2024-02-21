@@ -1,15 +1,11 @@
-import AppCore from "./app_core";
-import AppGame from "./app_game";
-import AppShell from "./app_shell";
+import AppCore from "./app/app_core";
+import AppGame from "./app/app_game";
+import AppShell from "./shell/app_shell";
 
 import {
 	addEventListener,
 	EventListenerDetails,
 } from "./document";
-
-import SceneGame from "./scene_game";
-import SceneMediator from "./scene_mediator";
-import SceneMap from "./scene_map";
 
 class App {
 	private core: AppCore;

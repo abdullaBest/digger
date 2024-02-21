@@ -1,5 +1,5 @@
-import { Assets, Asset } from "../assets";
-import InspectorMatter from "../page/inspector_matters";
+import { Assets, Asset } from "../app/assets";
+import InspectorMatter from "../shell/inspector_matters";
 
 const inspectors: { [id: string] : InspectorMatter } = {};
 

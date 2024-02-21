@@ -1,4 +1,4 @@
-import { AssetContentTypeComponent } from "../assets";
+import { AssetContentTypeComponent } from "../app/assets";
 import MapEvent from "./map_event";
 
 class MapSystem {
@@ -6,7 +6,7 @@ class MapSystem {
 	constructor() {
 		this.priority = 0;
 	}
-	async load(component: AssetContentTypeComponent) {}
+	async load(component: AssetContentTypeComponent) : Promise<any> {}
 	add(
 		component: AssetContentTypeComponent,
 		owner?: AssetContentTypeComponent | null

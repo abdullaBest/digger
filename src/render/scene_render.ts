@@ -1,14 +1,14 @@
 import * as THREE from "../lib/three.module.js";
 import { GLTFLoader } from "../lib/GLTFLoader.js";
 import { OrbitControls } from "../lib/OrbitControls.js";
-import { Assets } from "../assets.js";
-import SceneMath from "../scene_math.js";
+import { Assets } from "../app/assets.js";
+import SceneMath from "./scene_math.js";
 import {
 	SceneCollisions,
 	BoxColliderC,
 	ColliderType,
-} from "../scene_collisions.js";
-import { lerp, distlerp } from "../math.js";
+} from "../app/scene_collisions.js";
+import { lerp, distlerp } from "../core/math.js";
 import SceneRenderCache from "./scene_render_cache.js";
 import SceneRenderLoader from "./scene_render_loader.js";
 import { focusCameraOn, setCameraPos, setObjectPos } from "./render_utils.js";

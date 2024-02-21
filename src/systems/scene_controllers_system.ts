@@ -1,9 +1,9 @@
 import {
 	AssetContentTypeComponent,
 	AssetContentTypeController,
-} from "../assets";
+} from "../app/assets";
 import MapSystem from "./map_system";
-import SceneCore from "../scene_core";
+import SceneCore from "../app/scene_core";
 import { MapEvent, MapEventCode } from "./map_event";
 
 export default class SceneControllersSystem extends MapSystem {

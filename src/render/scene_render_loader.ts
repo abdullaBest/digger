@@ -3,7 +3,7 @@ import {
 	AssetContentTypeModel,
 	AssetContentTypeTexture,
 	Assets,
-} from "../assets.js";
+} from "../app/assets.js";
 import { GLTFLoader } from "../lib/GLTFLoader.js";
 import * as SkeletonUtils from "../lib/SkeletonUtils.js";
 import * as THREE from "../lib/three.module.js";

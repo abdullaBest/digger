@@ -1,5 +1,5 @@
-import { Matters, Matter } from "../matters"
-import InspectorMatter from "../page/inspector_matters";
+import { Matters, Matter } from "../core/matters"
+import InspectorMatter from "../shell/inspector_matters";
 
 const inspectors: { [id: string] : InspectorMatter } = {};
 

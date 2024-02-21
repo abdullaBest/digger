@@ -2,8 +2,8 @@ import {
 	AssetContentTypeComponent,
 	AssetContentTypeWireplug,
 	AssetContentTypeTimer,
-} from "../assets";
-import SceneCore from "../scene_core";
+} from "../app/assets";
+import SceneCore from "../app/scene_core";
 import MapSystem from "./map_system";
 import { MapEvent, MapEventCode } from "./map_event";
 

@@ -1,12 +1,12 @@
-import { AssetContentTypeTile } from "../assets";
-import { querySelector } from "../document";
+import { AssetContentTypeTile } from "../app/assets";
+import { querySelector } from "../document/utils";
 import MapSystem from "./map_system";
 import {
 	AssetContentTypeComponent,
 	AssetContentTypeTileset,
 	AssetContentTypeTexture,
-} from "../assets";
-import { Matters } from "../matters";
+} from "../app/assets";
+import { Matters } from "../core/matters";
 
 class MapTileset {
 	tilerefs: { [id: number]: string };

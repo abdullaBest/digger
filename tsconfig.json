@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es6",
     "lib": ["ESNext","dom"],
-		"moduleResolution": "Bundler"
-  },
-  "include": ["src/**/*"],
+		"moduleResolution": "Bundler",
+    "baseUrl": "./src",
+  }
 }
