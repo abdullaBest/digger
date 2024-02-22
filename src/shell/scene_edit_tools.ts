@@ -267,10 +267,12 @@ class SceneEditTools {
 	async tilesetDraw() {
 		const drawobject = this.tileset_editor.slected_object;
 		if (!this.tileset_editor.selected_tileset) {
+			printerror("Can't draw: tileset not selected", 3);
 			return;
 		}
 
 		if (!drawobject && this.editmode == SceneEditToolMode.TILE_DRAW) {
+			printerror("Can't draw: tile not selected", 3);
 			return;
 		}
 
