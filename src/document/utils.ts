@@ -1,9 +1,8 @@
-import { EventListenerDetails } from "../core/events";
-
 /**
  * Page helpers functions
  */
 
+import { EventListenerDetails } from "../core/events";
 
 export function querySelector(query: string, root: HTMLElement = document.body) : HTMLElement {
     const element = root.querySelector(query) as HTMLElement;

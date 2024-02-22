@@ -1,25 +1,28 @@
 content#scene-content-list {
-    &:empty::after {
-        content: "Nothing here. Drop asset.";
-    }
+	&:empty::after {
+		content: "Nothing here. Drop asset.";
+	}
 
-		btn > .label-id {
-			display: none;
-		}
+	btn > .label-id {
+		display: none;
+	}
 }
 
 section#edit-sidebar.noselected {
-    #edit-sidebar-list-root, section#edit-sidebar-controls {
-        display: none;
-    }
+	#edit-sidebar-list-root,
+	section#edit-sidebar-controls {
+		display: none;
+	}
 
-    &::after {
-        content: "Nothing here. Select asset";
-    }
+	&::after {
+		content: "Nothing here. Select asset";
+	}
 }
 
 section#asset-manage-section {
-	btn#asset-manage-reimport, btn#asset-tile-add, btn#asset-animator-add {
+	btn#asset-manage-reimport,
+	btn#asset-tile-add,
+	btn#asset-animator-add {
 		display: none;
 	}
 
@@ -56,7 +59,8 @@ section#asset-manage-section {
 		transition-property: max-width, max-height;
 		transition-duration: 0.1s;
 
-		&:hover, &:has(input:focus) {
+		&:hover,
+		&:has(input:focus) {
 			max-width: 12ch;
 			max-height: 100%;
 		}
@@ -72,8 +76,71 @@ section#asset-manage-section {
 }
 
 #scene_game_details {
-	entry input[type=number] {
+	entry input[type="number"] {
 		-webkit-appearance: none;
 		-moz-appearance: textfield;
+	}
+}
+
+#infobox {
+	position: fixed;
+	right: 0;
+	top: 0;
+	z-index: 2;
+	padding: var(--padding-minimum);
+
+	.infobox {
+		width: var(--size-medium-x2);
+		height: auto;
+		max-height: var(--size-medium);
+		background-color: var(--background-color-b);
+		padding: var(--padding-minor);
+		animation-duration: 0.2s;
+		animation-name: slidein;
+		overflow: hide;
+	}
+
+	.infobox.fadeout {
+		animation-duration: 0.5s;
+		animation-name: fadeout;
+	}
+
+	.infobox.info {
+		border-left: 4px solid blue;
+	}
+
+	.infobox.warn {
+		border-left: 4px solid orange;
+	}
+
+	.infobox.error {
+		border-left: 4px solid red;
+	}
+
+	@keyframes fadeout {
+		from {
+			opacity: 1;
+		}
+
+		20% {
+			opacity: 0;
+			max-height: var(--size-medium);
+		}
+
+		to {
+			opacity: 0;
+			max-height: 0;
+			padding: 0;
+		}
+	}
+
+	@keyframes slidein {
+		from {
+			margin-left: 100%;
+		}
+
+		to {
+			margin-left: 0%;
+		}
 	}
 }

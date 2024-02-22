@@ -6,6 +6,7 @@ import {
 } from "../systems";
 import { AssetContentTypeComponent } from "./assets";
 import { RenderTilesetSystem } from "../systems/tileset_render_system";
+import { printerror } from "../shell/infobox";
 
 export default class SceneMap {
 	scene_core: SceneCore;
@@ -51,8 +52,12 @@ export default class SceneMap {
 	}
 
 	cleanup() {
-		this.scene_core.cleanup();
-		this.setViewpoint(0, 0);
+		try {
+			this.scene_core.cleanup();
+			this.setViewpoint(0, 0);
+		} catch (err) {
+			printerror(err.message);
+		}
 	}
 
 	step(dt: number) {

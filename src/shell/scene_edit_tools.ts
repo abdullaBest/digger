@@ -7,16 +7,14 @@ import { setObjectPos } from "../render/render_utils.js";
 import { snap } from "../core/math.js";
 import { SceneCore, MapComponent } from "../app/scene_core.js";
 import SceneMap from "../app/scene_map.js";
+import { printinfo, printerror } from "./infobox";
 
 import {
 	Assets,
 	AssetContentTypeComponent,
 	AssetContentTypeWireplug,
 } from "../app/assets.js";
-import {
-	MapTilesetSystem,
-	SceneEditWireplugsSystem,
-} from "../systems/index";
+import { MapTilesetSystem, SceneEditWireplugsSystem } from "../systems/index";
 
 enum SceneEditToolMode {
 	DEFAULT = 0,
@@ -115,14 +113,18 @@ class SceneEditTools {
 			this.mousepressed = true;
 		});
 		this.scene_render.canvas.addEventListener("mouseup", (ev: MouseEvent) => {
-			const deltax = Math.abs(ev.clientX - localMouse.x);
-			const deltay = Math.abs(ev.clientY - localMouse.y);
-			if (deltax + deltay < 10) {
-				this.onMouseClick(ev);
+			try {
+				const deltax = Math.abs(ev.clientX - localMouse.x);
+				const deltay = Math.abs(ev.clientY - localMouse.y);
+				if (deltax + deltay < 10) {
+					this.onMouseClick(ev);
+				}
+				this.mousepressed = false;
+				this.scene_render.controls.enableRotate = true;
+				this.onMouseUp(ev);
+			} catch (err) {
+				printerror(err.message);
 			}
-			this.mousepressed = false;
-			this.scene_render.controls.enableRotate = true;
-			this.onMouseUp(ev);
 		});
 
 		this.scene_render.canvas.addEventListener("mousemove", (ev: MouseEvent) => {
@@ -250,7 +252,7 @@ class SceneEditTools {
 			);
 
 			if (object) {
-				console.log("transform attached to " + object.name);
+				printinfo("transform attached to " + object.name);
 				this.transform_controls.attach(object);
 			}
 		} else if (this.isInTileEditMode()) {
@@ -298,7 +300,8 @@ class SceneEditTools {
 			rpos_x >= image.width ||
 			rpos_y >= image.height
 		) {
-			throw new Error("Can't draw outside tileset bounds.");
+			printerror("Can't draw outside tileset bounds.", 3);
+			return;
 		}
 
 		let drawcolor = tileset.tileset.zero_color;
@@ -356,12 +359,9 @@ class SceneEditTools {
 			const instance = this.scene_core.matters.get(id);
 			const matrix = instance.get("matrix");
 			if (matrix?.length) {
-				object.applyMatrix4(
-					new THREE.Matrix4().fromArray(matrix)
-				);
+				object.applyMatrix4(new THREE.Matrix4().fromArray(matrix));
 			}
 		}
-
 
 		this.transform_controls.attach(object);
 	}
@@ -528,7 +528,7 @@ class SceneEditTools {
 		id: string,
 		change: (component: AssetContentTypeComponent) => void,
 		name?: string
-	) : Promise<AssetContentTypeComponent | null> {
+	): Promise<AssetContentTypeComponent | null> {
 		const matters = this.scene_core.matters;
 
 		const component_instance = matters.get(id) as AssetContentTypeComponent;

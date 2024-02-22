@@ -9,11 +9,9 @@ import GameShell from "./game_shell";
 
 import ControlsTabs from "../document/controls_tabs";
 import ControlsContainerCollapse from "../document/controls_container_collapse";
-import {
-	listenClick,
-	querySelector,
-} from "../document";
+import { listenClick, querySelector } from "../document";
 import test from "../test/index";
+import { Infobox } from "./infobox";
 
 /**
  * holds view classes
@@ -60,6 +58,8 @@ export default class AppShell {
 		this.scene_edit_view.init();
 
 		this.shell_game.init();
+
+		Infobox.instance.init(querySelector("#infobox"));
 
 		this.initPages();
 		this.initListeners();
