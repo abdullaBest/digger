@@ -84,6 +84,7 @@ class SceneEditTools {
 	init() {
 		this.tileset_editor.init();
 
+		// draw tileset ghost cube
 		const geometry = new THREE.BoxGeometry(1, 1, 1);
 		const material = new THREE.MeshBasicMaterial({
 			color: 0x00ff00,
@@ -258,6 +259,9 @@ class SceneEditTools {
 		}
 	}
 
+	/**
+	 * @brief draws tiles into tileset canvas
+	 */
 	async tilesetDraw() {
 		const drawobject = this.tileset_editor.slected_object;
 		if (!this.tileset_editor.selected_tileset) {
@@ -343,10 +347,23 @@ class SceneEditTools {
 	 * @param id model id
 	 */
 	attachTransformControls(id: string) {
-		const object = this.scene_render.cache.objects[id];
-		if (object) {
-			this.transform_controls.attach(object);
+		let object = this.scene_render.cache.objects[id];
+		// creates empty if no required object found
+		// has no removing option so it gonna be garbarging
+		if (!object) {
+			object = this.scene_render.addEmptyObject(id);
+
+			const instance = this.scene_core.matters.get(id);
+			const matrix = instance.get("matrix");
+			if (matrix?.length) {
+				object.applyMatrix4(
+					new THREE.Matrix4().fromArray(matrix)
+				);
+			}
 		}
+
+
+		this.transform_controls.attach(object);
 	}
 
 	step(dt: number) {

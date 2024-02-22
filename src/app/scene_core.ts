@@ -17,7 +17,7 @@ import MapDebugRenderCollidersSystem from "../systems/map_debug_render_colliders
 import ModelAnimatorRenderSystem from "../systems/model_animator_render_system";
 
 /**
- * Just creates empties
+ * Just creates empties. Disabled
  */
 class SceneRenderComponentSystem extends MapSystem {
 	private scene_render: SceneRender;
@@ -38,6 +38,8 @@ class SceneRenderComponentSystem extends MapSystem {
 		if (!this.filter(component)) {
 			return;
 		}
+
+		return;
 		const parent = (owner && this.scene_render.cache.objects[owner.id]) ?? null;
 		const obj = this.scene_render.addEmptyObject(component.id, parent);
 		if (
@@ -81,11 +83,9 @@ class SceneRenderModelSystem extends MapSystem {
 		if (!this.filter(component)) {
 			return;
 		}
-		const parent = (owner && this.scene_render.cache.objects[owner.id]) ?? null;
 		const obj = this.scene_render.addModel(
 			component.id,
-			component,
-			parent
+			component
 		);
 	}
 

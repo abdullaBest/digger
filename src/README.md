@@ -41,7 +41,7 @@ All sorts of different plugins for app/scene_core
 
 # test
 
-Test cases
+Test sanbox. May be broben, outdated or whatever
 
 # views
 

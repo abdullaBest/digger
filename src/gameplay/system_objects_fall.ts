@@ -1,5 +1,5 @@
 import SceneCore from "../app/scene_core";
-import SceneRender from "../scene_render";
+import SceneRender from "../render/scene_render";
 import SceneCollisions from "../app/scene_collisions";
 import { AssetContentTypeComponent } from "../app/assets";
 
@@ -57,7 +57,7 @@ export default class SystemObjectsFall {
                 // b.1 falling
                 this.scene_collisions.addBoxBody(b.collider, collider);
                 // b.2 make fall surrounding blocks
-                this.touchFallingBlock(b.collider, 0.01);
+                this.touchFallingBlock(b.collider, 0);
             } else if (body) {
                 // c. deactivating
                 for(let i = 0; i < body.contacts; i++) {
@@ -153,7 +153,7 @@ export default class SystemObjectsFall {
         this.falling_objects[id] = {
             collider: colliderid,
             elapsed: 1 - shaketime,
-            shaking: true
+            shaking: shaketime > 0
         }
     }
 }

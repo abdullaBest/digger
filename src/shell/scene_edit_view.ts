@@ -314,20 +314,13 @@ export default class SceneEditView {
 				return;
 			}
 
-			// redraw tileset
-			if (matter.get("type") === "tileset") {
-				//this.redrawElement(matter.id);
-			}
-
 			// remake component after each change
 			this.scene_core.remove(instance.id);
 			const ninstance = await this.scene_core.add(
 				matter as AssetContentTypeComponent
 			);
 			if (ninstance) {
-				tcontrols.attach(
-					this.scene_core.scene_render.cache.objects[ninstance.id]
-				);
+				this.scene_edit_tools.attachTransformControls(ninstance.id);
 			}
 		});
 	}

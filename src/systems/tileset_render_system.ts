@@ -186,7 +186,7 @@ class TilesetRender {
 					if (ref.type == "model_ninestack") {
 						const x_sides = ["l", "m", "r"];
 						const y_sides = ["t", "m", "b"];
-						const x = Math.round(pos_x);
+						const x = Math.abs(Math.round(pos_x));
 						const y = Math.abs(Math.round(pos_y));
 						const x_side = x_sides[x % 3];
 						const y_side = y_sides[y % 3];
