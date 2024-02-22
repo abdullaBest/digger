@@ -316,10 +316,10 @@ class SceneEditTools {
 			) as AssetContentTypeComponent;
 			const instance = await this.scene_core.add(ref, null, newid);
 			if (instance) {
-				instance.pos_x = rpos_x;
-				instance.pos_y = rpos_y;
+				instance.pos_x = pos_x;
+				instance.pos_y = pos_y;
 				const object = this.scene_render.cache.objects[instance.id];
-				this.scene_render.setPos(object, new THREE.Vector3(rpos_x, rpos_y, 0));
+				this.scene_render.setPos(object, new THREE.Vector3(pos_x, pos_y, 0));
 			}
 		} else if (this.editmode == SceneEditToolMode.TILE_ERASE) {
 			this.scene_core.remove(newid);
