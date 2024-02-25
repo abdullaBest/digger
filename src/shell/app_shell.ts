@@ -1,5 +1,6 @@
 import AppCore from "../app/app_core";
 import AppGame from "../app/app_game";
+import { InputAction } from "../core/game_inputs";
 
 import AssetsLibraryView from "./assets_library_view";
 import SceneEditTools from "./scene_edit_tools";
@@ -12,6 +13,7 @@ import ControlsContainerCollapse from "../document/controls_container_collapse";
 import { listenClick, querySelector } from "../document";
 import test from "../test/index";
 import { Infobox } from "./infobox";
+import AppTerminal from "./app_terminal";
 
 /**
  * holds view classes
@@ -25,6 +27,7 @@ export default class AppShell {
 	scene_edit_view: SceneEditView;
 
 	shell_game: GameShell;
+	terminal: AppTerminal;
 
 	constructor(core: AppCore, game: AppGame) {
 		this.core = core;
@@ -50,6 +53,9 @@ export default class AppShell {
 		);
 
 		this.shell_game = new GameShell(this.core, this.game);
+
+		this.terminal = new AppTerminal();
+		this.game.inputs.events.on("action_start", this._action.bind(this));
 	}
 
 	init() {
@@ -58,6 +64,7 @@ export default class AppShell {
 		this.scene_edit_view.init();
 
 		this.shell_game.init();
+		this.terminal.init(querySelector("#terminal"));
 
 		Infobox.instance.init(querySelector("#infobox"));
 
@@ -69,6 +76,17 @@ export default class AppShell {
 		this.scene_edit_tools.step(dt);
 		this.scene_edit_tools.render();
 		this.shell_game.step(dt);
+	}
+
+	_action(act: InputAction) {
+		switch (act) {
+			case InputAction.action_cmd:
+				this.terminal.toggle();
+				break;
+			case InputAction.action_enter:
+				this.terminal.confirm();
+				break;
+		}
 	}
 
 	initPages() {

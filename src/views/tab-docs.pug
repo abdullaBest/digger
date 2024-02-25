@@ -3,8 +3,17 @@ tab#docs-tab.hidden.display-block.size-fill
 		#docs-sidebar.flex-column.width-medium-x2.no-shrink.bg-default.frame-s1-right.buttons-list-s1.padding-minor.fontsize-bigger
 			btn(data-tab="docs-notes1-tab").tab-switch notes
 			btn(data-tab="docs-styles-tab").tab-switch styles
-		section#docs-section.flex-column.size-fill
-			section#docs-notes1-tab.display-block.bg-default.padding-minor
+		section#docs-section.flex-column.size-fill.bg-default.overflow-auto
+			section#docs-notes1-tab.display-block.padding-minor.width-page.margin-auto
+				.splitter tilesets
+				h4 (draft)
+				t Тайлсет в простейшем случае состоит из двух основных элементов - текстура и набор тайлов. 
+					| В текстуре хранится попиксельная информация о положении тайлов.
+					| Каждый тайл содержит информацию о цвете на тестуре, и модели, соответсвующей заданному цвету.
+				h4 автотайлы
+				t система автотайлов позволяет генерировать нерепетативные карты. 
+					| Для работы автотайла нужно задать референсный тайлсет, в котором задаются все возможные комбинации соединений
+					| Тайлов одного или нескольких типов
 				.splitter компоненты
 				h4 trigger
 				t Активирует компонент по колайду или взаимодействию с персонажем
@@ -47,7 +56,7 @@ tab#docs-tab.hidden.display-block.size-fill
 						li GET /assets/load/:id/:revision - отправляет файл по id ассета. revision - номер ревизии. revision ставить last для загрузки последней версии
 						li GET /assets/load?name=something - ищет в ассетах тот что соответствует всем параметрам в query. Временное решение
 				.splitter заметки
-			section#docs-styles-tab.flex-column.bg-default.padding-minimum
+			section#docs-styles-tab.display-block.width-page.margin-auto
 				.splitter d
 				.frame-s1.interactive abs
 				.frame-s2 abs

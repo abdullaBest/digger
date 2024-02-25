@@ -852,10 +852,7 @@ export default class AssetsLibraryView {
 		} else if (matter.inherited_equals("type", "component")) {
 			this.container_preview_render.classList.remove("hidden");
 			await this.scene_map.add(matter as AssetContentTypeComponent);
-			const obj = this.scene_render.cache.objects[matter.id];
-			if (obj) {
-				this.scene_render.focusCameraOn(obj);
-			}
+			this.scene_render.focusCameraOn(this.scene_render.scene);
 		}
 	}
 }

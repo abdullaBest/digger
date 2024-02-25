@@ -12,7 +12,9 @@ enum InputAction {
 	acion_d = 7,
 	acion_f = 8,
 	action_shift = 9,
-	action_esc = 10
+	action_esc = 10,
+	action_cmd = 11,
+	action_enter = 12,
 }
 
 class GameInputs {
@@ -73,6 +75,12 @@ class GameInputs {
 			case "ShiftLeft":
 				this.events.emit("action_start", InputAction.action_shift);
 				break;
+			case "Backquote":
+				this.events.emit("action_start", InputAction.action_cmd);
+				break;
+			case "Enter":
+				this.events.emit("action_start", InputAction.action_enter);
+				break;
 		}
 	}
 	_keyup(event: KeyboardEvent) {
@@ -109,6 +117,12 @@ class GameInputs {
 				break;
 			case "ShiftLeft":
 				this.events.emit("action_end", InputAction.action_shift);
+				break;
+			case "Backquote":
+				this.events.emit("action_end", InputAction.action_cmd);
+				break;
+			case "Enter":
+				this.events.emit("action_end", InputAction.action_enter);
 				break;
 		}
 	}
