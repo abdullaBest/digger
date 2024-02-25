@@ -505,8 +505,8 @@ export default class SceneDiggerGame {
 			}
 			// falling block activate
 			this.system_objects_fall.touchFallingBlock(component.id);
-			// remove breakable block
 
+			// remove breakable block
 			const owner = this.scene_core.matters.get(component.owner);
 			this.scene_core.remove(owner.id);
 
