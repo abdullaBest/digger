@@ -16,6 +16,7 @@ content#scene-content-list {
 	background-color: var(--background-color-a);
 	display: flex;
 	flex-direction: column;
+	backdrop-filter: blur(4px);
 
 	.content {
 		flex-grow: 1;
@@ -26,10 +27,12 @@ content#scene-content-list {
 		overflow: scroll;
 	}
 	.d {
-		padding-left: var(--padding-minimum);
+		padding: 0 var(--padding-minimum);
+		display: flex;
 	}
 	input {
 		text-align: left;
+		flex-grow: 1;
 		&::before {
 			content: ">";
 		}
