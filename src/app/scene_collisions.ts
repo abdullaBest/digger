@@ -444,7 +444,12 @@ class SceneCollisions {
 		);
 	}
 
-	thresholdAABBCollision(a: BoxColliderC, b: BoxColliderC, threshold_x: number, threshold_y: number = threshold_x) {
+	thresholdAABBCollision(
+		a: BoxColliderC,
+		b: BoxColliderC,
+		threshold_x: number,
+		threshold_y: number = threshold_x
+	) {
 		// should test by id
 		if (a == b) {
 			return false;

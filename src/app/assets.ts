@@ -1,5 +1,6 @@
 import { Matters, Matter } from "../core/matters";
 import Events from "../core/events";
+import logger from "../core/logger";
 import { sendFiles, listenFormSubmit } from "./request_utils";
 import {
 	BaseContentExtensionsList,
@@ -187,7 +188,7 @@ class Assets {
 	 * Loads asset metadata + asset content if it json type
 	 * @param onprogress callbacks on asset loaded
 	 */
-	async loadAsset(id: string) {
+	async loadAsset(id: string): Promise<Asset> {
 		const path = "/assets/get/" + id;
 		const res = await fetch(path);
 		if (!res.ok) {
@@ -200,6 +201,8 @@ class Assets {
 		const asset = this._createAsset(data);
 		await asset.load();
 		this._initAsset(asset, asset.content);
+
+		return asset;
 	}
 
 	_createAsset(info: AssetInfo): Asset {
@@ -280,6 +283,8 @@ class Assets {
 	 * @param onprogress callbacks on asset loaded
 	 */
 	async load() {
+		logger.log("Assets loading started");
+
 		this.status = AssetStatus.LOADING;
 		const res = await fetch("/assets/list");
 		if (!res.ok) {
@@ -294,14 +299,16 @@ class Assets {
 		let loaded = 0;
 		for (const i in data) {
 			try {
-				await this.loadAsset(data[i]);
+				const asset = await this.loadAsset(data[i]);
 				this.loadprogress = ++loaded / toload;
+				logger.log(`Asset #${asset.id} (${asset.info.name}, ${asset.info.extension}) loaded`, `Progress: ${this.loadprogress}`);
 			} catch (err) {
-				console.error(`Asset ${data[i]} loading error:`, err);
+				logger.error(`Asset ${data[i]} loading error:`, err);
 				this.status = AssetStatus.ERROR;
 			}
 		}
 		this.status = AssetStatus.LOADED;
+		logger.log("Assets loaded.");
 		this.events.emit("loaded");
 	}
 

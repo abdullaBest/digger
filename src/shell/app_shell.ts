@@ -1,6 +1,7 @@
 import AppCore from "../app/app_core";
 import AppGame from "../app/app_game";
 import { InputAction } from "../core/game_inputs";
+import { logger, LogCode } from "../core/logger";
 
 import AssetsLibraryView from "./assets_library_view";
 import SceneEditTools from "./scene_edit_tools";
@@ -12,7 +13,7 @@ import ControlsTabs from "../document/controls_tabs";
 import ControlsContainerCollapse from "../document/controls_container_collapse";
 import { listenClick, querySelector } from "../document";
 import test from "../test/index";
-import { Infobox } from "./infobox";
+import infobox from "./infobox";
 import AppTerminal from "./app_terminal";
 
 /**
@@ -59,17 +60,25 @@ export default class AppShell {
 	}
 
 	init() {
+		this.terminal.init(querySelector("#terminal"));
+
+		infobox.init(querySelector("#infobox"));
+		logger.init((code: LogCode, level: number, ...args) => {
+			this.terminal.print(code, args.join(", "));
+		});
+
+		logger.log("Terminal log initialized.");
+
 		this.assets_library_view.init();
 		this.scene_edit_tools.init();
 		this.scene_edit_view.init();
 
 		this.shell_game.init();
-		this.terminal.init(querySelector("#terminal"));
-
-		Infobox.instance.init(querySelector("#infobox"));
 
 		this.initPages();
 		this.initListeners();
+
+		logger.log("App shell initialized.");
 	}
 
 	step(dt: number) {

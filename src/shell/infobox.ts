@@ -1,10 +1,6 @@
-enum InfoLevel {
-	info = 0,
-	warn = 1,
-	error = 2,
-}
+import { LogCode, logger } from "../core/logger";
 
-export class Infobox {
+class Infobox {
 	private static _instance: Infobox;
 	container: HTMLElement;
 
@@ -20,11 +16,12 @@ export class Infobox {
 		this.container = container;
 	}
 
-	print(message: string, level: InfoLevel, duration: number = 3) {
+	print(message: string, code: LogCode, duration: number = 3) {
 		const box = document.createElement("div");
-		box.classList.add("infobox", InfoLevel[level]);
+		box.classList.add("infobox", LogCode[code]);
 		box.innerHTML = message;
 		this.container.appendChild(box);
+		logger.print(code, 1, message);
 		setTimeout(
 			() => {
 				box.classList.add("fadeout");
@@ -39,10 +36,15 @@ export class Infobox {
 	}
 }
 
-export function printinfo(message: string) {
-	Infobox.instance.print(message, InfoLevel.info);
+function printinfo(message: string) {
+	Infobox.instance.print(message, LogCode.info);
 }
 
-export function printerror(message: string, duration: number = 7) {
-	Infobox.instance.print(message, InfoLevel.error, duration);
+function printerror(message: string, duration: number = 7) {
+	Infobox.instance.print(message, LogCode.error, duration);
 }
+
+const infobox = Infobox.instance;
+
+export default infobox;
+export { Infobox, infobox, printinfo, printerror };

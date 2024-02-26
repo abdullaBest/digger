@@ -1,4 +1,5 @@
 import { addEventListener, querySelector } from "../document";
+import { LogCode } from "../core/logger";
 
 export default class AppTerminal {
 	container: HTMLElement;
@@ -35,20 +36,21 @@ export default class AppTerminal {
 
 		const text = this.input.value;
 		this.input.value = "";
-		this.print("> " + text);
+		this.print(LogCode.details, "> " + text);
 		this.command(text);
 	}
 
 	command(message: string) {
 		switch (message) {
 			default:
-				this.print(`No command <b>${message}</b> found`);
+				this.print(LogCode.error, `No command <b>${message}</b> found`);
 		}
 	}
 
-	print(message: string) {
+	print(code: LogCode, message: string) {
 		const t = document.createElement("t");
 		t.innerHTML = message;
+		t.classList.add(LogCode[code]);
 		this.content.appendChild(t);
 		this.content.scrollTop = this.content.scrollHeight;
 	}
