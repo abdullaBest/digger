@@ -135,6 +135,25 @@ container#gameui {
 			margin-top: auto;
 		}
 
+		.actions-extra {
+			display: grid;
+			margin-top: 0;
+			grid-template-areas:
+				"action_cmd ."
+				"shift shift"
+				". .";
+
+			.action_cmd {
+				grid-area: action_cmd;
+			}
+
+			.action_shift {
+				grid-area: shift;
+				text-align: left;
+				padding: 0 10px;
+			}
+		}
+
 		.actions-display {
 			display: grid;
 			grid-template-areas:

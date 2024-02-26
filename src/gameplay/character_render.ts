@@ -50,7 +50,7 @@ export default class CharacterRender {
         this.current_animation_name = null;
         this.character_x_rot = 0;
 
-        this.ui_interact_sprite = await this.scene_render.makeSprite("DPAD_up");
+        this.ui_interact_sprite = await this.scene_render.makeSprite("keyboard_arrows_up_outline");
         (this.ui_interact_sprite as any).position.y = 1.5;
         this.character_scene.add(this.ui_interact_sprite);
         this.character_scene.visible = this.draw_character_mesh;
