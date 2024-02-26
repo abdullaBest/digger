@@ -24,6 +24,7 @@ enum SceneEditToolMode {
 	TILE_DRAW = 4,
 	TILE_ERASE = 5,
 	WIRES = 6,
+	DRAGNSTICK = 7,
 }
 
 class SceneEditTools {
@@ -54,6 +55,8 @@ class SceneEditTools {
 	editmode: SceneEditToolMode;
 
 	private cube: THREE.Mesh;
+
+	picked_object: THREE.Object3D;
 
 	constructor(
 		scene_render: SceneRender,
@@ -111,6 +114,7 @@ class SceneEditTools {
 			localMouse.x = ev.clientX;
 			localMouse.y = ev.clientY;
 			this.mousepressed = true;
+			this.onMouseDown(ev);
 		});
 		this.scene_render.canvas.addEventListener("mouseup", (ev: MouseEvent) => {
 			try {
@@ -201,11 +205,41 @@ class SceneEditTools {
 			this.mousepos_world.copy(pos);
 		}
 
+		this.movePickedObject();
 		this.moveWireDrag();
+	}
+
+	onMouseDown(ev: MouseEvent) {
+		if (ev.button !== 0) {
+			return;
+		}
+		const event = ev as any;
+		event.preventDefault();
+
+		const sidebar_box = this.getSidebarSize();
+		if (sidebar_box.containsPoint(this.mousepos_abs)) {
+			return;
+		}
+
+		// pick on scene
+		const object = this.pickObject(
+			this.mousepos,
+			this.scene_render.camera,
+			this.scene_render.scene.children,
+			this.scene_render.cache.objects
+		);
+
+		this.picked_object = object ?? null;
+		if (this.picked_object && this.editmode == SceneEditToolMode.DRAGNSTICK) {
+			this.scene_render.controls.enableRotate = false;
+		}
 	}
 
 	onMouseUp(ev: MouseEvent) {
 		this.finishWireDrag();
+		this.scene_render.controls.enableRotate = true;
+		this.savePickedObjectTransform();
+		this.picked_object = null;
 	}
 
 	onMouseClick(ev: MouseEvent) {
@@ -243,17 +277,9 @@ class SceneEditTools {
 			this.editmode == SceneEditToolMode.ROTATE ||
 			this.editmode == SceneEditToolMode.SCALE
 		) {
-			// pick on scene
-			const object = this.pickObject(
-				this.mousepos,
-				this.scene_render.camera,
-				this.scene_render.scene.children,
-				this.scene_render.cache.objects
-			);
-
-			if (object) {
-				printinfo("transform attached to " + object.name);
-				this.transform_controls.attach(object);
+			if (this.picked_object) {
+				printinfo("transform attached to " + this.picked_object.name);
+				this.transform_controls.attach(this.picked_object);
 			}
 		} else if (this.isInTileEditMode()) {
 			this.tilesetDraw();
@@ -368,6 +394,27 @@ class SceneEditTools {
 		this.transform_controls.attach(object);
 	}
 
+	syncComponentTransforms(id: string) {
+		const object = this.scene_render.cache.objects[id];
+		const instance = this.assets.matters.get(id);
+		const matter = (
+			instance.inherites
+				? this.assets.matters.get(instance.inherites)
+				: instance
+		) as AssetContentTypeComponent;
+
+		// only works with scene edit elements
+		if (!matter) {
+			return;
+		}
+
+		const pos_x = (object as any).position.x;
+		const pos_y = (object as any).position.y;
+		matter.pos_x = pos_x;
+		matter.pos_y = pos_y;
+		matter.matrix = object.matrixWorld.toArray();
+	}
+
 	step(dt: number) {
 		if (
 			this.transform_controls.object &&
@@ -423,38 +470,40 @@ class SceneEditTools {
 
 		this.editmode = mode;
 		this.cube.visible = false;
-		this.transform_controls.visible = true;
+		this.transform_controls.visible = false;
 
 		switch (mode) {
 			case SceneEditToolMode.DEFAULT:
 				break;
 			case SceneEditToolMode.TRANSLATE:
 				this.transform_controls?.setMode("translate");
+				this.transform_controls.visible = true;
 				break;
 			case SceneEditToolMode.ROTATE:
 				this.transform_controls?.setMode("rotate");
+				this.transform_controls.visible = true;
 				break;
 			case SceneEditToolMode.SCALE:
 				this.transform_controls?.setMode("scale");
+				this.transform_controls.visible = true;
 				break;
 			case SceneEditToolMode.TILE_DRAW:
-				this.transform_controls.visible = false;
 				this.cube.visible = true;
 				this.cube.material.color.set(0, 1, 0);
 				break;
 			case SceneEditToolMode.TILE_ERASE:
-				this.transform_controls.visible = false;
 				this.cube.material.color.set(1, 0, 0);
 				this.cube.visible = true;
 				break;
 			case SceneEditToolMode.WIRES:
 				this.setEditModeWires();
+			case SceneEditToolMode.DRAGNSTICK:
+				this.transform_controls.detach();
 				break;
 		}
 	}
 
 	setEditModeWires() {
-		this.transform_controls.visible = false;
 		const wires_edit_system = new SceneEditWireplugsSystem(
 			this.scene_render,
 			this.scene_core.matters
@@ -482,6 +531,50 @@ class SceneEditTools {
 				}
 			}
 		});
+	}
+
+	movePickedObject() {
+		if (!this.picked_object || this.editmode !== SceneEditToolMode.DRAGNSTICK) {
+			return;
+		}
+
+		const o = this.picked_object as any;
+		o.position.x = this.mousepos_world.x;
+		o.position.y = this.mousepos_world.y;
+
+		this.syncComponentTransforms(this.picked_object.name);
+	}
+
+	savePickedObjectTransform() {
+		if (!this.picked_object || this.editmode !== SceneEditToolMode.DRAGNSTICK) {
+			return;
+		}
+
+		this.readdComponent(this.picked_object.name);
+	}
+
+	readdComponent(id: string) : AssetContentTypeComponent | null {
+			//this.scene_map.refresh(id);
+			const instance = this.assets.matters.get(id);
+
+			// all transfroms attached to component instance initially
+			// changes has to be made in original component
+			const matter = instance.inherites
+				? this.assets.matters.get(instance.inherites)
+				: instance;
+			if (!matter) {
+				return null;
+			}
+
+			//this.scene_edit_tools.scene_map.refresh(id);
+
+			// remake component after each change
+			this.scene_core.remove(instance.id);
+			const ninstance = this.scene_core.add(
+				matter as AssetContentTypeComponent
+			);
+
+			return ninstance;
 	}
 
 	moveWireDrag() {

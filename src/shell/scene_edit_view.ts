@@ -198,6 +198,9 @@ export default class SceneEditView {
 		};
 
 		const edit_modes_elements = {
+			[SceneEditToolMode.DRAGNSTICK]: querySelector(
+				"#controls_mode_dragnstick"
+			),
 			[SceneEditToolMode.TRANSLATE]: querySelector(
 				"#controls_mode_transform_translate"
 			),
@@ -229,6 +232,7 @@ export default class SceneEditView {
 			);
 		};
 
+		addModeBtnListener(SceneEditToolMode.DRAGNSTICK);
 		addModeBtnListener(SceneEditToolMode.TRANSLATE);
 		addModeBtnListener(SceneEditToolMode.ROTATE);
 		addModeBtnListener(SceneEditToolMode.SCALE);
@@ -269,23 +273,7 @@ export default class SceneEditView {
 		tcontrols.addEventListener("objectChange", (e) => {
 			const object = e.target.object;
 			const id = object.name;
-			const instance = this.assets.matters.get(id);
-			const matter = (
-				instance.inherites
-					? this.assets.matters.get(instance.inherites)
-					: instance
-			) as AssetContentTypeComponent;
-
-			// only works with scene edit elements
-			if (!matter) {
-				return;
-			}
-
-			const pos_x = (object as any).position.x;
-			const pos_y = (object as any).position.y;
-			matter.pos_x = pos_x;
-			matter.pos_y = pos_y;
-			matter.matrix = object.matrixWorld.toArray();
+			this.scene_edit_tools.syncComponentTransforms(id);
 		});
 
 		tcontrols.addEventListener("object-changed", (e) => {
@@ -300,28 +288,12 @@ export default class SceneEditView {
 			}
 		});
 
-		tcontrols.addEventListener("mouseUp", async (e) => {
+		tcontrols.addEventListener("mouseUp", (e) => {
 			const object = e.target.object;
 			const id = object.name;
-			const instance = this.assets.matters.get(id);
 
-			// all transfroms attached to component instance initially
-			// changes has to be made in original component
-			const matter = instance.inherites
-				? this.assets.matters.get(instance.inherites)
-				: instance;
-			if (!matter) {
-				return;
-			}
-
-			// remake component after each change
-			this.scene_core.remove(instance.id);
-			const ninstance = await this.scene_core.add(
-				matter as AssetContentTypeComponent
-			);
-			if (ninstance) {
-				this.scene_edit_tools.attachTransformControls(ninstance.id);
-			}
+			const instance = this.scene_edit_tools.readdComponent(id);
+			this.scene_edit_tools.attachTransformControls(instance.id);
 		});
 	}
 

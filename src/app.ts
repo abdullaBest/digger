@@ -7,6 +7,8 @@ import {
 	EventListenerDetails,
 } from "./document";
 
+import { printinfo } from "./shell/infobox";
+
 class App {
 	private core: AppCore;
 	private shell: AppShell;
@@ -39,7 +41,7 @@ class App {
 	}
 
 	run() {
-		this.core.load();
+		this.core.load().then(() => printinfo("Loading done"));
 
 		this.active = true;
 

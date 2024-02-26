@@ -62,7 +62,16 @@ export default class SceneMap {
 		}
 	}
 
+	/*
+	 * Refreshes componend by readdint it
+	 */
+	refresh(id: string) {
+		this.scene_core.hide(id);
+		this.scene_core.show(id);
+	}
+
 	step(dt: number) {
+		// probably here is some memory leaking
 		if (this.render_tileset_system.tileset_render.clip_tiles_draw) {
 			this.render_tileset_system.tileset_render.update(
 				this.viewpoint_x,

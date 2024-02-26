@@ -91,6 +91,9 @@ class SceneRenderModelSystem extends MapSystem {
 	}
 
 	remove(component: AssetContentTypeModel) {
+		if (!this.filter(component)) {
+			return;
+		}
 		this.scene_render.removeObject(component.id);
 	}
 }
@@ -339,6 +342,9 @@ class SceneCore {
 	 */
 	hide(id: string) {
 		const component = this.components[id];
+		if (!component) {
+			return;
+		}
 		for (const key in component) {
 			if (component.is_link(key)) {
 				const _component = this.matters.get(component.get(key));
