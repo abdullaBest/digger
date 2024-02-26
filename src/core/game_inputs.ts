@@ -6,11 +6,11 @@ enum InputAction {
 	up = 1,
 	right = 2,
 	down = 3,
-	acion_a = 4,
-	acion_b = 5,
-	acion_c = 6,
-	acion_d = 7,
-	acion_f = 8,
+	action_a = 4,
+	action_b = 5,
+	action_c = 6,
+	action_d = 7,
+	action_f = 8,
 	action_shift = 9,
 	action_esc = 10,
 	action_cmd = 11,
@@ -61,16 +61,16 @@ class GameInputs {
 				this.events.emit("action_start", InputAction.down);
 				break;
 			case "Space":
-				this.events.emit("action_start", InputAction.acion_a);
+				this.events.emit("action_start", InputAction.action_a);
 				break;
 			case "KeyA":
-				this.events.emit("action_start", InputAction.acion_b);
+				this.events.emit("action_start", InputAction.action_b);
 				break;
 			case "KeyW":
-				this.events.emit("action_start", InputAction.acion_c);
+				this.events.emit("action_start", InputAction.action_c);
 				break;
 			case "KeyS":
-				this.events.emit("action_start", InputAction.acion_d);
+				this.events.emit("action_start", InputAction.action_d);
 				break;
 			case "ShiftLeft":
 				this.events.emit("action_start", InputAction.action_shift);
@@ -104,16 +104,16 @@ class GameInputs {
 				this.events.emit("action_end", InputAction.down);
 				break;
 			case "Space":
-				this.events.emit("action_end", InputAction.acion_a);
+				this.events.emit("action_end", InputAction.action_a);
 				break;
 			case "KeyA":
-				this.events.emit("action_end", InputAction.acion_b);
+				this.events.emit("action_end", InputAction.action_b);
 				break;
 			case "KeyW":
-				this.events.emit("action_end", InputAction.acion_c);
+				this.events.emit("action_end", InputAction.action_c);
 				break;
 			case "KeyS":
-				this.events.emit("action_end", InputAction.acion_d);
+				this.events.emit("action_end", InputAction.action_d);
 				break;
 			case "ShiftLeft":
 				this.events.emit("action_end", InputAction.action_shift);

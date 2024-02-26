@@ -1,6 +1,19 @@
 tab#play-tab.size-fill.hidden.display-block
 	container#gameroot.size-fill.display-block
 		container#gameui.size-fill.flex-column.position-absolute.z-index-1
+			#controlshelp
+				.actions-display
+					.key.action_a
+					.key.action_b A
+					.key.action_c W
+					.key.action_d.muted S
+					.key.key_e.muted E
+					.key.key_d.muted D
+				.arrows-display
+					.key.up
+					.key.left
+					.key.down
+					.key.right
 			page#gameloadingpage.size-fill.flex-column
 				progressbar#gameloadingbar
 			page#gamehud.padding-minor
@@ -9,6 +22,7 @@ tab#play-tab.size-fill.hidden.display-block
 				h1 digger v0
 				btn(data-action="play")
 				btn(data-action="credits")
+
 			page#gamelevelselectmenu.flex-column.margin-auto.menu-style
 				h1 select level
 				container#levelselectoptions

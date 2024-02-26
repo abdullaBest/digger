@@ -540,16 +540,16 @@ export default class SceneDiggerGame {
 			case InputAction.action_shift:
 				this.player_character.actionRequest("run", code);
 				break;
-			case InputAction.acion_a:
+			case InputAction.action_a:
 				this.player_character.actionRequest("jump", code);
 				break;
-			case InputAction.acion_b:
+			case InputAction.action_b:
 				this.player_character.actionRequest("hit", code);
 				break;
-			case InputAction.acion_c:
+			case InputAction.action_c:
 				this.player_character.actionRequest("hook", code);
 				break;
-			case InputAction.acion_d:
+			case InputAction.action_d:
 				if (code == CharacterActionCode.START) {
 					this.step(0.016, true);
 				}

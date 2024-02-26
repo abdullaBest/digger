@@ -62,6 +62,7 @@ class MenuControls {
 class GameHud {
 	healthbar: HTMLElement;
 	game: AppGame;
+	controlshelp: HTMLElement;
 
 	constructor(game: AppGame) {
 		this.game = game;
@@ -69,6 +70,7 @@ class GameHud {
 
 	init() {
 		this.healthbar = querySelector("#gamehud #healthbar");
+		this.controlshelp = querySelector("#controlshelp");
 	}
 
 	step(dt: number) {
@@ -81,6 +83,12 @@ class GameHud {
 			character.health * 100 + "%"
 		);
 	}
+
+	_highlight_help_controls(act: InputAction, start: boolean) {
+		const el = this.controlshelp.querySelector("." + InputAction[act]);
+		el?.classList[start ? "add" : "remove"]("highlighted");
+	}
+
 }
 
 export default class GameShell {
@@ -93,6 +101,7 @@ export default class GameShell {
 
 	menucontrols: MenuControls;
 	menus_history: Array<string>;
+	menu_page: string;
 	active: boolean;
 
 	constructor(core: AppCore, game: AppGame) {
@@ -116,7 +125,13 @@ export default class GameShell {
 			this.show();
 		});
 
-		this.game.inputs.events.on("action_start", this._action.bind(this));
+		this.game.inputs.events.on("action_start", (act: InputAction) => {
+			this._action(act);
+			this.gamehud._highlight_help_controls(act, true);
+		});
+		this.game.inputs.events.on("action_end", (act: InputAction) => {
+			this.gamehud._highlight_help_controls(act, false);
+		});
 
 		this.game.scene_game.events.on("gameover", () => {
 			this.page("gameovermenu");
@@ -159,7 +174,7 @@ export default class GameShell {
 			case InputAction.down:
 				this.menucontrols.next();
 				break;
-			case InputAction.acion_a:
+			case InputAction.action_a:
 				this._menu_action(this.menucontrols.get_selected());
 				break;
 			case InputAction.action_esc:
@@ -253,6 +268,8 @@ export default class GameShell {
 		if (this.get_page() === id) {
 			return;
 		}
+
+		this.menu_page = id;
 
 		this.menus_history.push(id);
 

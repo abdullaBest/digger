@@ -7,6 +7,7 @@ import {
 import { AssetContentTypeComponent } from "./assets";
 import { RenderTilesetSystem } from "../systems/tileset_render_system";
 import { printerror } from "../shell/infobox";
+import logger from "../core/logger";
 
 export default class SceneMap {
 	scene_core: SceneCore;
@@ -39,6 +40,7 @@ export default class SceneMap {
 		component: AssetContentTypeComponent,
 		owner?: AssetContentTypeComponent
 	) {
+		logger.log(`SceneMap: Adding component #${component.id} (${component.name})`)
 		await this.scene_core.load(component);
 		return this.scene_core.add(component, owner);
 	}

@@ -4,6 +4,7 @@ import {
 	AssetContentTypeTexture,
 	Assets,
 } from "../app/assets.js";
+import logger from "../core/logger";
 import { GLTFLoader } from "../lib/GLTFLoader.js";
 import * as SkeletonUtils from "../lib/SkeletonUtils.js";
 import * as THREE from "../lib/three.module.js";
@@ -20,9 +21,10 @@ export default class SceneRenderLoader {
 	}
 
 	async loadModel(model: AssetContentTypeModel): Promise<void> {
-		const gltfurl = (
-			this.assets.matters.get(model.gltf) as AssetContentTypeGltf
-		).url;
+		const gltf_matter = this.assets.matters.get(
+			model.gltf
+		) as AssetContentTypeGltf;
+		const gltfurl = gltf_matter.url;
 		const textureurl = (
 			this.assets.matters.get(model.texture) as AssetContentTypeTexture
 		).url;
@@ -64,8 +66,9 @@ export default class SceneRenderLoader {
 			}
 
 			// 2. Loads model dependencies. Replaces it with custom path
-			// Works with model names so this could produce errors if name was changed on assets base
-			console.warn(
+			// Works with model names so this could produce errors if name was changed
+			// on assets base
+			logger.warn(
 				`SceneRender::loadGltf: gltf ${url} has internal '${path}' dependency. Please reimport`
 			);
 
@@ -78,6 +81,9 @@ export default class SceneRenderLoader {
 				url,
 				async (gltf) => {
 					this.cache.gltfs[id] = gltf;
+					logger.log(
+						`SceneRenderLoader: gltf ${id} (${this.assets.matters.get(id)?.name}) loaded`
+					);
 					resolve(gltf);
 				},
 				undefined,
@@ -98,6 +104,11 @@ export default class SceneRenderLoader {
 		texture.colorSpace = THREE.SRGBColorSpace;
 		texture.flipY = flipY;
 		this.cache.textures[id] = texture;
+		logger.log(
+			`SceneRenderLoader: texture ${id} (${
+				this.assets.matters.get(id)?.name
+			}) loaded`
+		);
 	}
 
 	getTexture(id: string) {
@@ -207,9 +218,9 @@ function dumpObject(
 ) {
 	const localPrefix = isLast ? "└─" : "├─";
 	lines.push(
-		`${prefix}${prefix ? localPrefix : ""}${obj.name || "*no-name*"} [${
-			obj.type
-		}]`
+		`${prefix}${prefix ? localPrefix : ""}${
+			obj.name || "*no-name*"
+		} [${obj.type}]`
 	);
 	const newPrefix = prefix + (isLast ? "  " : "│ ");
 	const lastNdx = obj.children.length - 1;

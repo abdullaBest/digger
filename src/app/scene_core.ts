@@ -1,3 +1,4 @@
+import logger from "../core/logger";
 import SceneRender from "../render/scene_render";
 import SceneRenderLoader from "../render/scene_render_loader";
 import {
@@ -202,6 +203,7 @@ class SceneCore {
 	}
 
 	async load(component: AssetContentTypeComponent) {
+		logger.log(`SceneCore: Loading component #${component.id} (${component.name})`)
 		const promises: Array<Promise<any>> = [];
 		this.matters.traverse(
 			component.id,
