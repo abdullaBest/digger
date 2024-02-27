@@ -587,7 +587,6 @@ class SceneEditTools {
 				intersection = object_b;
 				box_b.copy(box_tmp);
 				min_dist = dist_to;
-				break;
 			}
 		}
 
@@ -596,7 +595,6 @@ class SceneEditTools {
 			const center_a = box.getCenter(this.scene_render.cache.vec3_0);
 			const center_b = box_b.getCenter(this.scene_render.cache.vec3_1);
 			const delta = center_a.sub(center_b);
-			console.log(delta);
 
 			// x > y means it gonna be aligned by y and sticked by x
 			if (Math.abs(delta.x) > Math.abs(delta.y)) {
