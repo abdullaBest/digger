@@ -5,6 +5,7 @@ import { MapTilesetSystem } from "./map_tileset_system";
 import SceneEditWireplugsSystem from "./scene_edit_wireplugs_system";
 import SceneWireplugsSystem from "./scene_wireplugs_system";
 import SceneControllersSystem from "./scene_controllers_system";
+import MapDebugRenderCollidersSystem from "./map_debug_render_colliders_system";
 
 export {
 	MapSystem,
@@ -13,5 +14,6 @@ export {
 	MapTilesetSystem,
 	SceneWireplugsSystem,
 	SceneEditWireplugsSystem,
-	SceneControllersSystem
+	SceneControllersSystem,
+	MapDebugRenderCollidersSystem
 };

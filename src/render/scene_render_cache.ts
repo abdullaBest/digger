@@ -1,5 +1,5 @@
 
-import { Vector2, Vector3, Material, Texture, Mesh, Object3D, Box2 } from '../lib/three.module.js';
+import { Vector2, Vector3, Material, Texture, Mesh, Object3D, Box2, Box3 } from '../lib/three.module.js';
 
 export default class SceneRenderCache {
     constructor() {
@@ -7,6 +7,9 @@ export default class SceneRenderCache {
         this.vec3_0 = new Vector3();
         this.vec3_1 = new Vector3();
         this.box2_0 = new Box2();
+        this.box3_0 = new Box3();
+        this.box3_1 = new Box3();
+        this.box3_2 = new Box3();
         this.gltfs = {};
         this.objects = {};
         this.materials = {};
@@ -20,6 +23,9 @@ export default class SceneRenderCache {
     vec3_1: Vector3;
 
     box2_0: Box2;
+    box3_0: Box3;
+    box3_1: Box3;
+    box3_2: Box3;
 
     // used for gltfs cache
     gltfs: { [id: string] : any; };

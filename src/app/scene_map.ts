@@ -3,6 +3,7 @@ import {
 	SceneControllersSystem,
 	SceneWireplugsSystem,
 	MapEvent,
+	MapDebugRenderCollidersSystem,
 } from "../systems";
 import { AssetContentTypeComponent } from "./assets";
 import { RenderTilesetSystem } from "../systems/tileset_render_system";
@@ -34,13 +35,16 @@ export default class SceneMap {
 			"controllers",
 			new SceneControllersSystem(this.scene_core)
 		);
+		this.debugColliders(true);
 	}
 
 	async add(
 		component: AssetContentTypeComponent,
 		owner?: AssetContentTypeComponent
 	) {
-		logger.log(`SceneMap: Adding component #${component.id} (${component.name})`)
+		logger.log(
+			`SceneMap: Adding component #${component.id} (${component.name})`
+		);
 		await this.scene_core.load(component);
 		return this.scene_core.add(component, owner);
 	}
@@ -92,5 +96,26 @@ export default class SceneMap {
 			this.viewpoint_x,
 			this.viewpoint_y
 		);
+	}
+
+	debugColliders(show: boolean) {
+		const name = "debug_colliders";
+		if (show) {
+			if (this.scene_core.systems[name]) {
+				return;
+			}
+			this.scene_core.addSystem(
+				name,
+				new MapDebugRenderCollidersSystem(
+					this.scene_core.scene_collisions,
+					this.scene_core.scene_render
+				)
+			);
+		} else {
+			if (!this.scene_core.systems[name]) {
+				return;
+			}
+			this.scene_core.removeSystem(name);
+		}
 	}
 }

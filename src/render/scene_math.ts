@@ -72,8 +72,8 @@ export default class SceneMath {
             if (box && _box) {
                 box.min.x = Math.min(box.min.x, _box.min.x)
                 box.min.y = Math.min(box.min.y, _box.min.y)
-                box.max.x = Math.min(box.max.x, _box.max.x)
-                box.max.y = Math.min(box.max.y, _box.max.y)
+                box.max.x = Math.max(box.max.x, _box.max.x)
+                box.max.y = Math.max(box.max.y, _box.max.y)
             } 
         });
 

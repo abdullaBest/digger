@@ -394,6 +394,9 @@ class SceneEditTools {
 		this.transform_controls.attach(object);
 	}
 
+	/**
+	 * Stores object transforms into asset data
+	 */
 	syncComponentTransforms(id: string) {
 		const object = this.scene_render.cache.objects[id];
 		const instance = this.assets.matters.get(id);
@@ -472,6 +475,12 @@ class SceneEditTools {
 		this.cube.visible = false;
 		this.transform_controls.visible = false;
 
+		// it has to be removed cause drag logic iterates all meshes on scene
+		// this could cause intersecting with wrong objects
+		this.scene_map.debugColliders(
+			this.editmode !== SceneEditToolMode.DRAGNSTICK
+		);
+
 		switch (mode) {
 			case SceneEditToolMode.DEFAULT:
 				break;
@@ -538,9 +547,74 @@ class SceneEditTools {
 			return;
 		}
 
-		const o = this.picked_object as any;
-		o.position.x = this.mousepos_world.x;
-		o.position.y = this.mousepos_world.y;
+		const object = this.picked_object as any;
+		object.position.x = this.mousepos_world.x;
+		object.position.y = this.mousepos_world.y;
+
+		// this operations stupidly slow. Should be refactored
+		const box = this.scene_render.cache.box3_0;
+		box.makeEmpty();
+		box.expandByObject(this.picked_object, true);
+
+		let intersection: THREE.Object3D | null = null;
+		const box_b = this.scene_render.cache.box3_1;
+		let min_dist = Infinity;
+
+		// find out what picked object intersects with
+		for (const k in this.scene_render.cache.objects) {
+			if (this.picked_object.id == k) {
+				continue;
+			}
+			const object_b = this.scene_render.cache.objects[k];
+
+			const box_tmp = this.scene_render.cache.box3_2;
+			box_tmp.makeEmpty();
+			object_b.traverse((o) => {
+				if (!o.isMesh || this.picked_object.getObjectById(o.id)) {
+					return;
+				}
+				const geometry = o.geometry;
+				geometry.computeBoundingBox();
+				geometry.boundingBox.applyMatrix4(o.matrixWorld);
+				box_tmp.union(geometry.boundingBox);
+			});
+
+			const dist_to = object.position.distanceTo(object_b.position);
+			if (
+				box.intersectsBox(box_tmp) &&
+				min_dist > dist_to
+			) {
+				intersection = object_b;
+				box_b.copy(box_tmp);
+				min_dist = dist_to;
+				break;
+			}
+		}
+
+		if (intersection) {
+			// find intersection depth and direction
+			const center_a = box.getCenter(this.scene_render.cache.vec3_0);
+			const center_b = box_b.getCenter(this.scene_render.cache.vec3_1);
+			const delta = center_a.sub(center_b);
+			console.log(delta);
+
+			// x > y means it gonna be aligned by y and sticked by x
+			if (Math.abs(delta.x) > Math.abs(delta.y)) {
+				object.position.y = center_b.y;
+
+				const halfsize_a = (box.max.x - box.min.x) / 2;
+				const halfsize_b = (box_b.max.x - box_b.min.x) / 2;
+				object.position.x =
+					center_b.x + (halfsize_a + halfsize_b) * Math.sign(delta.x);
+			} else {
+				object.position.x = center_b.x;
+
+				const halfsize_a = (box.max.y - box.min.y) / 2;
+				const halfsize_b = (box_b.max.y - box_b.min.y) / 2;
+				object.position.y =
+					center_b.y + (halfsize_a + halfsize_b) * Math.sign(delta.y);
+			}
+		}
 
 		this.syncComponentTransforms(this.picked_object.name);
 	}
@@ -551,30 +625,6 @@ class SceneEditTools {
 		}
 
 		this.readdComponent(this.picked_object.name);
-	}
-
-	readdComponent(id: string) : AssetContentTypeComponent | null {
-			//this.scene_map.refresh(id);
-			const instance = this.assets.matters.get(id);
-
-			// all transfroms attached to component instance initially
-			// changes has to be made in original component
-			const matter = instance.inherites
-				? this.assets.matters.get(instance.inherites)
-				: instance;
-			if (!matter) {
-				return null;
-			}
-
-			//this.scene_edit_tools.scene_map.refresh(id);
-
-			// remake component after each change
-			this.scene_core.remove(instance.id);
-			const ninstance = this.scene_core.add(
-				matter as AssetContentTypeComponent
-			);
-
-			return ninstance;
 	}
 
 	moveWireDrag() {
@@ -667,6 +717,31 @@ class SceneEditTools {
 		change(component);
 
 		return this.scene_core.add(b as AssetContentTypeComponent);
+	}
+
+	/**
+	 * Simple recreates component
+	 */
+	readdComponent(id: string): AssetContentTypeComponent | null {
+		//this.scene_map.refresh(id);
+		const instance = this.assets.matters.get(id);
+
+		// all transfroms attached to component instance initially
+		// changes has to be made in original component
+		const matter = instance.inherites
+			? this.assets.matters.get(instance.inherites)
+			: instance;
+		if (!matter) {
+			return null;
+		}
+
+		//this.scene_edit_tools.scene_map.refresh(id);
+
+		// remake component after each change
+		this.scene_core.remove(instance.id);
+		const ninstance = this.scene_core.add(matter as AssetContentTypeComponent);
+
+		return ninstance;
 	}
 
 	async finishWireDrag(from?: string, to?: string) {

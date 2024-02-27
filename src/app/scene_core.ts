@@ -14,7 +14,6 @@ import {
 } from "./assets";
 import SceneMath from "../render/scene_math";
 import { MapSystem, MapEvent, MapEventCode, MapTilesetSystem } from "../systems";
-import MapDebugRenderCollidersSystem from "../systems/map_debug_render_colliders_system";
 import ModelAnimatorRenderSystem from "../systems/model_animator_render_system";
 
 /**
@@ -193,10 +192,6 @@ class SceneCore {
 			animator: new ModelAnimatorRenderSystem(this.scene_render),
 			component: new SceneRenderComponentSystem(this.scene_render),
 			collider: new SceneCollidersSystem(
-				this.scene_collisions,
-				this.scene_render
-			),
-			debug_colliders: new MapDebugRenderCollidersSystem(
 				this.scene_collisions,
 				this.scene_render
 			),
