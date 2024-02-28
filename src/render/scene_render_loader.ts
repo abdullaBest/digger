@@ -36,12 +36,35 @@ export default class SceneRenderLoader {
 		}
 
 		if (!this.cache.gltfs[model.gltf]) {
-			await this.loadGltf(gltfurl, model.gltf);
+			await this.cacheGltf(gltf_matter, model.gltf);
 		}
 
 		if (!this.cache.textures[textureurl]) {
 			await this.loadTexture(textureurl, model.texture);
 		}
+	}
+
+	/**
+	 * Parses and stores already loaded gltf
+	 */
+	cacheGltf(data: any, id: string) : Promise<any> {
+		if (this.cache.gltfs[id]) {
+			return this.cache.gltfs[id];
+		}
+
+
+		const loader = new GLTFLoader();
+
+		// temporarly stores promise into cache
+		return this.cache.gltfs[id] = new Promise((resolve, reject) => {
+			loader.parse(data, ".", (gltf) => {
+					this.cache.gltfs[id] = gltf;
+					logger.log(
+						`SceneRenderLoader: gltf ${id} (${data.name}) cached`
+					);
+					resolve(gltf);
+			}, reject);
+		});
 	}
 
 	async loadGltf(url: string, id: string) {
