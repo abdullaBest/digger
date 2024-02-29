@@ -39,7 +39,8 @@ class SceneRenderComponentSystem extends MapSystem {
 			return;
 		}
 
-		return;
+		// should disable it. no need, only affect performance.
+		// Only one class repends on that ghost objects - SceneEditWireplugsSystem 
 		const parent = (owner && this.scene_render.cache.objects[owner.id]) ?? null;
 		const obj = this.scene_render.addEmptyObject(component.id, parent);
 		if (
