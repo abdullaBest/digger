@@ -1,3 +1,3 @@
-import { querySelector, addEventListener, removeEventListeners, listenClick, reattach, EventListenerDetails } from "./utils"
+import { createElement, querySelector, addEventListener, removeEventListeners, listenClick, reattach, EventListenerDetails } from "./utils"
 
-export { querySelector, addEventListener, removeEventListeners, listenClick, reattach, EventListenerDetails };
+export { createElement, querySelector, addEventListener, removeEventListeners, listenClick, reattach, EventListenerDetails };

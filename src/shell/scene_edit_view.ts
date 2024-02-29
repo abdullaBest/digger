@@ -1,6 +1,7 @@
 import AssetsLibraryView from "./assets_library_view";
 import {
 	querySelector,
+	createElement,
 	listenClick,
 	addEventListener,
 	EventListenerDetails,
@@ -371,6 +372,27 @@ export default class SceneEditView {
 				_m.id,
 				this.container_list
 			);
+
+			const btns = createElement("flex-row buttons-list-s1");
+			entry.appendChild(btns);
+			btns.appendChild(createElement("img-delete fittext", "del", "btn"));
+			listenClick(btns, (ev) => {
+				const target = ev.target as HTMLElement;
+				const id = target?.id;
+				switch (id) {
+					case "del":
+						if (
+							this.assets_library_view._deleteComponentSequence(
+								_m as AssetContentTypeComponent,
+								[matter.id]
+							)
+						) {
+							delete matter[k];
+							entry.parentElement.removeChild(entry);
+						}
+						break;
+				}
+			});
 		}
 
 		this.assets_library_view.renderAsset(id);

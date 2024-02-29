@@ -1,4 +1,9 @@
-import { Assets, Asset, sendFiles, AssetContentTypeComponent } from "../app/assets";
+import {
+	Assets,
+	Asset,
+	sendFiles,
+	AssetContentTypeComponent,
+} from "../app/assets";
 import { querySelector, listenClick, EventListenerDetails } from "../document";
 import InspectorMatters from "./inspector_matters";
 import {
@@ -16,6 +21,7 @@ import { Matter } from "../core/matters";
  */
 export default class AssetsLibraryView {
 	asset_selected: Asset;
+	asset_rendered: Asset;
 	assets: Assets;
 	container_list: HTMLElement;
 	container_preview_render: HTMLElement;
@@ -144,7 +150,7 @@ export default class AssetsLibraryView {
 				});
 				const link_id = "**" + modeid;
 				await this._createComponent("model_ninestack", {
-					type: "model_ninestack", 
+					type: "model_ninestack",
 					inherites: "base_asset_type_component",
 					abstract: true,
 					model_tl: link_id,
@@ -516,16 +522,24 @@ export default class AssetsLibraryView {
 		return id;
 	}
 
-	async _wipeAsset(id: string) {
+	async _wipeAsset(id: string): Promise<boolean> {
 		this.scene_map.cleanup();
 		await this.assets.wipeAsset(id);
 		const el = this.container_list.querySelector("#" + id) as HTMLElement;
 		if (el) {
 			el.parentElement?.removeChild(el);
 		}
+
+		return true;
 	}
 
-	async _deleteComponentSequence(component: AssetContentTypeComponent) {
+	async _deleteComponentSequence(
+		component: AssetContentTypeComponent,
+		ignorelist: Array<string> = []
+	): Promise<boolean> {
+		// scene cleaned up and all instances removed
+		this.scene_map.cleanup();
+
 		if (component && component.dependents) {
 			Popup.instance
 				.show()
@@ -533,18 +547,22 @@ export default class AssetsLibraryView {
 					"delete error",
 					`Asset ${component.id} has ${component.dependents} dependents. Could not delete`
 				);
-			return;
+
+			this.renderAsset(this.asset_rendered.id);
+			return false;
 		}
 
 		const links: Array<string> = [];
 		for (const k in this.assets.matters.list) {
 			const m = this.assets.matters.list[k];
+			if (ignorelist.includes(k)) {
+				continue;
+			}
 			for (const kk in m) {
 				const val = m[kk];
 				if (
-					typeof val === "string" &&
-					val.startsWith("**") &&
-					val.substring(2) === component.id
+					m.is_link(kk) &&
+					this.assets.matters.get(kk)?.id === component.id
 				) {
 					links.push(m.id);
 				}
@@ -557,7 +575,9 @@ export default class AssetsLibraryView {
 			return;
 		}
 		await Popup.instance.show().message("delete?", "");
-		return this._wipeAsset(component.id);
+		await this._wipeAsset(component.id);
+
+		this.renderAsset(this.asset_rendered.id);
 	}
 
 	listAsset(id: string, container: HTMLElement = this.container_list) {
@@ -632,7 +652,6 @@ export default class AssetsLibraryView {
 		if (this.asset_selected) {
 			sectionel.classList.remove("type-" + this.asset_selected.info.extension);
 		}
-
 
 		const container = querySelector("#assets-library-details content");
 
@@ -841,6 +860,7 @@ export default class AssetsLibraryView {
 
 		const asset = this.assets.get(id);
 		const matter = this.assets.matters.get(id);
+		this.asset_rendered = asset;
 
 		if (asset.info.extension == "gltf") {
 			this.container_preview_render.classList.remove("hidden");

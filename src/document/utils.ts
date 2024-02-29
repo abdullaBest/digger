@@ -4,45 +4,80 @@
 
 import { EventListenerDetails } from "../core/events";
 
-export function querySelector(query: string, root: HTMLElement = document.body) : HTMLElement {
-    const element = root.querySelector(query) as HTMLElement;
-    if (!element) { throw new Error("can't find element matching query " + query); }
-    return element;
+export function querySelector(
+	query: string,
+	root: HTMLElement = document.body
+): HTMLElement {
+	const element = root.querySelector(query) as HTMLElement;
+	if (!element) {
+		throw new Error("can't find element matching query " + query);
+	}
+	return element;
 }
 
-
 /**
- * 
+ *
  * @param opts event listener properties
  * @param list array list to append properties to
  * @returns listened event properties
  */
-export function addEventListener(opts: EventListenerDetails, list?: Array<EventListenerDetails>) : EventListenerDetails {
-    opts.node.addEventListener(opts.name, opts.callback);
-    list?.push(opts);
+export function addEventListener(
+	opts: EventListenerDetails,
+	list?: Array<EventListenerDetails>
+): EventListenerDetails {
+	opts.node.addEventListener(opts.name, opts.callback);
+	list?.push(opts);
 
-    return opts;
+	return opts;
+}
+
+/**
+ * @param type {string} element TAG
+ * @param classes {string} space-separated list of classes
+ */
+export function createElement(
+	classes: string,
+	id?: string,
+	type?: string
+): HTMLElement {
+	const el = document.createElement(type ?? "div");
+	if (id) {
+		el.id = id;
+	}
+	el.classList.add(...classes.split(" "));
+
+	return el;
 }
 
 export function removeEventListeners(list: Array<EventListenerDetails>) {
-    while(list.length) {
-        const l = list.pop();
-        l?.node?.removeEventListener(l.name, l.callback);
-    }
+	while (list.length) {
+		const l = list.pop();
+		l?.node?.removeEventListener(l.name, l.callback);
+	}
 }
 
-
-export function listenClick(selector: string | HTMLElement, callback: (event: MouseEvent) => any, list?: Array<EventListenerDetails>, container?: HTMLElement) : EventListenerDetails {
-    const node = typeof selector === "string" ? querySelector(selector, container) : selector;
-    return addEventListener({node, callback: callback as any, name: "click"}, list)
+export function listenClick(
+	selector: string | HTMLElement,
+	callback: (event: MouseEvent) => any,
+	list?: Array<EventListenerDetails>,
+	container?: HTMLElement
+): EventListenerDetails {
+	const node =
+		typeof selector === "string"
+			? querySelector(selector, container)
+			: selector;
+	return addEventListener(
+		{ node, callback: callback as any, name: "click" },
+		list
+	);
 }
 
 export function reattach(element: Element, container: Element) {
-    if(element.parentElement == container) {
-        return;
-    }
-    element.parentElement?.removeChild(element);
-    container.appendChild(element);
+	if (element.parentElement == container) {
+		return;
+	}
+	element.parentElement?.removeChild(element);
+	container.appendChild(element);
 }
 
 export { EventListenerDetails };
