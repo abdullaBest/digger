@@ -17,7 +17,7 @@ import { MapSystem, MapEvent, MapEventCode, MapTilesetSystem } from "../systems"
 import ModelAnimatorRenderSystem from "../systems/model_animator_render_system";
 
 /**
- * Just creates empties. Disabled
+ * Just creates empties. 
  */
 class SceneRenderComponentSystem extends MapSystem {
 	private scene_render: SceneRender;

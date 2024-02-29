@@ -540,44 +540,49 @@ export default class AssetsLibraryView {
 		// scene cleaned up and all instances removed
 		this.scene_map.cleanup();
 
-		if (component && component.dependents) {
-			Popup.instance
-				.show()
-				.message(
-					"delete error",
-					`Asset ${component.id} has ${component.dependents} dependents. Could not delete`
-				);
+		try {
+			if (component && component.dependents) {
+				await Popup.instance
+					.show()
+					.message(
+						"delete error",
+						`Asset ${component.id} has ${component.dependents} dependents. Could not delete`
+					);
 
-			this.renderAsset(this.asset_rendered.id);
-			return false;
-		}
-
-		const links: Array<string> = [];
-		for (const k in this.assets.matters.list) {
-			const m = this.assets.matters.list[k];
-			if (ignorelist.includes(k)) {
-				continue;
+				return false;
 			}
-			for (const kk in m) {
-				const val = m[kk];
-				if (
-					m.is_link(kk) &&
-					this.assets.matters.get(kk)?.id === component.id
-				) {
-					links.push(m.id);
+
+			const links: Array<string> = [];
+			for (const k in this.assets.matters.list) {
+				const m = this.assets.matters.list[k];
+				if (ignorelist.includes(k)) {
+					continue;
+				}
+				for (const kk in m) {
+					const val = m[kk];
+					if (
+						m.is_link(kk) &&
+						this.assets.matters.get(kk)?.id === component.id
+					) {
+						links.push(m.id);
+					}
 				}
 			}
-		}
-		if (links.length) {
-			let message = `<q>Asset ${component.id} referensed in [${links}] assets. Could not delete.</q>`;
+			if (links.length) {
+				let message = `<q>Asset ${component.id} referensed in [${links}] assets. Could not delete.</q>`;
 
-			Popup.instance.show().message("delete error", message);
-			return;
+				Popup.instance.show().message("delete error", message);
+				return false;
+			}
+			await Popup.instance.show().message("delete?", "");
+			await this._wipeAsset(component.id);
+		} catch (err) {
+			throw err;
+		} finally {
+			this.renderAsset(this.asset_rendered.id);
 		}
-		await Popup.instance.show().message("delete?", "");
-		await this._wipeAsset(component.id);
 
-		this.renderAsset(this.asset_rendered.id);
+		return true;
 	}
 
 	listAsset(id: string, container: HTMLElement = this.container_list) {

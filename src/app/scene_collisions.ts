@@ -248,7 +248,7 @@ class SceneCollisions {
 		for (const k in this.colliders) {
 			const collider = this.colliders[k];
 			const contact = this.cache.cr_0;
-			if (this.detailedAABBCollision(body.collider, collider, contact)) {
+			if (this.detailedAABBCollision(body.collider, collider, contact, 1e-4)) {
 				const c = body.contacts_list[body.contacts];
 				if (!c) {
 					break;
@@ -395,7 +395,8 @@ class SceneCollisions {
 	detailedAABBCollision(
 		a: BoxColliderC,
 		b: BoxColliderC,
-		ret: CollisionResult
+		ret: CollisionResult,
+		threshold: number = 0
 	): boolean {
 		ret.normal_x = 0;
 		ret.normal_y = 0;
@@ -410,9 +411,9 @@ class SceneCollisions {
 		const d2x = a._left - b._right;
 		const d2y = a._bottom - b._top;
 
-		if (d1x > 0.0 || d1y > 0.0) return false;
+		if (d1x > threshold || d1y > threshold) return false;
 
-		if (d2x > 0.0 || d2y > 0.0) return false;
+		if (d2x > threshold || d2y > threshold) return false;
 
 		const x = -Math.max(d1x, d2x);
 		const y = -Math.max(d1y, d2y);

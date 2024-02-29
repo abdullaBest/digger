@@ -376,13 +376,13 @@ export default class SceneEditView {
 			const btns = createElement("flex-row buttons-list-s1");
 			entry.appendChild(btns);
 			btns.appendChild(createElement("img-delete fittext", "del", "btn"));
-			listenClick(btns, (ev) => {
+			listenClick(btns, async (ev) => {
 				const target = ev.target as HTMLElement;
 				const id = target?.id;
 				switch (id) {
 					case "del":
 						if (
-							this.assets_library_view._deleteComponentSequence(
+							await this.assets_library_view._deleteComponentSequence(
 								_m as AssetContentTypeComponent,
 								[matter.id]
 							)
