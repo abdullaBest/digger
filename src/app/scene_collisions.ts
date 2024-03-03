@@ -116,6 +116,7 @@ interface CollisionResult {
 	normal_y: number;
 	point_x: number;
 	point_y: number;
+	distance: number;
 	hit: boolean;
 	time: number;
 	id: string | null;
@@ -130,6 +131,7 @@ class CollidersCache {
 	contacts: Array<CollisionResult>;
 	constructor() {
 		this.cr_0 = {
+			distance: 0,
 			point_x: 0,
 			point_y: 0,
 			hit: false,
@@ -249,14 +251,40 @@ class SceneCollisions {
 			const collider = this.colliders[k];
 			const contact = this.cache.cr_0;
 			if (this.detailedAABBCollision(body.collider, collider, contact, 1e-4)) {
-				const c = body.contacts_list[body.contacts];
+				let c = body.contacts_list[body.contacts];
 				if (!c) {
 					break;
 				}
 				if (collider.type == ColliderType.RIGID) {
+					// find closest
+					for (let i = 0; i < body.contacts; i++) {
+						const cc = body.contacts_list[i];
+						if (
+							contact.normal_x != cc.normal_x ||
+							contact.normal_y != cc.normal_y
+						) {
+							continue;
+						}
+
+						// no new contact gonna be added
+						if (contact.time <= cc.time && contact.distance <= cc.distance) {
+							c = cc;
+							body.contacts -= 1;
+						} else {
+							c = null;
+						}
+
+						break;
+					}
+
+					if (!c) {
+						continue;
+					}
+
 					c.normal_x = contact.normal_x;
 					c.normal_y = contact.normal_y;
 					c.time = contact.time;
+					c.distance = contact.distance;
 				} else {
 					c.normal_x = c.normal_y = 0;
 					c.time = 1;
@@ -419,6 +447,9 @@ class SceneCollisions {
 		const y = -Math.max(d1y, d2y);
 		const normal_y = d1y > d2y ? 1 : -1;
 		const normal_x = d1x > d2x ? 1 : -1;
+		const dx = a.x - b.x;
+		const dy = a.y - b.y;
+		const distance = Math.sqrt(dx * dx + dy * dy);
 
 		if (x < y) {
 			ret.normal_x = normal_x;
@@ -427,6 +458,8 @@ class SceneCollisions {
 			ret.normal_y = normal_y;
 			ret.time = -y;
 		}
+
+		ret.distance = distance;
 
 		return true;
 	}
