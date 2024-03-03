@@ -4,17 +4,110 @@ import SceneRender from "../render/scene_render.js";
 import { SceneCollisions } from '../app/scene_collisions.js';
 import { lerp, distlerp } from '../core/math.js';
 
+class AnimationNode {
+	name: string;
+	clip: THREE.AnimationAction;
+	constructor(name: string, clip: THREE.AnimationAction) {
+		this.name = name;
+		this.clip = clip;
+	}
+}
+
+class AnimationMachine {
+	nodes: { [id: string] : AnimationNode };
+	constructor() {
+		this.nodes = {};
+	}
+	/*
+	 * Adds new node into scope
+	 */
+	register(node: AnimationNode) {
+		if (this.nodes[node.name]) {
+			throw new Error(`AnimationMachine::register error - node "${node.name}" already exists`);
+		}
+
+
+		this.nodes[node.name] = node;
+	}
+	/*
+	 * Creates transition between two states
+	 */
+	pair(from: string, to: string) {
+		if (!this.nodes[from] || !this.nodes[to]) {
+			throw new Error(`AnimationMachine::pair error - node "${from}" or "${to}" was not registered`);
+		}
+	}
+
+
+	/*
+	 * Traveling through nodes till reaches target one
+	 */
+	transite(target: string) {
+	}
+
+	/*
+	 * Appends transition into query
+	 */
+	query(target: string) {
+	}
+}
+
+class Animator {
+    animation_mixer: THREE.AnimationMixer;
+    animation_time_scale: number;
+		animation_machine: AnimationMachine;
+    animations_actions_cache: {[id: string] : THREE.AnimationAction};
+
+		scene: THREE.Scene;
+		gltf: any;
+
+		constructor() {
+			this.animation_time_scale = 1;
+		}
+
+		init(scene: THREE.Scene, gltf: any) {
+			this.scene = scene;
+			this.gltf = gltf;
+			this.animation_mixer = new THREE.AnimationMixer(scene);
+			this.animation_machine = new AnimationMachine();
+			this.animations_actions_cache = {};
+		}
+
+    step(dt: number) {
+			if (this.animation_mixer) {
+				this.animation_mixer.update(dt * this.animation_time_scale);
+			}
+		}
+
+    getAnimation(name: string | null, gltf = this.gltf) : THREE.AnimationAction | null {
+        if (!name) {
+            return null;
+        }
+
+        if (!this.animation_mixer) {
+            throw new Error("CharacterRender::playAnimation error - No animation mixer set");
+        }
+
+        let action = this.animations_actions_cache[name] ?? this.animation_mixer.clipAction(THREE.AnimationClip.findByName(gltf, name));
+        if (!action) {
+            return null;
+        }
+        this.animations_actions_cache[name] = action;
+        action.play();
+        action.setEffectiveWeight( 0 );
+        return action;
+    }
+}
+
 export default class CharacterRender {
     character: Character;
     scene_render: SceneRender;
     character_gltf: any;
     character_scene: THREE.Object3D;
     colliders: SceneCollisions;
-    animation_mixer: THREE.AnimationMixer;
-    animation_time_scale: number;
+		animator: Animator;
 
     current_animation_name: string | null;
-    animations_actions_cache: {[id: string] : THREE.AnimationAction};
     character_x_rot: number;
 
     debug_bodypos_path: Array<THREE.Mesh>;
@@ -31,11 +124,40 @@ export default class CharacterRender {
     init(scene_render: SceneRender, colliders: SceneCollisions) {
         this.scene_render = scene_render;
         this.colliders = colliders;
-        this.animation_time_scale = 1;
         this.debug_bodypos_path = [];
         this.draw_character_mesh = true;
         this.draw_bodypos_path = false;
+				this.animator = new Animator();
     }
+
+		_initAnimationMachine() {
+			const am = this.animator.animation_machine;
+			const register = (name: string, clipname: string) => {
+				const clip = this.animator.getAnimation(clipname);
+				if (!clip) {
+					throw new Error(`Animator::register error - no clip "${clipname}" found`);
+				}
+				const node = new AnimationNode(name, clip);
+				am.register(node);
+			}
+
+			register("idle", "idle");
+			register("run", "run");
+			register("hit", "hit");
+			register("jump", "jump-1");
+			register("fall", "fall-idle");
+
+			am.pair("idle", "run");
+			am.pair("run", "idle");
+
+			/*
+			am.pair("idle", "hit");
+			am.pair("idle", "jump");
+			am.pair("run", "jump");
+			am.pair("fall", "idle");
+			am.pair("fall", "run");
+		 */
+		}
 
     async run(character: Character) {
         this.character = character;
@@ -45,25 +167,26 @@ export default class CharacterRender {
         this.character_scene.children[0].position.y = -0.5;
 
         (this.character_scene as any).scale.set(0.5, 0.5, 0.5);
-        this.animation_mixer = new THREE.AnimationMixer(this.character_scene);
-        this.animations_actions_cache = {};
         this.current_animation_name = null;
         this.character_x_rot = 0;
+
+				this.animator.init(this.character_scene, this.character_gltf);
+				this._initAnimationMachine();
 
         this.ui_interact_sprite = await this.scene_render.makeSprite("keyboard_arrows_up_outline");
         (this.ui_interact_sprite as any).position.y = 1.5;
         this.character_scene.add(this.ui_interact_sprite);
         this.character_scene.visible = this.draw_character_mesh;
 
-            const body = this.character.body;
-            if (this.draw_bodypos_path) {
-            for(let i = 0; i < 10; i++) {
-                const sphere = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.01);
-                this.debug_bodypos_path.push(sphere);
-            }
-            this.debug_bodypos1 = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.03, 0xff0000);
-            this.debug_bodypos2 = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.05, 0x0000ff);
-        }
+				const body = this.character.body;
+				if (this.draw_bodypos_path) {
+					for(let i = 0; i < 10; i++) {
+						const sphere = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.01);
+						this.debug_bodypos_path.push(sphere);
+					}
+					this.debug_bodypos1 = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.03, 0xff0000);
+					this.debug_bodypos2 = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.05, 0x0000ff);
+				}
 
         this.hook_draw = this.scene_render.testSphereAdd(this.scene_render.cache.vec3_0.set(body.collider.x, body.collider.y, 0), 0.05, 0xff0000);
     }
@@ -92,7 +215,6 @@ export default class CharacterRender {
         if (!gltf) {
             return;
         }
-
        
         this.updateCharacterAnimations();
         this.renderCharacterModel(dt);
@@ -105,9 +227,7 @@ export default class CharacterRender {
             }
         }
        
-        if (this.animation_mixer) {
-            this.animation_mixer.update(dt * this.animation_time_scale);
-        }
+				this.animator.step(dt);
     }
 
     drawUiInteractSprite(show: boolean) {
@@ -121,15 +241,24 @@ export default class CharacterRender {
             return;
         }
 
-        if(this.character.performed_actions.find((e) => e.tag == "jump")) {
+				if (this.character.collided_bottom && this.character.movement_x) {
+					this.animator.animation_machine.transite("run");
+        } else if (this.character.collided_bottom && !this.character.movement_x) {
+					this.animator.animation_machine.transite("idle");
+        }
+
+				/*
+        if (this.character.performed_actions.find((e) => e.tag == "jump")) {
             this.playAnimation("jump-1", { once: true, weight: 0.9, speed: 1.5 });
+						this.synchronizeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("fall-idle"), 0.1);
         } else if(this.character.performed_actions.find((e) => e.tag == "hit")) {
             this.playAnimation("hit", { once: true, weight: 0.9, speed: 2 });
-        } else if (this.character.movement_x && this.current_animation_name != "run") {
+        } else if (this.character.collided_bottom && this.character.movement_x && this.current_animation_name != "run") {
             this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("run"), 0.1);
-        } else if (!this.character.movement_x) {
+        } else if (this.character.collided_bottom && !this.character.movement_x && this.character.body.velocity_y <= 0) {
             this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("Idle"), 0.8);
         }
+			 */
     }
 
     renderCharacterModel(dt: number) {
@@ -140,46 +269,32 @@ export default class CharacterRender {
         cha.lookAt(this.scene_render.cache.vec3_0.set((cha as any).position.x + this.character_x_rot, (cha as any).position.y + this.character.look_direction_y * 0.3,  1 - Math.abs(this.character_x_rot)));
     }
 
-    getAnimation(name: string | null, gltf = this.character_gltf) : THREE.AnimationAction | null {
-        if (!name) {
-            return null;
-        }
-
-        if (!this.animation_mixer) {
-            throw new Error("CharacterRender::playAnimation error - No animation mixer set");
-        }
-
-        let action = this.animations_actions_cache[name] ?? this.animation_mixer.clipAction(THREE.AnimationClip.findByName(gltf, name));
-        if (!action) {
-            return null;
-        }
-        this.animations_actions_cache[name] = action;
-        action.play();
-        this.setWeight(action, 0);
-        return action;
-        //this.current_animation_name = action.getClip().name;
-    }
 
     playAnimation(
         name: string,  
         { once = false, weight = 1, fadeout = 0.1, fadein = 0.1, speed = 1 }: {once?: boolean, weight?: number, fadeout?: number, fadein?: number, speed?: number}
         ) {
         const anim = this.getAnimation(name);
-        if (anim) {
-            this.setWeight(anim, weight);
-            anim.setEffectiveTimeScale( speed );
-            anim.fadeIn(fadein);
-            if (once) {
-                const onLoopFinished = ( event ) => {
-                    if ( event.action === anim ) {
-                        this.animation_mixer.removeEventListener( 'loop', onLoopFinished );
-                        this.setWeight(anim, 0);
-                        anim.fadeOut( fadeout );
-                    }
-                }
-                this.animation_mixer.addEventListener( 'loop', onLoopFinished );
-            }
-        }
+        if (!anim) {
+					return;
+				}
+
+				this.setWeight(anim, weight);
+				anim.setEffectiveTimeScale( speed );
+				anim.fadeIn(fadein);
+        this.current_animation_name = name;
+
+				if (once) {
+					const onLoopFinished = ( event ) => {
+						if ( event.action === anim ) {
+							this.animation_mixer.removeEventListener( 'loop', onLoopFinished );
+							this.setWeight(anim, 0);
+							anim.fadeOut( fadeout );
+						}
+					}
+					this.animation_mixer.addEventListener( 'loop', onLoopFinished );
+				}
+
     }
 
     prepareCrossFade( startAction: THREE.AnimationAction | null, endAction: THREE.AnimationAction | null, duration: number ) {
