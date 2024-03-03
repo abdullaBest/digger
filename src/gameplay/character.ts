@@ -1,4 +1,8 @@
-import { BoxColliderC, DynamicBody, SceneCollisions } from "../app/scene_collisions";
+import {
+	BoxColliderC,
+	DynamicBody,
+	SceneCollisions,
+} from "../app/scene_collisions";
 import { lerp, clamp } from "../core/math";
 import GadgetGrapplingHook from "./gadget_grapplig_hook";
 
@@ -88,7 +92,7 @@ class Character {
 		this.run_vertical_jump_scale = 1.3;
 		this.run_horisontal_jump_scale = 1.2;
 		this.run_movement_scale = 1.5;
-		this.prerun_threshold = 0.25;
+		this.prerun_threshold = 0.15;
 		this.airjump_threshold = 0.1;
 
 		this.look_direction_x = 0;
@@ -220,8 +224,17 @@ class Character {
 		// ---
 
 		// a. horisontal movement
-		movement_x *= running ? this.run_movement_scale : 1;
-		movement_x *= running && jumping ? this.run_horisontal_jump_scale : 1;
+		if (this.running) {
+			// full speed reached after (run_elapsed / factor) seconds
+			const factor = 3;
+			const run_scale = lerp(
+				1,
+				this.run_movement_scale,
+				Math.min(1, this.run_elapsed * factor)
+			);
+			movement_x *= run_scale;
+			movement_x *= jumping ? this.run_horisontal_jump_scale : 1;
+		}
 
 		// smooth
 		movement_x = lerp(this.movement_x, movement_x, movement_x ? 0.6 : 0.95);
@@ -292,6 +305,7 @@ class Character {
 				acc_x += dx * 10;
 			}
 
+			// fixin obstacle stuck
 			// horisontal movement
 			const obstacle_right =
 				dx > 1 && this.collided_right && this.gadget_grappling_hook.dir_x > 0;

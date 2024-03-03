@@ -445,6 +445,13 @@ class SceneCollisions {
 
 		const x = -Math.max(d1x, d2x);
 		const y = -Math.max(d1y, d2y);
+
+		// skip collision on corners
+		const threshold_corner = threshold * 1e2;
+		if (x < threshold_corner && y < threshold_corner) {
+			return false;
+		}
+
 		const normal_y = d1y > d2y ? 1 : -1;
 		const normal_x = d1x > d2x ? 1 : -1;
 		const dx = a.x - b.x;
