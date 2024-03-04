@@ -45,13 +45,12 @@ export default function main(container: HTMLElement) {
 		am.pair("run", "jump");
 		am.pair("fall", "idle");
 		am.pair("fall", "run");
-
-		console.log("pair jump->fall");
 		am.pair("jump", "fall");
 
 
 		am.query("idle");
 		am.query("fall");
+		am.query("idle");
 		console.log("case 3", am);
 	}
 

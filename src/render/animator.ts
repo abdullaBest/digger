@@ -41,7 +41,7 @@ class AnimationEdge {
 class AnimationMachine {
 	nodes: { [id: string]: AnimationNode };
 	edges: { [id: string]: AnimationEdge };
-	query_nodes: Array<AnimationNode>;
+	query_nodes: Array<string>;
 
 	constructor() {
 		this.nodes = {};
@@ -145,13 +145,11 @@ class AnimationMachine {
 
 	/*
 	 * Queries all nodes into sequence
-	 *
-	 * @returns {AnimationNode} first animation in sequence
 	 */
-	query(target: string, instant: boolean = true): AnimationNode {
+	query(target: string, instant: boolean = true){
 		if (!this.query_nodes.length) {
-			this.query_nodes.push(this.nodes[target]);
-			return this.query_nodes[0];
+			this.query_nodes.push(this.nodes[target].id);
+			return;
 		}
 
 		if (instant) {
@@ -160,22 +158,21 @@ class AnimationMachine {
 			}
 		}
 
-		let node = this.query_nodes[this.query_nodes.length - 1];
+		let nodename = this.query_nodes[this.query_nodes.length - 1];
 
-		while (node.id !== target) {
+		while (nodename !== target) {
+			const node = this.nodes[nodename];
 			const next = node.paths[target]?.next;
 
 			if (!next) {
 				throw new Error(
-					`AnimationMachine::query error - ${this.query_nodes[0].id} has no path to ${target}`
+					`AnimationMachine::query error - ${this.query_nodes[0]} has no path to ${target}`
 				);
 			}
 
-			node = this.nodes[next];
-			this.query_nodes.push(node);
+			nodename = this.nodes[next].id
+			this.query_nodes.push(nodename);
 		}
-
-		return this.query_nodes[0];
 	}
 }
 
@@ -210,7 +207,13 @@ class Animator {
 	_on_mixer_loop(event) {
 		const action = event.action as THREE.AnimationAction;
 
-		if (action != this.animation_machine.query_nodes[0].action) {
+		const nodename = this.animation_machine.query_nodes[0];
+		const node = this.animation_machine.nodes[nodename]
+		if (action != node.action) {
+			return;
+		}
+
+		if (this.animation_machine.query_nodes.length <= 1) {
 			return;
 		}
 
@@ -218,14 +221,16 @@ class Animator {
 	}
 
 	_play_next() {
-		if (this.animation_machine.query_nodes.length <= 1) {
-			return;
+		if (this.animation_machine.query_nodes.length > 1) {
+			const nodename = this.animation_machine.query_nodes.shift();
+			const node = this.animation_machine.nodes[nodename];
+			const oldaction = node.action;
+			oldaction.stop();
 		}
 
-		const oldaction = this.animation_machine.query_nodes.shift().action;
-		oldaction.stop();
-
-		const newaction = this.animation_machine.query_nodes[0].action;
+		const nodename = this.animation_machine.query_nodes[0];
+		const node = this.animation_machine.nodes[nodename];
+		const newaction = node.action;
 		newaction.play();
 	}
 
@@ -237,20 +242,12 @@ class Animator {
 
 	transite(target: string, instant: boolean = true) {
 		const qn = this.animation_machine.query_nodes;
-		const current_animation = qn[0];
-		const last_animation = qn[qn.length - 1];
-		if (target === last_animation?.id) {
+		const last_node = qn[qn.length - 1];
+		if (target === last_node) {
 			return;
 		}
 
-		const new_animation = this.animation_machine.query(target, instant);
-
-		if (!current_animation) {
-			new_animation.action.play();
-			return;
-		}
-
-		console.log(this.animation_machine.query_nodes);
+		this.animation_machine.query(target, instant);
 		this._play_next();
 	}
 

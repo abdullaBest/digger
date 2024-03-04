@@ -52,14 +52,22 @@ export default class CharacterRender {
 			register("hit", "hit");
 			register("jump", "jump-1");
 			register("fall", "fall-idle");
+			register("lean", "lean");
 
 			am.pair("idle", "run");
 			am.pair("run", "idle");
 			am.pair("idle", "jump");
 			am.pair("run", "jump");
+			am.pair("jump", "idle");
+			am.pair("jump", "run");
 			am.pair("jump", "fall");
 			am.pair("fall", "idle");
 			am.pair("fall", "run");
+			am.pair("jump", "lean");
+			am.pair("fall", "lean");
+			am.pair("lean", "fall");
+			am.pair("lean", "idle");
+			am.pair("lean", "run");
 
 			/*
 			am.pair("idle", "hit");
@@ -152,9 +160,12 @@ export default class CharacterRender {
 					this.animator.transite("run");
         } else if (this.character.collided_bottom && !this.character.movement_x) {
 					this.animator.transite("idle");
-        } else if (!this.character.collided_bottom) {
-					this.animator.transite("fall");
+        } else if (!this.character.collided_bottom && (this.character.collided_right || this.character.collided_left)) {
+					this.animator.transite("lean");
 				}
+				else if (!this.character.collided_bottom) {
+					this.animator.transite("fall");
+				} 
 
 				/*
         if (this.character.performed_actions.find((e) => e.tag == "jump")) {
@@ -174,7 +185,13 @@ export default class CharacterRender {
         const cha = this.character_scene as any;
         const body = this.character.body;
 
-        this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.2) ;
+        if (!this.character.collided_bottom && (this.character.collided_right || this.character.collided_left)) {
+					const dir = this.character.collided_left ? 1 : -1;
+					this.character_x_rot = lerp(this.character_x_rot, dir, 0.5) ;
+				} else {
+					this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.2) ;
+				}
+
         cha.lookAt(this.scene_render.cache.vec3_0.set((cha as any).position.x + this.character_x_rot, (cha as any).position.y + this.character.look_direction_y * 0.3,  1 - Math.abs(this.character_x_rot)));
     }
 
