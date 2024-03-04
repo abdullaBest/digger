@@ -149,9 +149,9 @@ export default class CharacterRender {
         }
 
 				if (this.character.collided_bottom && this.character.movement_x) {
-					this.animator.transite("run", false);
+					this.animator.transite("run");
         } else if (this.character.collided_bottom && !this.character.movement_x) {
-					this.animator.transite("idle", false);
+					this.animator.transite("idle");
         } else if (!this.character.collided_bottom) {
 					this.animator.transite("fall");
 				}

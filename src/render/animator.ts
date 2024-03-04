@@ -214,6 +214,10 @@ class Animator {
 			return;
 		}
 
+		this._play_next();
+	}
+
+	_play_next() {
 		if (this.animation_machine.query_nodes.length <= 1) {
 			return;
 		}
@@ -222,7 +226,6 @@ class Animator {
 		oldaction.stop();
 
 		const newaction = this.animation_machine.query_nodes[0].action;
-		console.log(this.animation_machine.query_nodes[0]);
 		newaction.play();
 	}
 
@@ -233,18 +236,22 @@ class Animator {
 	}
 
 	transite(target: string, instant: boolean = true) {
-		const current_animation = this.animation_machine.query_nodes[0];
-		const new_animation = this.animation_machine.query(target, instant);
-
-		if (current_animation == new_animation) {
+		const qn = this.animation_machine.query_nodes;
+		const current_animation = qn[0];
+		const last_animation = qn[qn.length - 1];
+		if (target === last_animation?.id) {
 			return;
 		}
 
-		if (current_animation) {
-			current_animation.action.stop();
+		const new_animation = this.animation_machine.query(target, instant);
+
+		if (!current_animation) {
+			new_animation.action.play();
+			return;
 		}
 
-		new_animation.action.play();
+		console.log(this.animation_machine.query_nodes);
+		this._play_next();
 	}
 
 	getAnimation(
