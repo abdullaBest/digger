@@ -150,6 +150,11 @@ export default class AppShell {
 						this.core.assets
 					);
 					break;
+				case "testcase-animator-tab":
+					test.animator(
+						querySelector("#testcase-animator-window content")
+					);
+					break;
 			}
 		});
 
