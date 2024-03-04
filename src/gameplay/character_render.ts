@@ -55,13 +55,14 @@ export default class CharacterRender {
 
 			am.pair("idle", "run");
 			am.pair("run", "idle");
+			am.pair("idle", "jump");
+			am.pair("run", "jump");
+			am.pair("jump", "fall");
+			am.pair("fall", "idle");
+			am.pair("fall", "run");
 
 			/*
 			am.pair("idle", "hit");
-			am.pair("idle", "jump");
-			am.pair("run", "jump");
-			am.pair("fall", "idle");
-			am.pair("fall", "run");
 		 */
 		}
 
@@ -148,10 +149,12 @@ export default class CharacterRender {
         }
 
 				if (this.character.collided_bottom && this.character.movement_x) {
-					this.animator.animation_machine.transite("run");
+					this.animator.transite("run", false);
         } else if (this.character.collided_bottom && !this.character.movement_x) {
-					this.animator.animation_machine.transite("idle");
-        }
+					this.animator.transite("idle", false);
+        } else if (!this.character.collided_bottom) {
+					this.animator.transite("fall");
+				}
 
 				/*
         if (this.character.performed_actions.find((e) => e.tag == "jump")) {

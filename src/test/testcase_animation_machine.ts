@@ -14,7 +14,7 @@ export default function main(container: HTMLElement) {
 
 		// a.paths: b (len 1), c (len 2)
 		// b.paths: c (len 1)
-		console.log(am);
+		console.log("case 1", am);
 	}
 
 	{
@@ -28,7 +28,31 @@ export default function main(container: HTMLElement) {
 
 		// a.paths: b (len 1), c (len 2)
 		// b.paths: c (len 1)
-		console.log(am);
+		console.log("case 2", am);
+	}
+
+	{
+		const am = new AnimationMachine();
+		am.register(new AnimationNode("idle", null));
+		am.register(new AnimationNode("run", null));
+		am.register(new AnimationNode("hit", null));
+		am.register(new AnimationNode("jump", null));
+		am.register(new AnimationNode("fall", null));
+
+		am.pair("idle", "run");
+		am.pair("run", "idle");
+		am.pair("idle", "jump");
+		am.pair("run", "jump");
+		am.pair("fall", "idle");
+		am.pair("fall", "run");
+
+		console.log("pair jump->fall");
+		am.pair("jump", "fall");
+
+
+		am.query("idle");
+		am.query("fall");
+		console.log("case 3", am);
 	}
 
 	{
@@ -56,6 +80,6 @@ export default function main(container: HTMLElement) {
 		am.pair("c", "a");
 
 
-		console.log(am);
+		console.log("case 4", am);
 	}
 }
