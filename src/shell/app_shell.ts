@@ -151,9 +151,7 @@ export default class AppShell {
 					);
 					break;
 				case "testcase-animator-tab":
-					test.animator(
-						querySelector("#testcase-animator-window content")
-					);
+					test.animator(querySelector("#testcase-animator-window content"));
 					break;
 			}
 		});
@@ -181,8 +179,9 @@ export default class AppShell {
 						target.classList.toggle("highlighted");
 					break;
 				case "physics_toggle_collision_debug":
-					this.core.scene_render._drawDebug2dAabb =
-						target.classList.toggle("highlighted");
+					this.game.scene_map.debugColliders(
+						target.classList.toggle("highlighted")
+					);
 					break;
 				case "game_center_camera":
 					this.core.scene_render.focusCameraOn(this.core.scene_render.scene);

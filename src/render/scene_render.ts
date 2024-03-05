@@ -34,14 +34,12 @@ class SceneRender {
 	cache: SceneRenderCache;
 	loader: SceneRenderLoader;
 
-	_drawDebug2dAabb: boolean;
 
 	constructor(assets: Assets) {
 		this.assets = assets;
 		this.cache = new SceneRenderCache();
 
 		this.scene_math = SceneMath.instance;
-		this._drawDebug2dAabb = false;
 		this.loader = new SceneRenderLoader(this.assets, this.cache);
 		this.camera_base_fov = 45;
 	}
@@ -56,6 +54,7 @@ class SceneRender {
 			1000
 		);
 		const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+		renderer.shadowMap.enabled = true;
 		this.canvas_container = canvas.parentElement;
 		this.canvas = canvas;
 
@@ -90,9 +89,10 @@ class SceneRender {
 		this.global_lights.add(light1);
 
 		const light2 = new THREE.DirectionalLight(0xffffff, 2.3);
-		(light2 as any).position.set(0.5, 0, -0.866); // ~60º
+		(light2 as any).position.set(0.5, 1, -0.866); // ~60º
 		light2.name = "main_light";
 		this.global_lights.add(light2);
+		//light2.castShadow = true;
 
 		const hemiLight = new THREE.HemisphereLight(0xffffff, 0x333333, 3.2);
 		hemiLight.name = "hemi_light";

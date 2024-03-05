@@ -234,6 +234,8 @@ export default class GameShell {
 		await this.game.scene_map.add(matter as AssetContentTypeComponent);
 		this.game.scene_mediator.play();
 		this.game.scene_game.attach_camera_to_player = true;
+		this.core.scene_render.global_lights.visible = false;
+		this.game.scene_map.debugColliders(false);
 	}
 
 	_propagate_levelselect_options() {

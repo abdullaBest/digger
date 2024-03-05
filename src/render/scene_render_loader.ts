@@ -180,6 +180,7 @@ export default class SceneRenderLoader {
 			}
 
 			o.material = material;
+			o.receiveShadow = true;
 		});
 
 		return scene;
@@ -219,7 +220,7 @@ export default class SceneRenderLoader {
 		texture.colorSpace = THREE.SRGBColorSpace;
 
 		const materialOptions = {
-			standart: { roughness: 0.7 },
+			standart: { roughness: 1 },
 			toon: {},
 		};
 		const options = Object.assign(
