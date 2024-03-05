@@ -193,7 +193,7 @@ export default class SceneDiggerGame {
 		// init player
 		let playerbox = new Box2().setFromCenterAndSize(
 			startpos,
-			new Vector2(0.5, 0.6)
+			new Vector2(0.35, 0.6)
 		);
 		const body = this.scene_collisions.createBoxBody(
 			"player_character",

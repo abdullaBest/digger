@@ -3,7 +3,7 @@ import Character from "./character.js";
 import SceneRender from "../render/scene_render.js";
 import { SceneCollisions } from '../app/scene_collisions.js';
 import { lerp, distlerp } from '../core/math.js';
-import { AnimationNode, Animator, AnimationMachine, AnimationTransitionMode } from "../render/animator";
+import { AnimationNode, Animator, AnimationMachine, AnimationTransitionMode, AnimationPlaybackMode } from "../render/animator";
 
 export default class CharacterRender {
     character: Character;
@@ -38,19 +38,20 @@ export default class CharacterRender {
 
 		_initAnimationMachine() {
 			const am = this.animator.animation_machine;
-			const register = (name: string, clipname: string) => {
+			const register = (name: string, clipname: string, playback_mode: AnimationPlaybackMode = AnimationPlaybackMode.default) => {
 				const clip = this.animator.getAnimation(clipname);
 				if (!clip) {
 					throw new Error(`Animator::register error - no clip "${clipname}" found`);
 				}
 				const node = new AnimationNode(name, clip);
+				node.playback_mode = playback_mode;
 				am.register(node);
 			}
 
 			register("idle", "idle");
 			register("run", "run");
-			register("hit", "hit");
-			register("jump", "jump-1");
+			register("hit", "hit", AnimationPlaybackMode.at_start);
+			register("jump", "jump-1", AnimationPlaybackMode.at_start);
 			register("fall", "fall-idle");
 			register("lean", "lean");
 
@@ -64,10 +65,11 @@ export default class CharacterRender {
 			am.pair("jump", "fall");
 			am.pair("fall", "idle");
 			am.pair("fall", "run");
-			am.pair("jump", "lean");
+			am.pair("jump", "lean", AnimationTransitionMode.end);
 			am.pair("fall", "lean");
 
 			am.pair("lean", "fall");
+			am.pair("lean", "jump");
 			am.pair("lean", "idle");
 			am.pair("lean", "run");
 
@@ -87,7 +89,7 @@ export default class CharacterRender {
 
         this.character_gltf = await this.scene_render.addGLTF("res/test-cha.glb", "player_character");
         this.character_scene = this.character_gltf.scene;
-        this.character_scene.children[0].position.y = -0.5;
+        this.character_scene.children[0].position.y = -0.55;
 
         (this.character_scene as any).scale.set(0.5, 0.5, 0.5);
         this.current_animation_name = null;
@@ -164,31 +166,22 @@ export default class CharacterRender {
             return;
         }
 
-				if(this.character.performed_actions.find((e) => e.tag == "hit")) {
+				const cha = this.character;
+
+				if(cha.performed_actions.find((e) => e.tag == "hit")) {
 					this.animator.transite("hit");
-				} else if (this.character.collided_bottom && this.character.movement_x) {
+				} else if (cha.collided_bottom && cha.movement_x) {
 					this.animator.transite("run");
-        } else if (this.character.collided_bottom && !this.character.movement_x) {
+        } else if (cha.collided_bottom && !cha.movement_x) {
 					this.animator.transite("idle");
-        } else if (!this.character.collided_bottom && (this.character.collided_right || this.character.collided_left)) {
+        } else if (!cha.collided_bottom && cha.performed_actions.find((e) => e.tag == "jump")) {
+					this.animator.transite("jump");
+				}	else if (!cha.collided_bottom && (cha.collided_right || cha.collided_left)) {
 					this.animator.transite("lean");
 				}
-				else if (!this.character.collided_bottom) {
+				else if (!cha.collided_bottom) {
 					this.animator.transite("fall");
 				} 
-
-				/*
-        if (this.character.performed_actions.find((e) => e.tag == "jump")) {
-            this.playAnimation("jump-1", { once: true, weight: 0.9, speed: 1.5 });
-						this.synchronizeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("fall-idle"), 0.1);
-        } else if(this.character.performed_actions.find((e) => e.tag == "hit")) {
-            this.playAnimation("hit", { once: true, weight: 0.9, speed: 2 });
-        } else if (this.character.collided_bottom && this.character.movement_x && this.current_animation_name != "run") {
-            this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("run"), 0.1);
-        } else if (this.character.collided_bottom && !this.character.movement_x && this.character.body.velocity_y <= 0) {
-            this.executeCrossFade(this.getAnimation(this.current_animation_name), this.getAnimation("Idle"), 0.8);
-        }
-			 */
     }
 
     renderCharacterModel(dt: number) {
@@ -197,9 +190,13 @@ export default class CharacterRender {
 
         if (!this.character.collided_bottom && (this.character.collided_right || this.character.collided_left)) {
 					const dir = this.character.collided_left ? 1 : -1;
+					// face out of wall
 					this.character_x_rot = lerp(this.character_x_rot, dir, 0.5) ;
+					// fix lean model distance
+					this.character_scene.children[0].position.z = -0.2;
 				} else {
 					this.character_x_rot = lerp(this.character_x_rot, this.character.look_direction_x, 0.2) ;
+					this.character_scene.children[0].position.z = 0;
 				}
 
         cha.lookAt(this.scene_render.cache.vec3_0.set((cha as any).position.x + this.character_x_rot, (cha as any).position.y + this.character.look_direction_y * 0.3,  1 - Math.abs(this.character_x_rot)));

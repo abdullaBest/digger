@@ -21,17 +21,24 @@ enum AnimationTransitionMode {
 	end = 2,
 }
 
+enum AnimationPlaybackMode {
+	default = 0,
+	at_start = 1,
+}
+
 class AnimationNode {
 	events: Events;
 	id: string;
 	action: THREE.AnimationAction;
 	edges: { [id: string]: AnimationEdge };
 	paths: { [id: string]: AnimationPath };
+	playback_mode: AnimationPlaybackMode;
 	constructor(id: string, action: THREE.AnimationAction) {
 		this.id = id;
 		this.action = action;
 		this.edges = {};
 		this.paths = {};
+		this.playback_mode = AnimationPlaybackMode.default;
 
 		this.events = new Events();
 	}
@@ -257,6 +264,9 @@ class Animator {
 		const nodename = this.animation_machine.query_nodes[0];
 		const node = this.animation_machine.nodes[nodename];
 		const newaction = node.action;
+		if (node.playback_mode === AnimationPlaybackMode.at_start) {
+			newaction.time = 0;
+		}
 		this.actionFadeIn(newaction);
 	}
 
@@ -279,9 +289,7 @@ class Animator {
 		const node0 = qn[0];
 		const node1 = qn[1];
 		const edge = this.animation_machine.nodes[node0]?.edges[node1];
-		if (
-			edge && edge.transition_mode !== AnimationTransitionMode.instant
-		) {
+		if (edge && edge.transition_mode !== AnimationTransitionMode.instant) {
 			return;
 		}
 
@@ -334,4 +342,10 @@ class Animator {
 }
 
 export default Animator;
-export { Animator, AnimationMachine, AnimationNode, AnimationTransitionMode };
+export {
+	Animator,
+	AnimationMachine,
+	AnimationNode,
+	AnimationTransitionMode,
+	AnimationPlaybackMode,
+};
