@@ -225,13 +225,13 @@ class Animator {
 			const nodename = this.animation_machine.query_nodes.shift();
 			const node = this.animation_machine.nodes[nodename];
 			const oldaction = node.action;
-			oldaction.stop();
+			this.actionFadeOut(oldaction);
 		}
 
 		const nodename = this.animation_machine.query_nodes[0];
 		const node = this.animation_machine.nodes[nodename];
 		const newaction = node.action;
-		newaction.play();
+		this.actionFadeIn(newaction);
 	}
 
 	step(dt: number) {
@@ -249,6 +249,19 @@ class Animator {
 
 		this.animation_machine.query(target, instant);
 		this._play_next();
+	}
+
+	actionFadeOut(action: THREE.AnimationAction) {
+		action.paused = true;
+		action.setEffectiveWeight(1);
+		action.fadeOut(this.fadetime);
+	}
+
+	actionFadeIn(action: THREE.AnimationAction) {
+		action.paused = false;
+		action.enabled = true;
+		action.setEffectiveWeight(1);
+		action.fadeIn(this.fadetime);
 	}
 
 	getAnimation(
@@ -274,8 +287,11 @@ class Animator {
 			return null;
 		}
 		this.animations_actions_cache[name] = action;
-		action.stop();
-		action.setEffectiveWeight(1);
+		action.play();
+		action.enabled = true;
+		action.paused = true;
+		action.setEffectiveTimeScale( 1 );
+		action.setEffectiveWeight(0);
 		return action;
 	}
 }
