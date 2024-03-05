@@ -38,20 +38,21 @@ export default class CharacterRender {
 
 		_initAnimationMachine() {
 			const am = this.animator.animation_machine;
-			const register = (name: string, clipname: string, playback_mode: AnimationPlaybackMode = AnimationPlaybackMode.default) => {
+			const register = (name: string, clipname: string, { playback_mode = AnimationPlaybackMode.default, speed = 1 } = {}) => {
 				const clip = this.animator.getAnimation(clipname);
 				if (!clip) {
 					throw new Error(`Animator::register error - no clip "${clipname}" found`);
 				}
 				const node = new AnimationNode(name, clip);
 				node.playback_mode = playback_mode;
+				clip.setEffectiveTimeScale(speed);
 				am.register(node);
 			}
 
 			register("idle", "idle");
 			register("run", "run");
-			register("hit", "hit", AnimationPlaybackMode.at_start);
-			register("jump", "jump-1", AnimationPlaybackMode.at_start);
+			register("hit", "hit", { speed: 2, playback_mode: AnimationPlaybackMode.at_start });
+			register("jump", "jump-1", { playback_mode: AnimationPlaybackMode.at_start });
 			register("fall", "fall-idle");
 			register("lean", "lean");
 

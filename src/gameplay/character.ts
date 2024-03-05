@@ -64,6 +64,11 @@ class Character {
 	collided_top: string | null;
 	collided_bottom: string | null;
 
+	hit_elapsed: number;
+	hit_threshold: number;
+	hit_delay: number;
+	hit_delayed: boolean;
+
 	damage_threshold: number;
 	damage_elapsed: number;
 
@@ -117,6 +122,10 @@ class Character {
 		this.collided_top = null;
 		this.phys_tick_elapsed = 0;
 		this.airtime_elapsed = 0;
+		this.hit_delay = 0.1;
+		this.hit_threshold = 0.2;
+		this.hit_elapsed = 0;
+		this.hit_delayed = false;
 
 		this.hook_length = 5;
 		this.hook_speed = 50;
@@ -153,9 +162,10 @@ class Character {
 		}
 
 		this.damage_elapsed += dt;
+		this._updateHitState(dt);
 
 		// apply actions
-		// same type actions could be stacked but _action() functions shouldn't change state. only flags
+		// same actions types could be stacked but _action() functions shouldn't change state. only flags
 		const actions_buff: Array<CharacterAction> = [];
 		while (this.requested_actions.length) {
 			const action = this.requested_actions.shift();
@@ -364,6 +374,20 @@ class Character {
 		}
 	}
 
+	_updateHitState(dt: number) {
+		this.hit_elapsed += dt;
+
+		if (this.hit_delayed && this.hit_elapsed >= this.hit_delay) {
+			this.hit_delayed = false;
+
+			const action = {
+				tag: "hit_made",
+				code: CharacterActionCode.DEFAULT
+			}
+			this.performed_actions.push(action);
+		}
+	}
+
 	_updateRunState(dt: number, movemet_x: number): boolean {
 		const discard_runstate_case0 =
 			!this.prerunning ||
@@ -453,6 +477,28 @@ class Character {
 		return this.jumping_up || this.jumping_left || this.jumping_right;
 	}
 
+	private _actionHit(): boolean{
+		// only hits on ground
+		if (!this.collided_bottom) {
+			return false;
+		}
+
+		// can't hit too often
+		if (this.hit_elapsed < this.hit_threshold) {
+			return false;
+		}
+
+		// hit action already delayed and will be executed anyway
+		if (this.hit_elapsed < this.hit_delay) {
+			return false;
+		}
+
+		this.hit_elapsed = 0;
+		this.hit_delayed = true;
+
+		return true;
+	}
+
 	private _action(
 		action: CharacterAction,
 		perform_physics_actions: boolean = false
@@ -483,7 +529,11 @@ class Character {
 				break;
 			case "hit":
 				if (code == CharacterActionCode.START) {
-					apply_code = CharacterActionApplyCode.PERFORMED;
+					if (this._actionHit()) {
+						apply_code = CharacterActionApplyCode.PERFORMED;
+					} else {
+						apply_code = CharacterActionApplyCode.DISCARED;
+					}
 				}
 				break;
 			case "move_left":

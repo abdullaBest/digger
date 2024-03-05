@@ -71,7 +71,10 @@ export default class SceneDiggerGame {
 		this.scene_core = this.scene_map.scene_core;
 
 		this.player_character_render = new CharacterRender();
-		this.system_objects_break = new SystemObjectsBreak(this.scene_core);
+		this.system_objects_break = new SystemObjectsBreak(
+			this.scene_core,
+			this.scene_render
+		);
 		this.system_objects_fall = new SystemObjectsFall(
 			this.scene_core,
 			this.scene_render
@@ -273,6 +276,7 @@ export default class SceneDiggerGame {
 		this.player_character_render.step(dt);
 		this.scene_debug.step();
 		this.system_objects_fall.step(dt);
+		this.system_objects_break.step(dt);
 		this.system_render_bodiespos.step(dt);
 
 		if (
@@ -301,7 +305,9 @@ export default class SceneDiggerGame {
 			this.scene_render.setCameraPos(pos, targ);
 		}
 
-		if (this.player_character.performed_actions.find((e) => e.tag == "hit")) {
+		if (
+			this.player_character.performed_actions.find((e) => e.tag == "hit_made")
+		) {
 			this._actionHit();
 		}
 
