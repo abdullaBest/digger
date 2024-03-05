@@ -132,6 +132,8 @@ export default class SceneRenderLoader {
 				this.assets.matters.get(id)?.name
 			}) loaded`
 		);
+
+		return texture;
 	}
 
 	getTexture(id: string) {
