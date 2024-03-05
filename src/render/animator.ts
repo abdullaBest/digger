@@ -8,6 +8,19 @@ interface AnimationPath {
 	next: string;
 }
 
+/*
+    Instant: Will switch to the next state immediately. The current state will end and blend into the beginning of the new one.
+
+    Sync: Will switch to the next state immediately, but will seek the new state to the playback position of the old state.
+
+    End: Will wait for the current state playback to end, then switch to the beginning of the next state animation.
+*/
+enum AnimationTransitionMode {
+	instant = 0,
+	sync = 1,
+	end = 2,
+}
+
 class AnimationNode {
 	events: Events;
 	id: string;
@@ -28,7 +41,9 @@ class AnimationEdge {
 	start: string;
 	end: string;
 	id: string;
+	transition_mode: AnimationTransitionMode;
 	constructor(start: string, end: string) {
+		this.transition_mode = AnimationTransitionMode.instant;
 		this.start = start;
 		this.end = end;
 		this.id = `${start}-${end}`;
@@ -65,7 +80,11 @@ class AnimationMachine {
 	/*
 	 * Creates connection between two nodes. Also calculates all connection paths
 	 */
-	pair(from: string, to: string) {
+	pair(
+		from: string,
+		to: string,
+		transition_mode: AnimationTransitionMode = AnimationTransitionMode.instant
+	) {
 		const nodea = this.nodes[from];
 		const nodeb = this.nodes[to];
 
@@ -82,8 +101,9 @@ class AnimationMachine {
 			);
 		}
 
+		edge.transition_mode = transition_mode;
 		this.edges[edge.id] = edge;
-		nodea.edges[edge.id] = edge;
+		nodea.edges[nodeb.id] = edge;
 		nodeb.edges[edge.id] = edge;
 		this._build_path(nodea);
 	}
@@ -92,7 +112,10 @@ class AnimationMachine {
 	 * @param node {AnimationNode} new node to calculate pah
 	 * @param _traversed {AnimationNode} internal deadlock safe
 	 */
-	_build_path(node: AnimationNode, _traversed: { [id: string]: AnimationNode} = {}) {
+	_build_path(
+		node: AnimationNode,
+		_traversed: { [id: string]: AnimationNode } = {}
+	) {
 		// full loop reached
 		if (_traversed[node.id]) {
 			return;
@@ -146,7 +169,7 @@ class AnimationMachine {
 	/*
 	 * Queries all nodes into sequence
 	 */
-	query(target: string, instant: boolean = true){
+	query(target: string, instant: boolean = true) {
 		if (!this.query_nodes.length) {
 			this.query_nodes.push(this.nodes[target].id);
 			return;
@@ -170,12 +193,15 @@ class AnimationMachine {
 				);
 			}
 
-			nodename = this.nodes[next].id
+			nodename = this.nodes[next].id;
 			this.query_nodes.push(nodename);
 		}
 	}
 }
 
+/*
+ * Core behaviour inspired by animation - https://docs.godotengine.org/en/stable/tutorials/animation/animation_tree.html#statemachine
+ */
 class Animator {
 	animation_mixer: THREE.AnimationMixer;
 	animation_machine: AnimationMachine;
@@ -208,7 +234,7 @@ class Animator {
 		const action = event.action as THREE.AnimationAction;
 
 		const nodename = this.animation_machine.query_nodes[0];
-		const node = this.animation_machine.nodes[nodename]
+		const node = this.animation_machine.nodes[nodename];
 		if (action != node.action) {
 			return;
 		}
@@ -248,6 +274,17 @@ class Animator {
 		}
 
 		this.animation_machine.query(target, instant);
+
+		// switch instantly if node type allows
+		const node0 = qn[0];
+		const node1 = qn[1];
+		const edge = this.animation_machine.nodes[node0]?.edges[node1];
+		if (
+			edge && edge.transition_mode !== AnimationTransitionMode.instant
+		) {
+			return;
+		}
+
 		this._play_next();
 	}
 
@@ -290,11 +327,11 @@ class Animator {
 		action.play();
 		action.enabled = true;
 		action.paused = true;
-		action.setEffectiveTimeScale( 1 );
+		action.setEffectiveTimeScale(1);
 		action.setEffectiveWeight(0);
 		return action;
 	}
 }
 
 export default Animator;
-export { Animator, AnimationMachine, AnimationNode };
+export { Animator, AnimationMachine, AnimationNode, AnimationTransitionMode };

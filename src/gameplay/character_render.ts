@@ -3,7 +3,7 @@ import Character from "./character.js";
 import SceneRender from "../render/scene_render.js";
 import { SceneCollisions } from '../app/scene_collisions.js';
 import { lerp, distlerp } from '../core/math.js';
-import { AnimationNode, Animator, AnimationMachine } from "../render/animator";
+import { AnimationNode, Animator, AnimationMachine, AnimationTransitionMode } from "../render/animator";
 
 export default class CharacterRender {
     character: Character;
@@ -56,6 +56,7 @@ export default class CharacterRender {
 
 			am.pair("idle", "run");
 			am.pair("run", "idle");
+
 			am.pair("idle", "jump");
 			am.pair("run", "jump");
 			am.pair("jump", "idle");
@@ -65,9 +66,16 @@ export default class CharacterRender {
 			am.pair("fall", "run");
 			am.pair("jump", "lean");
 			am.pair("fall", "lean");
+
 			am.pair("lean", "fall");
 			am.pair("lean", "idle");
 			am.pair("lean", "run");
+
+			am.pair("idle", "hit");
+			am.pair("run", "hit");
+			am.pair("hit", "idle", AnimationTransitionMode.end);
+			am.pair("hit", "run");
+			am.pair("hit", "jump");
 
 			/*
 			am.pair("idle", "hit");
@@ -156,7 +164,9 @@ export default class CharacterRender {
             return;
         }
 
-				if (this.character.collided_bottom && this.character.movement_x) {
+				if(this.character.performed_actions.find((e) => e.tag == "hit")) {
+					this.animator.transite("hit");
+				} else if (this.character.collided_bottom && this.character.movement_x) {
 					this.animator.transite("run");
         } else if (this.character.collided_bottom && !this.character.movement_x) {
 					this.animator.transite("idle");
