@@ -54,7 +54,7 @@ class SceneRender {
 			1000
 		);
 		const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-		renderer.shadowMap.enabled = true;
+		//renderer.shadowMap.enabled = true;
 		this.canvas_container = canvas.parentElement;
 		this.canvas = canvas;
 

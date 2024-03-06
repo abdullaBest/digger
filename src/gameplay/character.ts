@@ -275,6 +275,17 @@ class Character {
 
 		// e. hook. overrides all previous accelerations
 		if (this.gadget_grappling_hook.grapped) {
+			const threshold = 1e-2;
+			const dist_x =
+				Math.abs(this.gadget_grappling_hook.pos_x - this.body.collider.x) -
+				this.body.collider.width * 0.5;
+			const dist_y =
+				Math.abs(this.gadget_grappling_hook.pos_y - this.body.collider.y) -
+				this.body.collider.height * 0.5;
+			const sdx = dist_x > threshold ? this.gadget_grappling_hook.dir_x : 0;
+			const sdy = dist_y > threshold ? this.gadget_grappling_hook.dir_y : 0;
+
+			/*
 			const sdx = clamp(
 				this.gadget_grappling_hook.pos_x -
 					this.body.collider.x -
@@ -289,6 +300,7 @@ class Character {
 				-1,
 				1
 			);
+		 */
 			const dx = sdx * this.hook_drag_force;
 			const dy = sdy * this.hook_drag_force;
 			acc_x = dx;
@@ -382,8 +394,8 @@ class Character {
 
 			const action = {
 				tag: "hit_made",
-				code: CharacterActionCode.DEFAULT
-			}
+				code: CharacterActionCode.DEFAULT,
+			};
 			this.performed_actions.push(action);
 		}
 	}
@@ -477,7 +489,7 @@ class Character {
 		return this.jumping_up || this.jumping_left || this.jumping_right;
 	}
 
-	private _actionHit(): boolean{
+	private _actionHit(): boolean {
 		// only hits on ground
 		if (!this.collided_bottom) {
 			return false;
