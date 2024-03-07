@@ -120,7 +120,7 @@ class SceneRender {
 		return object;
 	}
 
-	removeObject(id: string, fullclear: boolean = false) {
+	removeObject(id: string) {
 		const object = this.cache.objects[id];
 		if (object) {
 			object.removeFromParent();

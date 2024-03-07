@@ -99,7 +99,7 @@ export default class SystemObjectsBreak {
 		let test_t = cha.body.collider.y;
 		let test_b = cha.body.collider.y;
 
-		// shift ray towards look x direction.
+		// shift "ray" (boundbox actually) towards look x direction.
 		// Y look direction in priority
 		if (!cha.look_direction_y) {
 			test_l =
@@ -125,13 +125,19 @@ export default class SystemObjectsBreak {
 			test_l = cha.body.collider._left + 0.01;
 		}
 		let hit_collider: string | null = null;
+		let distance = Infinity;
 		for (const k in colliders) {
 			const c = colliders[k];
 			const collides_x = test_l <= c._right && c._left <= test_r;
 			const collides_y = test_b <= c._top && c._bottom <= test_t;
 			if (collides_x && collides_y) {
-				hit_collider = k;
-				break;
+				const dx = cha.body.collider.x - c.x;
+				const dy = cha.body.collider.y - c.y;
+				const dist = Math.sqrt(dx * dx + dy * dy);
+				if (dist < distance) {
+					distance = dist;
+					hit_collider = k;
+				}
 			}
 		}
 

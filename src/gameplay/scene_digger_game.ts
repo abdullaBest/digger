@@ -9,6 +9,7 @@ import {
 } from "../document/utils";
 import CharacterRender from "./character_render";
 import SceneRender from "../render/scene_render";
+import SceneVfxRender from "../render/scene_vfx_render";
 import { distlerp } from "../core/math";
 import SceneDebug from "../shell/scene_debug";
 import { SceneCore } from "../app/scene_core";
@@ -35,6 +36,7 @@ export default class SceneDiggerGame {
 	scene_debug: SceneDebug;
 	scene_core: SceneCore;
 	scene_map: SceneMap;
+	scene_vfx_render: SceneVfxRender;
 
 	system_objects_break: SystemObjectsBreak;
 	system_objects_fall: SystemObjectsFall;
@@ -70,6 +72,10 @@ export default class SceneDiggerGame {
 		this.scene_map = scene_map;
 		this.scene_core = this.scene_map.scene_core;
 
+		this.scene_vfx_render = new SceneVfxRender(
+			this.scene_render,
+			this.scene_collisions
+		);
 		this.player_character_render = new CharacterRender();
 		this.system_objects_break = new SystemObjectsBreak(
 			this.scene_core,
@@ -104,6 +110,7 @@ export default class SceneDiggerGame {
 		this.player_character_render.init(this.scene_render, this.scene_collisions);
 		this.attach_camera_to_player = false;
 		await this.scene_collisions.init();
+		await this.scene_vfx_render.load(); // tbi
 		this.scene_debug = new SceneDebug();
 
 		this.inputs.events.on("action_start", (action: InputAction) => {
@@ -278,6 +285,7 @@ export default class SceneDiggerGame {
 		this.system_objects_fall.step(dt);
 		this.system_objects_break.step(dt);
 		this.system_render_bodiespos.step(dt);
+		this.scene_vfx_render.step(dt);
 
 		if (
 			this.attach_camera_to_player &&
@@ -498,6 +506,27 @@ export default class SceneDiggerGame {
 		);
 		if (!hit_result) {
 			return;
+		}
+
+		// vfx
+		{
+			const cha = this.player_character;
+			const collider = this.scene_collisions.colliders[hit_result];
+			let x = cha.body.collider.x;
+			let y = cha.body.collider.y;
+			if (!cha.look_direction_y) {
+				x = collider.x - collider.width * 0.5 * cha.look_direction_x;
+			} else {
+				y = collider.y - collider.height * 0.5 * cha.look_direction_y;
+			}
+			const pos = this.scene_render.cache.vec3_0;
+			pos.x = x;
+			pos.y = y;
+			pos.z = this.player_character_render.character_scene.position.z;
+			const dir = this.scene_render.cache.vec3_1;
+			dir.x = cha.look_direction_y ? 0 : -cha.look_direction_x;
+			dir.y = -cha.look_direction_y;
+			this.scene_vfx_render.spawnStarParticle_01(pos, dir);
 		}
 
 		const broke = this.system_objects_break.hit(hit_result);
