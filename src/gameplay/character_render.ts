@@ -121,8 +121,10 @@ export default class CharacterRender {
 			o.castShadow = true;
 		});
 
-		if (false && !this.lights) {
+		if (!this.lights) {
 			this.lights = new THREE.Group();
+			this.scene_render.scene.add(this.lights);
+			/*
 			const plight = new THREE.PointLight(0xffffdd, 10, 10);
 			//plight.castShadow = true;
 			plight.position.z = -1;
@@ -136,10 +138,9 @@ export default class CharacterRender {
 			spotLight.position.z = 5;
 			(this.lights as any).spotLight = spotLight;
 			this.lights.add(spotLight);
-
-			this.scene_render.scene.add(this.lights);
+		 */
 		}
-		(this.lights as any).spotLight.target = this.character_scene;
+		//(this.lights as any).spotLight.target = this.character_scene;
 
 		(this.character_scene as any).scale.set(0.5, 0.5, 0.5);
 		this.current_animation_name = null;
