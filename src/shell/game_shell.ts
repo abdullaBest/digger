@@ -136,6 +136,13 @@ export default class GameShell {
 		this.game.scene_game.events.on("gameover", () => {
 			this.page("gameovermenu");
 		});
+
+		this.game.scene_mediator.events.on("scene_close", ()=> {
+			this.overlay("showin");
+		});
+		this.game.scene_mediator.events.on("scene_open", ()=> {
+			this.overlay("showout");
+		});
 	}
 
 	step(dt: number) {
@@ -153,9 +160,26 @@ export default class GameShell {
 		this.menus_history = [];
 		if (this.core.assets.status != AssetStatus.LOADED) {
 			this.page("gameloadingpage");
+			this.overlay("hidden");
 		} else {
 			this.page("gamemainmenu");
+			//this.overlay("showinout");
 		}
+	}
+
+	/*
+	 * @param style {string} showin, showout, showinout, hidden
+	 */
+	overlay(style: string) {
+		const overlay = querySelector("#loading-overlay");
+
+		/* trigger reflow */
+		overlay.style.animation = 'none';
+		overlay.offsetHeight; 
+		overlay.style.animation = null; 
+
+		overlay.classList.remove("showin", "showout", "showinout", "hidden");
+		overlay.classList.add(style);
 	}
 
 	hide() {
@@ -228,11 +252,10 @@ export default class GameShell {
 	}
 
 	async _play_level(id: string) {
+		this.game.scene_mediator.sceneClose();
 		this.game.scene_game.autostep = true;
 		this.page("gamehud");
-		const matter = this.core.assets.matters.get(id);
-		await this.game.scene_map.add(matter as AssetContentTypeComponent);
-		this.game.scene_mediator.play();
+		this.game.scene_mediator.sceneOpen(id);
 		this.game.scene_game.attach_camera_to_player = true;
 		//this.core.scene_render.global_lights.visible = false;
 		this.game.scene_map.debugColliders(false);

@@ -21,6 +21,66 @@ container#gameui {
 		}
 	}
 
+	#loading-overlay {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		background-color: #000000;
+		opacity: 1;
+		background-image: radial-gradient(#767676 1.45px, #000000 1.45px);
+		background-size: 29px 29px;
+		z-index: 1;
+
+		--animation-duration: 300ms;
+
+		&.showin {
+			animation-duration: var(--animation-duration);
+			animation-name: slidein;
+			animation-iteration-count: 1;
+		}
+
+		&.showout {
+			animation-duration: var(--animation-duration);
+			animation-name: slideout;
+			animation-fill-mode: forwards;
+			animation-iteration-count: 1;
+		}
+
+		&.showinout {
+			animation-duration: var(--animation-duration);
+			animation-name: slidein, slideout;
+			animation-iteration-count: 1;
+			animation-delay: 0s, var(--animation-duration);
+			animation-fill-mode: none, forwards;
+		}
+
+		@keyframes slidein {
+			from {
+				width: 0%;
+				left: 0%;
+				right: 0%;
+			}
+			to {
+				width: 100%;
+				left: 0%;
+				right: 0%;
+			}
+		}
+
+		@keyframes slideout {
+			from {
+				width: 100%;
+				left: 0%;
+				right: 100%;
+			}
+			to {
+				width: 0%;
+				left: 100%;
+				right: 0%;
+			}
+		}
+	}
+
 	#gamehud {
 		#healthbar {
 			width: 126px;

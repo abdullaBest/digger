@@ -1,18 +1,20 @@
 import SceneDiggerGame from "../gameplay/scene_digger_game";
+import { AssetContentTypeComponent } from "../app/assets";
 import SceneMap from "./scene_map";
+import Events from "../core/events";
 
 class SceneMediator {
     scene_game: SceneDiggerGame;
     scene_map: SceneMap;
-    events: HTMLElement;
+    events: Events;
 
     active_scene: string | null;
 
-    constructor(scene_game: SceneDiggerGame, scene_core: SceneMap) {
+    constructor(scene_game: SceneDiggerGame, scene_map: SceneMap) {
         this.scene_game = scene_game;
         this.active_scene = null;
-        this.events = document.createElement("event");
-        this.scene_map = scene_core;
+        this.events = new Events();
+        this.scene_map = scene_map;
     }
 
     step() {
@@ -34,14 +36,16 @@ class SceneMediator {
         }
 
         this.active_scene = id;
-        this.scene_game.play();
-        this.events.dispatchEvent(new CustomEvent("scene_open", { detail : {id}}));
+				const matter = this.scene_map.scene_core.matters.get(id);
+				await this.scene_map.add(matter as AssetContentTypeComponent);
+        await this.scene_game.play();
+				this.events.emit("scene_open", { id });
     }
 
     sceneClose() {
-        this.events.dispatchEvent(new CustomEvent("scene_close", { detail : {id: this.active_scene}}));
-        this.active_scene = null;
-        this.scene_game.stop();
+			this.events.emit("scene_close", { id: this.active_scene });
+			this.active_scene = null;
+			this.scene_game.stop();
     }
 
     async sceneSwitch(id: string) {
@@ -49,8 +53,8 @@ class SceneMediator {
         await this.sceneOpen(id);
     }
 
-    play(entrance_id?: string | null) {
-        this.scene_game.play(entrance_id);
+    async play(entrance_id?: string | null) {
+        await this.scene_game.play(entrance_id);
     }
 }
 
