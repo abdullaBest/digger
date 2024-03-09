@@ -130,7 +130,7 @@ export default class TilepackRenderSystem extends MapSystem {
 			filter += sprintf("," + component.model_right_filter, 2);
 		}
 
-		if (!s_t) {
+		if (!s_t && Math.random() > 0.5) {
 			const num = Math.floor(Math.random() * 3) + 1;
 			filter += sprintf("," + component.model_decor_top_filter, num);
 		}

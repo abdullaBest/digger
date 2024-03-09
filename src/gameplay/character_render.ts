@@ -121,14 +121,14 @@ export default class CharacterRender {
 			o.castShadow = true;
 		});
 
-		if (!this.lights) {
+		if (false && !this.lights) {
 			this.lights = new THREE.Group();
-			const plight = new THREE.PointLight(0xffffdd, 0.1, 10);
+			const plight = new THREE.PointLight(0xffffdd, 10, 10);
 			//plight.castShadow = true;
 			plight.position.z = -1;
 			plight.position.y = 0.5;
 			this.lights.add(plight);
-			const spotLight = new THREE.SpotLight(0xffffff, 10, 10, 0.5, 0.7);
+			const spotLight = new THREE.SpotLight(0xffffff, 100, 10, 0.5, 0.7);
 			this.scene_render.loader.loadTexture("res/noise-texture.png", "noise-texture").then((texture) => {
 				spotLight.map = texture;
 			});
