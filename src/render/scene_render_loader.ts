@@ -47,24 +47,26 @@ export default class SceneRenderLoader {
 	/**
 	 * Parses and stores already loaded gltf
 	 */
-	cacheGltf(data: any, id: string) : Promise<any> {
+	cacheGltf(data: any, id: string): Promise<any> {
 		if (this.cache.gltfs[id]) {
 			return this.cache.gltfs[id];
 		}
 
-
 		const loader = new GLTFLoader();
 
 		// temporarly stores promise into cache
-		return this.cache.gltfs[id] = new Promise((resolve, reject) => {
-			loader.parse(data, ".", (gltf) => {
+		return (this.cache.gltfs[id] = new Promise((resolve, reject) => {
+			loader.parse(
+				data,
+				".",
+				(gltf) => {
 					this.cache.gltfs[id] = gltf;
-					logger.log(
-						`SceneRenderLoader: gltf ${id} (${data.name}) cached`
-					);
+					logger.log(`SceneRenderLoader: gltf ${id} (${data.name}) cached`);
 					resolve(gltf);
-			}, reject);
-		});
+				},
+				reject
+			);
+		}));
 	}
 
 	async loadGltf(url: string, id: string) {
@@ -158,7 +160,25 @@ export default class SceneRenderLoader {
 			);
 		}
 
-		const scene = SkeletonUtils.clone(gltf.scene);
+		let scene = null;
+		if (!model.filter) {
+			scene = SkeletonUtils.clone(gltf.scene);
+		} else {
+			const filter = model.filter.split(',');
+			scene = new THREE.Group();
+			for (const i in filter) {
+				const f = filter[i];
+				const filtered = gltf.scene.getObjectByName(f);
+				if (!filtered) {
+					console.log(dumpObject(gltf.scene));
+					throw new Error(
+						`SceneRenderLoader::getModel error - gltf ${model.gltf} does not contain filter requirements "${f}" (${model.filter})`
+					);
+				}
+				scene.add(SkeletonUtils.clone(filtered));
+			}
+
+		}
 
 		scene.name = id;
 

@@ -74,11 +74,12 @@ export default class SceneVfxRender {
 			sprite.position.x += 0.5 * r3;
 			sprite.position.y += 0.5 * r4;
 			sprite.scale.set(0, 0, 0);
+			particle.physics = physics;
+			// todo: remake math. Calculate 180 angle instead
 			particle.vx = Math.abs(r3) * 3e-2 * (dir.x || Math.sign(r3));
 			particle.vy = Math.abs(r4) * 3e-2 * (dir.y || Math.sign(r4));
 			particle.vx *= pfactor;
 			particle.vy *= pfactor;
-			particle.physics = physics;
 
 			this.particles_stars[id] = particle;
 			this.scene_render.addObject(id, sprite);

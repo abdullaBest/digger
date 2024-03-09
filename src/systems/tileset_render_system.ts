@@ -175,7 +175,7 @@ class TilesetRender {
 			const tileset = this.map_tileset_system.tilesets[k];
 
 			tileset.propagate(
-				(ref_id: string, id: string, pos_x: number, pos_y: number) => {
+				(ref_id: string, id: string, tile_x: number, tile_y: number, pos_x: number, pos_y: number) => {
 					if ((ignore && id in ignore) || this.queue[id]) {
 						return;
 					}
@@ -183,21 +183,9 @@ class TilesetRender {
 						tileset.components[ref_id]
 					) as AssetContentTypeComponent;
 
-					if (ref.type == "model_ninestack") {
-						const x_sides = ["l", "m", "r"];
-						const y_sides = ["t", "m", "b"];
-						const x = Math.abs(Math.round(pos_x));
-						const y = Math.abs(Math.round(pos_y));
-						const x_side = x_sides[x % 3];
-						const y_side = y_sides[y % 3];
-						ref = this.matters.get(
-							ref[`model_${y_side}${x_side}`]
-						) as AssetContentTypeComponent;
-					}
-
 					const component = (this.matters.get(id) ??
 						this.matters.create(
-							{ pos_x, pos_y, tileref: true },
+							{ tileset: k, tile_x, tile_y, pos_x, pos_y, tileref: true },
 							ref.id,
 							id
 						)) as AssetContentTypeComponent;

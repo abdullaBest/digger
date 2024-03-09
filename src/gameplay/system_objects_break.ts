@@ -74,8 +74,9 @@ export default class SystemObjectsBreak {
 				const x = refx + (Math.random() - 0.5) * 0.04;
 				const y = refy + (Math.random() - 0.5) * 0.04;
 
-				(obj as any).position.x = x;
-				(obj as any).position.y = y;
+				// no shake with new objects possible
+				//(obj as any).position.x = x;
+				//(obj as any).position.y = y;
 			} else {
 				delete this.breakable_objects[k];
 				if (!obj) {

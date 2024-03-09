@@ -7,6 +7,7 @@ import {
 } from "../systems";
 import { AssetContentTypeComponent } from "./assets";
 import { RenderTilesetSystem } from "../systems/tileset_render_system";
+import TilepackRenderSystem from "../systems/tilepack_render_system";
 import { printerror } from "../shell/infobox";
 import logger from "../core/logger";
 
@@ -27,6 +28,10 @@ export default class SceneMap {
 	init() {
 		this.render_tileset_system = new RenderTilesetSystem(this.scene_core);
 		this.scene_core.addSystem("render_tileset", this.render_tileset_system);
+		this.scene_core.addSystem(
+			"tilepacks",
+			new TilepackRenderSystem(this.scene_core.scene_render, this.scene_core)
+		);
 		this.scene_core.addSystem(
 			"wireplugs",
 			new SceneWireplugsSystem(this.scene_core)

@@ -263,9 +263,12 @@ class Assets {
 		}
 
 		// b. creating new matter
+		let extension = asset.info.extension;
+		extension = this._isTextureExtension(extension) ? "texture" : extension;
+		
 		const inherites =
 			content.inherites ??
-			this._base_content_extensions[asset.info.extension]?.id;
+			this._base_content_extensions[extension]?.id;
 		try {
 			asset.content = this.matters.create(
 				content,
@@ -276,6 +279,10 @@ class Assets {
 		} catch (err) {
 			console.error(`Asset ${asset.id} creating error:`, err);
 		}
+	}
+
+	_isTextureExtension(extension: string) {
+		return !!extension.match(/(jpg|png|jpeg)/);
 	}
 
 	/**

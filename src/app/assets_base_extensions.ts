@@ -79,6 +79,8 @@ export interface AssetContentTypeModel extends AssetContentTypeComponent {
 	gltf: string;
 	material: string;
 	texture: string;
+	// allows to pick one object inside gltf file
+	filter?: string | null;
 }
 
 export interface AssetContentTypeAnimator extends AssetContentTypeComponent {
@@ -156,7 +158,7 @@ export function cunstructBaseExtensionsData(
 		delay: 0,
 		//interval: 0
 	}
-	const base_asset_extension_texture = { type: "texture", asset: null };
+	const base_asset_extension_texture = { type: "texture", abstract: true, asset: null };
 	const base_asset_extension_collider = {
 		type: "collider",
 		autosize: true,

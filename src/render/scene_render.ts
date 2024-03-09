@@ -12,6 +12,7 @@ import { lerp, distlerp } from "../core/math.js";
 import SceneRenderCache from "./scene_render_cache.js";
 import SceneRenderLoader from "./scene_render_loader.js";
 import { focusCameraOn, setCameraPos, setObjectPos } from "./render_utils.js";
+import { GridWaveShaderMaterial } from "./vfx_shader_materials";
 
 const SPRITE_DEFAULT_PATH = "./res/icons/";
 

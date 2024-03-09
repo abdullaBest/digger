@@ -79,7 +79,7 @@ class MapTileset {
 	}
 
 	propagate(
-		ontile: (ref_id: string, id: string, pos_x: number, pos_y: number) => void,
+		ontile: (ref_id: string, id: string, tile_x: number, tile_y: number, pos_x: number, pos_y: number) => void,
 		min_x?: number | null,
 		min_y?: number | null,
 		max_x?: number | null,
@@ -168,7 +168,7 @@ class MapTileset {
 			const pos_y = oy + ly;
 			const tileid = this.makeTileId(pos_x, pos_y);
 
-			ontile(cache_id, tileid, origin_x + pos_x, origin_y + pos_y);
+			ontile(cache_id, tileid, pos_x, pos_y, origin_x + pos_x, origin_y + pos_y);
 		}
 
 		for (const i in unused_colors) {

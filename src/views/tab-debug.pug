@@ -3,9 +3,14 @@ tab#debug-tab.flex-row.gap-minor.styleset-a.padding-minimum.hidden
         container#testcases-select-window.style-window.behave-collapsing.flex-column.width-medium
             .header tests
             content.padding-minor.flex-column.buttons-list-s1
+                btn(data-tab="sandbox-tab").tab-switch sandbox
                 btn(data-tab="testcase-matters-tab").tab-switch "matters" test
                 btn(data-tab="testcase-assets-tab").tab-switch assets test
                 btn(data-tab="testcase-animator-tab").tab-switch animator test
+    section#sandbox-tab.flex-column
+        container#sandbox-window.style-window.behave-collapsing.flex-column.width-medium-x4
+            .header sandbox
+            content.padding-minor
     section#testcase-matters-tab.flex-column
         container#testcase-matters-window.style-window.behave-collapsing.flex-column.width-medium-x2
             .header "matters" test
@@ -19,3 +24,4 @@ tab#debug-tab.flex-row.gap-minor.styleset-a.padding-minimum.hidden
         container#testcase-animator-window.style-window.behave-collapsing.flex-column.width-medium-x2
             .header animator test
             content.padding-minor
+              nothing here

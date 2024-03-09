@@ -143,25 +143,27 @@ export default class AssetsLibraryView {
 		);
 		// --
 		listenClick(
-			"#assets-create-model-ninestack",
+			"#assets-create-model-tilepack",
 			async (ev) => {
-				const modeid = await this._showSelectList("select model", {
-					extension: /model/,
+				const gltfid = await this._showSelectList("select gltf", {
+					extension: /gltf/,
 				});
-				const link_id = "**" + modeid;
-				await this._createComponent("model_ninestack", {
-					type: "model_ninestack",
-					inherites: "base_asset_type_component",
-					abstract: true,
-					model_tl: link_id,
-					model_tm: link_id,
-					model_tr: link_id,
-					model_ml: link_id,
-					model_mm: link_id,
-					model_mr: link_id,
-					model_bl: link_id,
-					model_bm: link_id,
-					model_br: link_id,
+				const textureid = await this._showSelectList("select texture", {
+					extension: /(png|jpg)/,
+				});
+				await this._createComponent("model_tilepack", {
+					gltf: "**" + gltfid,
+					texture: "**" + textureid,
+					type: "model_tilepack",
+					inherites: "base_asset_type_model",
+					model_center_filter: "center_%d_%d",
+					model_top_filter: "top_%d",
+					model_left_filter: "left_%d",
+					model_right_filter: "right_%d",
+					model_bottom_filter: "bottom_%d",
+					model_corner_in_filter: "corner_in_%d",
+					model_corner_out_filter: "corner_out_%d",
+					model_decor_top_filter: "decor_%d",
 				});
 			},
 			this._listeners
