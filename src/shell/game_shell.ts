@@ -257,7 +257,7 @@ export default class GameShell {
 		this.page("gamehud");
 		this.game.scene_mediator.sceneOpen(id);
 		this.game.scene_game.attach_camera_to_player = true;
-		//this.core.scene_render.global_lights.visible = false;
+		this.core.scene_render.global_lights.visible = false;
 		this.game.scene_map.debugColliders(false);
 	}
 

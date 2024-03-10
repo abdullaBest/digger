@@ -1,3 +1,4 @@
+import * as THREE from "../lib/three.module.js";
 import SceneRender from "../render/scene_render";
 import SceneCore from "../app/scene_core";
 

@@ -124,13 +124,12 @@ export default class CharacterRender {
 		if (!this.lights) {
 			this.lights = new THREE.Group();
 			this.scene_render.scene.add(this.lights);
-			/*
-			const plight = new THREE.PointLight(0xffffdd, 10, 10);
-			//plight.castShadow = true;
-			plight.position.z = -1;
-			plight.position.y = 0.5;
+			const plight = new THREE.PointLight(0xffffdd, 3, 5, 1.5);
+			plight.castShadow = true;
+			plight.position.z = 0;
+			plight.position.y = 0;
 			this.lights.add(plight);
-			const spotLight = new THREE.SpotLight(0xffffff, 100, 10, 0.5, 0.7);
+			const spotLight = new THREE.SpotLight(0xffffff, 30, 10, 0.5, 0.9);
 			this.scene_render.loader.loadTexture("res/noise-texture.png", "noise-texture").then((texture) => {
 				spotLight.map = texture;
 			});
@@ -138,9 +137,8 @@ export default class CharacterRender {
 			spotLight.position.z = 5;
 			(this.lights as any).spotLight = spotLight;
 			this.lights.add(spotLight);
-		 */
 		}
-		//(this.lights as any).spotLight.target = this.character_scene;
+		(this.lights as any).spotLight.target = this.character_scene;
 
 		(this.character_scene as any).scale.set(0.5, 0.5, 0.5);
 		this.current_animation_name = null;

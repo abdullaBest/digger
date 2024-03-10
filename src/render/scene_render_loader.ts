@@ -195,13 +195,44 @@ export default class SceneRenderLoader {
 			(scene as any).position.y = model.pos_y;
 		}
 
-		const material = this.getMaterial(model.material, model.texture);
+		// allows to assign different materians for meshes by name
+		// such: *_center_*:standart,*:standard_emission
+		const materials = [];
+		const filters = [];
+		const names = [];
+		const separator = ":";
+		const use_filters = model.material.includes(separator);
+		if (!use_filters) {
+			materials.push(this.getMaterial(model.material, model.texture));
+		} else {
+			const f = model.material.split(",");
+			for (const i in f) {
+				const arg = f[i];
+				const args = arg.split(separator);
+				const filter = args[0];
+				const name = args[1];
+				filters.push(filter);
+				materials.push(this.getMaterial(name, model.texture));
+			}
+		}
+
 		scene.traverse((o) => {
 			if (!o.isMesh) {
 				return;
 			}
 
-			o.material = material;
+			if (use_filters) {
+				for(let i in filters) {
+					const f = filters[i];
+					if (o.name.match(f)) {
+						o.material = materials[i];
+						break;
+					}
+				}
+			} 
+			if (!use_filters || !o.material) {
+				o.material = materials[0];
+			}
 			o.receiveShadow = true;
 		});
 
@@ -216,8 +247,10 @@ export default class SceneRenderLoader {
 	getMaterial(name: string, texture_id: string): THREE.Material {
 		const materialTypes = {
 			basic: THREE.MeshBasicMaterial,
+			standard_emission: THREE.MeshStandardMaterial,
 			standart: THREE.MeshStandardMaterial,
 			toon: THREE.MeshToonMaterial,
+			toon_emission: THREE.MeshToonMaterial,
 			sprite: THREE.SpriteMaterial,
 		};
 
@@ -243,12 +276,15 @@ export default class SceneRenderLoader {
 
 		const materialOptions = {
 			standart: { roughness: 1 },
+			standard_emission: { roughness: 1, emissiveMap : texture, emissive : new THREE.Color(0xffffff), emissiveIntensity: 0.3},
 			toon: {},
+			toon_emission: { emissiveMap : texture, emissive : new THREE.Color(0xffffff), emissiveIntensity: 0.3},
 		};
 		const options = Object.assign(
 			{ color: 0xffffff, name: id, map: texture },
 			materialOptions[name]
 		);
+
 		const material = new materialTypes[name](options);
 		this.cache.materials[id] = material;
 
