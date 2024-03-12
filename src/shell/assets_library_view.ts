@@ -403,6 +403,9 @@ export default class AssetsLibraryView {
 				if (asset.info.extension === "gltf") {
 					await importGltfSequence(this.assets, asset.id);
 				}
+				if (asset.content?.type === "texture") {
+					await importImageSequence(this.assets, asset.id);
+				}
 			},
 			this._listeners
 		);
@@ -673,8 +676,8 @@ export default class AssetsLibraryView {
 		}
 
 		const sectionel = querySelector("#asset-manage-section");
-		if (this.asset_selected) {
-			sectionel.classList.remove("type-" + this.asset_selected.info.extension);
+		if (this.asset_selected && this.asset_selected.content?.type) {
+			sectionel.classList.remove("type-" + this.asset_selected.content.type);
 		}
 
 		const container = querySelector("#assets-library-details content");
@@ -691,7 +694,9 @@ export default class AssetsLibraryView {
 			this.asset_inspector.dispose();
 		}
 
-		sectionel.classList.add("type-" + asset.info.extension);
+		if (asset.content?.type) {
+			sectionel.classList.add("type-" + asset.content.type);
+		}
 
 		container.innerHTML = "";
 		try {

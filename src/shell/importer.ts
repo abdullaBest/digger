@@ -13,7 +13,7 @@ function blobToBase64(blob: Blob): Promise<string | ArrayBuffer | null> {
 	});
 }
 
-export async function importImageSequence(assets: Assets) {
+export async function importImageSequence(assets: Assets, id?: string) {
 	try {
 		const input = document.createElement("input");
 		await Popup.instance.show().confirm("select image", (container) => {
@@ -36,7 +36,11 @@ export async function importImageSequence(assets: Assets) {
 			files.push(file);
 		}
 
-		return assets.createFiles(files);
+		if (id) {
+			return assets.uploadAsset(id, files);
+		} else {
+			return assets.createFiles(files);
+		}
 	} catch (err) {
 		if (err == "cancel") {
 			throw err;
