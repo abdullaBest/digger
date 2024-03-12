@@ -413,6 +413,7 @@ export default class SceneDiggerGame {
 				});
 			}
 
+
 			if (
 				action.code == CharacterActionCode.START &&
 				trigger.event.includes("mapexit")
@@ -431,6 +432,13 @@ export default class SceneDiggerGame {
 				!trigger.user_collide ||
 				this._character_trigger_collisions[trigger.id]
 			) {
+				return;
+			}
+
+			// tmp. Should be handled by standalone system
+			if (trigger.event.includes("bonus-torch")) {
+				this.player_character.gadget_torch.amount = 1;
+				this.scene_core.remove(trigger.owner);
 				return;
 			}
 

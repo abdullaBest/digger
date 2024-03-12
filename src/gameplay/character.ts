@@ -148,7 +148,6 @@ class Character {
 		this.gadget_torch = new GadgetTorch();
 
 		this.tool_mode = CharacterToolModes.DEFAULT;
-		console.log(CharacterToolModes);
 	}
 
 	init(body: DynamicBody): Character {
