@@ -125,7 +125,7 @@ export default class CharacterRender {
 		if (!this.lights) {
 			this.lights = new THREE.Group();
 			this.scene_render.scene.add(this.lights);
-			const plight = new THREE.PointLight(0xffffdd, 3, 5, 1.5);
+			const plight = new THREE.PointLight(0xffffdd, 1, 5, 1.5);
 			plight.castShadow = true;
 			plight.position.z = 0;
 			plight.position.y = 0;
@@ -139,7 +139,7 @@ export default class CharacterRender {
 			spotLight.castShadow = true;
 			spotLight.position.z = 5;
 			(this.lights as any).spotLight = spotLight;
-			this.lights.add(spotLight);
+			//this.lights.add(spotLight);
 
 			const fakelight = await this.scene_render.makeSprite(
 				"masks/circle-gradient",
@@ -147,7 +147,7 @@ export default class CharacterRender {
 			);
 			fakelight.material.depthTest = false;
 			fakelight.renderOrder = 1;
-			fakelight.scale.set(5, 5, 5);
+			fakelight.scale.set(10, 10, 10);
 			this.fakelight = fakelight;
 		}
 		(this.lights as any).spotLight.target = this.character_scene;

@@ -131,21 +131,20 @@ uniform float exposure;
 uniform float gamma;
 
 void main() {
-	vec4 background = vec4(1.0, 1.0, 1.0, 1.0);
 	vec4 diffuse = texture( texture_main, vUv );
-	vec4 lights = texture( texture_fakelights, vUv );
-	lights += background * (1.0 - lights.a);
-	
-	vec4 color = diffuse * lights;
 
-	vec3 hdrColor = color.rgb;
-
+	vec3 hdrColor = diffuse.rgb;
 	// exposure tone mapping
 	vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
 	// gamma correction 
 	mapped = pow(mapped, vec3(1.0 / gamma));
 
-	pc_FragColor = vec4(mapped, color.a);
+	vec4 background = vec4(1.0, 1.0, 1.0, 1.0);
+	vec4 lights = texture( texture_fakelights, vUv );
+	lights += background * (1.0 - lights.a);
+	vec4 color = vec4(mapped.xyz, diffuse.a) * lights;
+
+	pc_FragColor = color;
 }
 `,
 					uniforms: {
