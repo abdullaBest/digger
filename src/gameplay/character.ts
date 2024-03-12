@@ -251,7 +251,7 @@ class Character {
 		// a. horisontal movement
 		if (this.running) {
 			// full speed reached after (run_elapsed / factor) seconds
-			const factor = 3;
+			const factor = 1.5;
 			const run_scale = lerp(
 				1,
 				this.run_movement_scale,
