@@ -293,7 +293,7 @@ void main() {
 			"basic",
 			spritepath,
 			true
-		)) as THREE.SpriteMaterial;
+		)) as THREE.MeshBasicMaterial;
 
 		const geometry = new THREE.PlaneGeometry(1, 1);
 		const sprite = new THREE.Mesh(geometry, material as any);

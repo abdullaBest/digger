@@ -2,14 +2,7 @@ import * as THREE from "../lib/three.module.js";
 import SceneRender from "../render/scene_render";
 import SceneCore from "../app/scene_core";
 import { MapSystem } from ".";
-import { AssetContentTypeComponent, AssetContentTypeFakeLight2d } from "../app/assets";
-
-const SHAPES_TO_SPRITENAMES = {
-	"circle": "masks/circle",
-	"circle-gradient": "masks/circle-gradient",
-	"square": "masks/square",
-	"square-gradient": "masks/square-gradient",
-}
+import { AssetContentTypeTexture, AssetContentTypeComponent, AssetContentTypeFakeLight2d } from "../app/assets";
 
 export default class FakeLight2dRenderSystem extends MapSystem {
 	private scene_render: SceneRender;
@@ -21,8 +14,8 @@ export default class FakeLight2dRenderSystem extends MapSystem {
 		super();
 		this.priority = 0;
 		this.scene_render = scene_render;
+		this.scene_core = scene_core;
 		this.sprites = {};
-		this.sprite_refs = {};
 	}
 
 	filter(component: AssetContentTypeComponent): boolean {
@@ -41,27 +34,10 @@ export default class FakeLight2dRenderSystem extends MapSystem {
 			return;
 		}
 
-		const spriteshape = this._getSpriteShapeName(component);
-
-		if (this.sprite_refs[spriteshape]) {
-			return;
-		}
-
-		const spritepath = SHAPES_TO_SPRITENAMES[component.shape];
-		if (!spritepath) {
-			throw new Error(`FakeLight2dRenderSystem::load error - no predefined sprite for shape ${component.shape}`);
-		}
-
-		// btw no need in cache here
-		let sprite = null;
-		if (component.billboard) {
-			sprite = await this.scene_render.makeSprite(spritepath);
-		} else {
-			sprite = await this.scene_render.makeSprite3d(spritepath);
-		}
-
-		this.sprite_refs[spriteshape] = sprite;
-
+		const textureurl = (
+			this.scene_core.matters.get(component.shape) as AssetContentTypeTexture
+		).url;
+		await this.scene_render.loader.loadTexture(textureurl, component.shape);
 	}
 	
 	add(
@@ -72,13 +48,15 @@ export default class FakeLight2dRenderSystem extends MapSystem {
 			return;
 		}
 
-		const spriteshape = this._getSpriteShapeName(component);
-		const sprite = this.sprite_refs[spriteshape]?.clone();
-
-		if (!sprite) {
-			throw new Error(`FakeLight2dRenderSystem::add error - no sprite ${component.shape} was preloaded`);
+		let sprite = null;
+		if (component.billboard) {
+			const material = this.scene_render.loader.getMaterial("sprite", component.shape);
+			sprite = new THREE.Sprite(material as THREE.SpriteMaterial);
+		} else {
+			const material = this.scene_render.loader.getMaterial("basic", component.shape);
+			const geometry = new THREE.PlaneGeometry(1, 1);
+			sprite = new THREE.Mesh(geometry, material as any);
 		}
-
 		this.sprites[component.id] = sprite;
 		this.scene_render.fakelights_scene.add(sprite);
 		(sprite as any).position.x = owner.pos_x ?? 0;
