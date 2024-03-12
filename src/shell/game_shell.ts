@@ -3,6 +3,7 @@ import AppGame from "../app/app_game";
 import { querySelector } from "../document";
 import { AssetStatus, Assets, AssetContentTypeComponent } from "../app/assets";
 import { InputAction } from "../core/game_inputs";
+import { CharacterToolModes } from "../gameplay/character";
 
 class MenuControls {
 	container: HTMLElement;
@@ -62,6 +63,7 @@ class MenuControls {
 class GameHud {
 	healthbar: HTMLElement;
 	torchbar: HTMLElement;
+	toolmode: HTMLElement;
 	game: AppGame;
 	controlshelp: HTMLElement;
 
@@ -72,6 +74,7 @@ class GameHud {
 	init() {
 		this.healthbar = querySelector("#gamehud #healthbar");
 		this.torchbar = querySelector("#gamehud #torchbar");
+		this.toolmode = querySelector("#gamehud #toolmode");
 		this.controlshelp = querySelector("#controlshelp");
 	}
 
@@ -89,6 +92,8 @@ class GameHud {
 			"--progress",
 			character.gadget_torch.amount * 100 + "%"
 		);
+
+		this.toolmode.innerHTML = CharacterToolModes[character.tool_mode]
 	}
 
 	_highlight_help_controls(act: InputAction, start: boolean) {

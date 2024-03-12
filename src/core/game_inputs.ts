@@ -72,6 +72,9 @@ class GameInputs {
 			case "KeyS":
 				this.events.emit("action_start", InputAction.action_d);
 				break;
+			case "KeyQ":
+				this.events.emit("action_start", InputAction.action_f);
+				break;
 			case "ShiftLeft":
 				this.events.emit("action_start", InputAction.action_shift);
 				break;
@@ -114,6 +117,9 @@ class GameInputs {
 				break;
 			case "KeyS":
 				this.events.emit("action_end", InputAction.action_d);
+				break;
+			case "KeyQ":
+				this.events.emit("action_end", InputAction.action_f);
 				break;
 			case "ShiftLeft":
 				this.events.emit("action_end", InputAction.action_shift);

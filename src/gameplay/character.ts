@@ -20,6 +20,12 @@ enum CharacterActionApplyCode {
 	DISCARED = 3,
 }
 
+enum CharacterToolModes {
+	DEFAULT = 0,
+	SUPERAXE = 1,
+	__LENGTH,
+}
+
 interface CharacterAction {
 	tag: string;
 	code: CharacterActionCode;
@@ -82,6 +88,8 @@ class Character {
 	gadget_grappling_hook: GadgetGrapplingHook;
 	gadget_torch: GadgetTorch;
 
+	tool_mode: CharacterToolModes;
+
 	// actions that should be executed next step
 	requested_actions: Array<CharacterAction>;
 	// actions that was executed previous step
@@ -138,6 +146,9 @@ class Character {
 
 		this.gadget_grappling_hook = new GadgetGrapplingHook(this.scene_collisions);
 		this.gadget_torch = new GadgetTorch();
+
+		this.tool_mode = CharacterToolModes.DEFAULT;
+		console.log(CharacterToolModes);
 	}
 
 	init(body: DynamicBody): Character {
@@ -585,6 +596,17 @@ class Character {
 					this.gadget_grappling_hook.retract();
 				}
 				break;
+			case "switch":
+				if (code == CharacterActionCode.START) {
+					const newmode =
+						CharacterToolModes[
+							CharacterToolModes[
+								(this.tool_mode + 1) % CharacterToolModes.__LENGTH
+							]
+						];
+					this.tool_mode = newmode;
+				}
+				break;
 			default:
 				console.warn(`no action ${tag} defined`);
 		}
@@ -620,4 +642,4 @@ class Character {
 }
 
 export default Character;
-export { Character, CharacterAction, CharacterActionCode };
+export { Character, CharacterAction, CharacterActionCode, CharacterToolModes };

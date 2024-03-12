@@ -1,5 +1,5 @@
 import Events from "../core/events";
-import { Character, CharacterActionCode } from "./character";
+import { Character, CharacterActionCode, CharacterToolModes } from "./character";
 import { SceneCollisions } from "../app/scene_collisions";
 import { Box2, Vector2 } from "../lib/three.module";
 import {
@@ -508,6 +508,8 @@ export default class SceneDiggerGame {
 			return;
 		}
 
+		const damage = this.player_character.tool_mode == CharacterToolModes.SUPERAXE ? 999 : 1;
+
 		// vfx
 		{
 			const cha = this.player_character;
@@ -526,10 +528,10 @@ export default class SceneDiggerGame {
 			const dir = this.scene_render.cache.vec3_1;
 			dir.x = cha.look_direction_y ? 0 : -cha.look_direction_x;
 			dir.y = -cha.look_direction_y;
-			this.scene_vfx_render.spawnStarParticle_01(pos, dir);
+			this.scene_vfx_render.spawnStarParticle_01(pos, dir, damage);
 		}
 
-		const broke = this.system_objects_break.hit(hit_result);
+		const broke = this.system_objects_break.hit(hit_result, damage);
 		if (broke) {
 			// component is collider. owner is actual block object
 			const component = this.scene_core.matters.get(
@@ -588,6 +590,9 @@ export default class SceneDiggerGame {
 				if (code == CharacterActionCode.START) {
 					this.step(0.016, true);
 				}
+				break;
+			case InputAction.action_f:
+				this.player_character.actionRequest("switch", code);
 				break;
 		}
 	}

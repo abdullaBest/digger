@@ -25,12 +25,14 @@ export default class SystemObjectsBreak {
 
 	/**
 	 *
-	 * @param id hit object
+	 * @param id {string} hit object
+	 * @param damage {number} amound of damage made
+	 * @param strength {number} damage threshold. When it less than object resistance no damage will be made
 	 * @returns true if objet durability set and it less/equals zero
 	 */
-	hit(id: string): boolean {
-		const hit_damage = 1;
-		const hit_strength = 1;
+	hit(id: string, damage: number = 1, strength: number = 1): boolean {
+		const hit_damage = damage;
+		const hit_strength = strength;
 
 		// hit result is collider. Breakable component has to be found somehere in tree
 		let component = this.scene_core.components[id] as any;

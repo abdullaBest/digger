@@ -43,11 +43,12 @@ export default class SceneVfxRender {
 		this.sprite_star_ref = await this.scene_render.makeSprite("star");
 	}
 
-	spawnStarParticle_01(pos: THREE.Vector3, dir: THREE.Vector3) {
+	spawnStarParticle_01(pos: THREE.Vector3, dir: THREE.Vector3, strength: number = 1) {
 		const star_lifetime = 0.7;
 		const star_scale = 0.5;
+		strength = Math.min(Math.log(Math.max(1, strength)) + 1, 10);
 
-		const amount = Math.random() * 4 + 4;
+		const amount = Math.random() * 4 + 4 + strength;
 
 		for (let i = 0; i < amount; i++) {
 			const sprite = this.sprite_star_ref.clone();
@@ -78,8 +79,8 @@ export default class SceneVfxRender {
 			// todo: remake math. Calculate 180 angle instead
 			particle.vx = Math.abs(r3) * 3e-2 * (dir.x || Math.sign(r3));
 			particle.vy = Math.abs(r4) * 3e-2 * (dir.y || Math.sign(r4));
-			particle.vx *= pfactor;
-			particle.vy *= pfactor;
+			particle.vx *= pfactor * strength;
+			particle.vy *= pfactor * strength;
 
 			this.particles_stars[id] = particle;
 			this.scene_render.addObject(id, sprite);

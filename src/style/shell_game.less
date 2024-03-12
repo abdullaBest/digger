@@ -81,6 +81,15 @@ container#gameui {
 	}
 
 	#gamehud {
+		#toolmode {
+			font-size: 16px;
+			color: white;
+			text-shadow: 1px 1px black;
+			&::before {
+				content: "tool mode: "
+			}
+		}
+
 		#healthbar, #torchbar {
 			width: 126px;
 			height: 16px;
@@ -241,6 +250,10 @@ container#gameui {
 
 			.action_d {
 				grid-area: key_s;
+			}
+
+			.action_f {
+				grid-area: key_q;
 			}
 
 			.key_e {
