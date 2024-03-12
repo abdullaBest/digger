@@ -6,8 +6,11 @@ import {
 	MapDebugRenderCollidersSystem,
 } from "../systems";
 import { AssetContentTypeComponent } from "./assets";
-import { RenderTilesetSystem } from "../systems/tileset_render_system";
-import TilepackRenderSystem from "../systems/tilepack_render_system";
+import {
+	RenderTilesetSystem,
+	TilepackRenderSystem,
+	FakeLight2dRenderSystem,
+} from "../systems";
 import { printerror } from "../shell/infobox";
 import logger from "../core/logger";
 
@@ -31,6 +34,10 @@ export default class SceneMap {
 		this.scene_core.addSystem(
 			"tilepacks",
 			new TilepackRenderSystem(this.scene_core.scene_render, this.scene_core)
+		);
+		this.scene_core.addSystem(
+			"fakelights2d",
+			new FakeLight2dRenderSystem(this.scene_core.scene_render, this.scene_core)
 		);
 		this.scene_core.addSystem(
 			"wireplugs",

@@ -83,6 +83,14 @@ export interface AssetContentTypeModel extends AssetContentTypeComponent {
 	filter?: string | null;
 }
 
+export interface AssetContentTypeFakeLight2d extends AssetContentTypeComponent {
+	size_x: number;
+	size_y: number;
+	shape: string;
+	color: string;
+	billboard: boolean;
+}
+
 export interface AssetContentTypeAnimator extends AssetContentTypeComponent {
 	// animation name that will be set to 0 on component creation
 	initial: string;
@@ -127,6 +135,7 @@ export interface BaseContentExtensionsList {
 	collider: AssetContentTypeCollider;
 	gameprop: AssetContentTypeGameprop;
 	model: AssetContentTypeModel;
+	fakelight2d: AssetContentTypeFakeLight2d;
 	gltf: AssetContentTypeGltf;
 	animator: AssetContentTypeAnimator;
 	controller: AssetContentTypeController;
@@ -186,6 +195,14 @@ export function cunstructBaseExtensionsData(
 		material: "standart",
 		texture: "toset",
 		matrix: null,
+	};
+	const base_asset_extension_fakelight2d = {
+		type: "fakelight2d",
+		size_x: 1,
+		size_y: 1,
+		shape: "circle",
+		color: "#ffffff",
+		billboard: true
 	};
 	const base_asset_extension_animator = {
 		type: "animator",
@@ -266,6 +283,11 @@ export function cunstructBaseExtensionsData(
 			"base_asset_type_component",
 			"base_asset_type_model"
 		) as AssetContentTypeModel,
+		fakelight2d: matters.create(
+			base_asset_extension_fakelight2d,
+			"base_asset_type_component",
+			"base_asset_type_fakelight2d"
+		) as AssetContentTypeFakeLight2d,
 		animator: matters.create(
 			base_asset_extension_animator,
 			"base_asset_type_component",

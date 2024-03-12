@@ -6,6 +6,9 @@ import SceneEditWireplugsSystem from "./scene_edit_wireplugs_system";
 import SceneWireplugsSystem from "./scene_wireplugs_system";
 import SceneControllersSystem from "./scene_controllers_system";
 import MapDebugRenderCollidersSystem from "./map_debug_render_colliders_system";
+import { RenderTilesetSystem } from "./tileset_render_system";
+import TilepackRenderSystem from "./tilepack_render_system";
+import FakeLight2dRenderSystem from "./fakelight2d_render_system";
 
 export {
 	MapSystem,
@@ -15,5 +18,8 @@ export {
 	SceneWireplugsSystem,
 	SceneEditWireplugsSystem,
 	SceneControllersSystem,
-	MapDebugRenderCollidersSystem
+	MapDebugRenderCollidersSystem,
+	RenderTilesetSystem,
+	TilepackRenderSystem,
+	FakeLight2dRenderSystem
 };

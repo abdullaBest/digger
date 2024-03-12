@@ -34,6 +34,7 @@ export default class CharacterRender {
 	ui_interact_sprite: THREE.Sprite | null;
 
 	lights: THREE.Group;
+	fakelight: THREE.Object3D;
 
 	init(scene_render: SceneRender, colliders: SceneCollisions) {
 		this.scene_render = scene_render;
@@ -130,13 +131,24 @@ export default class CharacterRender {
 			plight.position.y = 0;
 			this.lights.add(plight);
 			const spotLight = new THREE.SpotLight(0xffffff, 30, 10, 0.5, 0.9);
-			this.scene_render.loader.loadTexture("res/noise-texture.png", "noise-texture").then((texture) => {
-				spotLight.map = texture;
-			});
+			this.scene_render.loader
+				.loadTexture("res/noise-texture.png", "noise-texture")
+				.then((texture) => {
+					spotLight.map = texture;
+				});
 			spotLight.castShadow = true;
 			spotLight.position.z = 5;
 			(this.lights as any).spotLight = spotLight;
 			this.lights.add(spotLight);
+
+			const fakelight = await this.scene_render.makeSprite(
+				"masks/circle-gradient",
+				this.scene_render.fakelights_scene
+			);
+			fakelight.material.depthTest = false;
+			fakelight.renderOrder = 1;
+			fakelight.scale.set(5, 5, 5);
+			this.fakelight = fakelight;
 		}
 		(this.lights as any).spotLight.target = this.character_scene;
 
@@ -296,7 +308,9 @@ export default class CharacterRender {
 			)
 		);
 
-		this.lights.position.x = this.character_scene.position.x;
-		this.lights.position.y = this.character_scene.position.y;
+		this.lights.position.x = this.fakelight.position.x =
+			this.character_scene.position.x;
+		this.lights.position.y = this.fakelight.position.y =
+			this.character_scene.position.y;
 	}
 }

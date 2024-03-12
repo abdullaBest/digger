@@ -7,6 +7,9 @@ import { AssetContentTypeComponent, AssetContentTypeModel } from "../app/assets"
 import { sprintf } from "../lib/sprintf.js";
 import logger from "../core/logger";
 
+/**
+ * This system renders tilepack components wich holds batch of tile mesh pieces
+ */
 export default class TilepackRenderSystem extends MapSystem {
 	private scene_render: SceneRender;
 	private scene_core: SceneCore;

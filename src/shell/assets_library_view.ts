@@ -345,6 +345,19 @@ export default class AssetsLibraryView {
 
 		// --
 		listenClick(
+			"#asset-fakelight2d-add",
+			async (ev) => {
+				const id = await this._createComponent("fakelight2d", {
+					owner: this.asset_selected.id,
+				});
+				const asset = this.asset_selected;
+				this.addComponentLink(asset.content as Matter, "fakelight2d", id);
+			},
+			this._listeners
+		);
+
+		// --
+		listenClick(
 			"#asset-manage-save",
 			async (ev) => {
 				if (this.asset_selected) {

@@ -55,7 +55,7 @@ export default class SceneRenderLoader {
 		const loader = new GLTFLoader();
 
 		// temporarly stores promise into cache
-		return (this.cache.gltfs[id] = new Promise((resolve, reject) => {
+		const p = this.cache.gltfs[id] = new Promise((resolve, reject) => {
 			loader.parse(
 				data,
 				".",
@@ -66,7 +66,9 @@ export default class SceneRenderLoader {
 				},
 				reject
 			);
-		}));
+		});
+
+		return p;
 	}
 
 	async loadGltf(url: string, id: string) {
@@ -197,6 +199,7 @@ export default class SceneRenderLoader {
 
 		// allows to assign different materians for meshes by name
 		// such: *_center_*:standart,*:standard_emission
+		// kinda may bug and fail
 		const materials = [];
 		const filters = [];
 		const names = [];

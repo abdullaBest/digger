@@ -453,7 +453,8 @@ import {
 	AssetContentTypeWireplug,
 	AssetContentTypeTimer,
 	AssetContentTypeController,
-	AssetContentTypeGltf
+	AssetContentTypeGltf,
+	AssetContentTypeFakeLight2d
 } from "./assets_base_extensions";
 
 export {
@@ -473,5 +474,6 @@ export {
 	AssetContentTypeWireplug,
 	AssetContentTypeTimer,
 	AssetContentTypeController,
-	AssetContentTypeGltf
+	AssetContentTypeGltf,
+	AssetContentTypeFakeLight2d
 };

@@ -14,7 +14,10 @@ import SceneRenderLoader from "./scene_render_loader.js";
 import { focusCameraOn, setCameraPos, setObjectPos } from "./render_utils.js";
 import { GridWaveShaderMaterial } from "./vfx_shader_materials";
 
-const SPRITE_DEFAULT_PATH = "./res/icons/";
+const RENDER_GAMMA = 1.2;
+const RENDER_EXPOSURE = 3.0
+
+const SPRITE_DEFAULT_PATH = "./res/sprites/";
 
 class SceneRender {
 	canvas: HTMLCanvasElement;
@@ -27,6 +30,18 @@ class SceneRender {
 	rootscene: THREE.Scene;
 	global_lights: THREE.Group;
 	scene: THREE.Group;
+
+	// this group made for sprites that serves as "light"
+	fakelights_scene: THREE.Scene;
+	fakelights_render_enabled: boolean;
+	fakelights_render_target: THREE.WebGLRenderTarget;
+
+	// postprocess holds render layers results
+	postprocess_scene: THREE.Scene;
+	postprocess_camera: THREE.OrthographicCamera;
+	postprocess_enabled: boolean;
+	scene_render_target: THREE.WebGLRenderTarget;
+
 	camera: THREE.PerspectiveCamera;
 	controls: OrbitControls;
 
@@ -35,7 +50,6 @@ class SceneRender {
 	cache: SceneRenderCache;
 	loader: SceneRenderLoader;
 
-
 	constructor(assets: Assets) {
 		this.assets = assets;
 		this.cache = new SceneRenderCache();
@@ -43,8 +57,11 @@ class SceneRender {
 		this.scene_math = SceneMath.instance;
 		this.loader = new SceneRenderLoader(this.assets, this.cache);
 		this.camera_base_fov = 45;
+		this.postprocess_enabled = true;
+		this.fakelights_render_enabled = true;
 	}
-	init(canvas: HTMLCanvasElement): SceneRender {
+
+	_initCore(canvas: HTMLCanvasElement) {
 		const rootscene = new THREE.Scene();
 		const scene = new THREE.Group();
 		rootscene.add(scene);
@@ -59,21 +76,107 @@ class SceneRender {
 		this.canvas_container = canvas.parentElement;
 		this.canvas = canvas;
 
-		const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-		const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-		const cube = new THREE.Mesh(geometry, material);
-		scene.add(cube);
-
-		this.controls = new OrbitControls(camera, renderer.domElement);
-		this.controls.screenSpacePanning = true;
-
-		(camera as any).position.z = 2;
-
-		this.cube = cube;
 		this.renderer = renderer;
 		this.scene = scene;
 		this.rootscene = rootscene;
 		this.camera = camera;
+	}
+
+	_initPostprocess() {
+		const postprocess_scene = new THREE.Scene();
+		const postprocess_camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+		const fakelights_scene = new THREE.Scene();
+		this.scene_render_target = new THREE.WebGLRenderTarget();
+
+		this.fakelights_render_target = new THREE.WebGLRenderTarget();
+		this.fakelights_render_target.depthBuffer = false;
+
+		this.fakelights_scene = fakelights_scene;
+		this.postprocess_scene = postprocess_scene;
+		this.postprocess_camera = postprocess_camera;
+
+		this.postprocess_scene.add(
+			new THREE.Mesh(
+				new THREE.PlaneGeometry(2, 2),
+				new THREE.RawShaderMaterial({
+					name: "Post-FX Shader",
+					vertexShader: 
+`
+in vec3 position;
+in vec2 uv;
+
+out vec2 vUv;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
+void main() {
+	vUv = uv;
+	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+}
+`,
+					fragmentShader:
+`
+precision highp float;
+precision highp int;
+
+layout(location = 0) out vec4 pc_FragColor;
+
+in vec2 vUv;
+
+uniform sampler2D texture_main;
+uniform sampler2D texture_fakelights;
+
+uniform float exposure;
+uniform float gamma;
+
+void main() {
+	vec4 background = vec4(1.0, 1.0, 1.0, 1.0);
+	vec4 diffuse = texture( texture_main, vUv );
+	vec4 lights = texture( texture_fakelights, vUv );
+	lights += background * (1.0 - lights.a);
+	
+	vec4 color = diffuse * lights;
+
+	vec3 hdrColor = color.rgb;
+
+	// exposure tone mapping
+	vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
+	// gamma correction 
+	mapped = pow(mapped, vec3(1.0 / gamma));
+
+	pc_FragColor = vec4(mapped, color.a);
+}
+`,
+					uniforms: {
+						texture_main: { value: this.scene_render_target.texture },
+						texture_fakelights: {
+							value: this.fakelights_render_target.texture,
+						},
+						exposure: { value: RENDER_EXPOSURE },
+						gamma: { value: RENDER_GAMMA }
+					},
+					glslVersion: THREE.GLSL3,
+					depthWrite: false
+				})
+			)
+		);
+	}
+
+	init(canvas: HTMLCanvasElement): SceneRender {
+		this._initCore(canvas);
+		this._initPostprocess();
+		const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+		const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+		const cube = new THREE.Mesh(geometry, material);
+		this.scene.add(cube);
+
+		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+		this.controls.screenSpacePanning = true;
+
+		(this.camera as any).position.z = 2;
+
+		this.cube = cube;
 
 		this.initLights();
 		this.updateSize();
@@ -182,9 +285,29 @@ class SceneRender {
 		return sprite;
 	}
 
+	async makeSprite3d(
+		name: string,
+		parent?: THREE.Object3D
+	): Promise<THREE.Mesh> {
+		const spritepath = SPRITE_DEFAULT_PATH + name + ".png";
+		const material = (await this.getLoadMaterial(
+			"basic",
+			spritepath,
+			true
+		)) as THREE.SpriteMaterial;
+
+		const geometry = new THREE.PlaneGeometry(1, 1);
+		const sprite = new THREE.Mesh(geometry, material as any);
+		if (parent) {
+			parent.add(sprite);
+		}
+
+		return sprite;
+	}
+
 	clearCached() {
 		for (const k in this.cache.objects) {
-			this.removeObject(k, true);
+			this.removeObject(k);
 		}
 	}
 
@@ -283,9 +406,30 @@ class SceneRender {
 		const width = this.getRenderWidth();
 		const height = this.getRenderHeight();
 
-		// main scene render
 		this.renderer.autoClear = true;
 		this.renderer.setViewport(0, 0, width, height);
+
+		if (this.postprocess_enabled) {
+
+			// render fake lights into texture
+			if (this.fakelights_render_enabled) {
+				this.renderer.setRenderTarget(this.fakelights_render_target);
+				this.renderer.render(this.fakelights_scene, this.camera);
+			}
+
+			// render scene itself into texture
+			this.renderer.setRenderTarget(this.scene_render_target);
+			this.renderer.render(this.rootscene, this.camera);
+
+			// render rendered textures into canvas
+			this.renderer.setRenderTarget(null);
+			this.renderer.render(this.postprocess_scene, this.postprocess_camera);
+
+			return;
+		}
+
+		// main scene render
+		this.renderer.setRenderTarget(null);
 		this.renderer.render(this.rootscene, this.camera);
 	}
 
@@ -322,6 +466,13 @@ class SceneRender {
 		) {
 			this.renderer.setSize(width, height);
 			this.updateCameraAspect(width, height);
+
+			if (this.postprocess_enabled) {
+				this.scene_render_target.setSize(width, height);
+				if (this.fakelights_render_enabled) {
+					this.fakelights_render_target.setSize(width, height);
+				}
+			}
 		}
 	}
 

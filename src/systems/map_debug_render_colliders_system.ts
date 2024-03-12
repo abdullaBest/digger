@@ -51,7 +51,7 @@ export default class MapDebugRenderCollidersSystem extends MapSystem {
 
         if (!plane) {
             const geometry = new THREE.PlaneGeometry( 1, 1 );
-            // tynroar tmp todo: move material into cache
+            // todo: move material into cache
             const material = new THREE.MeshStandardMaterial( { color, wireframe: true } );
             plane = new THREE.Mesh( geometry, material as any );
             this.scene_render.addObject(id + '-dbg_collider', plane)
