@@ -7,7 +7,7 @@ export default class GadgetTorch {
 
 	constructor() {
 		this.amount = 1;
-		this.fadetime = 10;
+		this.fadetime = 30;
 		this.max_strength = 10;
 	}
 
