@@ -187,12 +187,12 @@ void main() {
 		this.global_lights = new THREE.Group();
 		this.rootscene.add(this.global_lights);
 
-		const light1 = new THREE.AmbientLight(0xffffff, 0.7);
+		const light1 = new THREE.AmbientLight(0xffffff, 1.3);
 		light1.name = "ambient_light";
 		this.global_lights.add(light1);
 
-		const light2 = new THREE.DirectionalLight(0xffffff, 2.3);
-		(light2 as any).position.set(0.5, 1, -0.866); // ~60º
+		const light2 = new THREE.DirectionalLight(0xffffff, 1.3);
+		(light2 as any).position.set(0.5, 1, 0.866); // ~60º
 		light2.name = "main_light";
 		this.global_lights.add(light2);
 		//light2.castShadow = true;

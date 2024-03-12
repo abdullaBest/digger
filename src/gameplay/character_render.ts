@@ -129,7 +129,7 @@ export default class CharacterRender {
 			plight.castShadow = true;
 			plight.position.z = 0;
 			plight.position.y = 0;
-			this.lights.add(plight);
+			//this.lights.add(plight);
 			const spotLight = new THREE.SpotLight(0xffffff, 30, 10, 0.5, 0.9);
 			this.scene_render.loader
 				.loadTexture("res/noise-texture.png", "noise-texture")
