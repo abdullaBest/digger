@@ -61,6 +61,7 @@ class MenuControls {
 
 class GameHud {
 	healthbar: HTMLElement;
+	torchbar: HTMLElement;
 	game: AppGame;
 	controlshelp: HTMLElement;
 
@@ -70,6 +71,7 @@ class GameHud {
 
 	init() {
 		this.healthbar = querySelector("#gamehud #healthbar");
+		this.torchbar = querySelector("#gamehud #torchbar");
 		this.controlshelp = querySelector("#controlshelp");
 	}
 
@@ -81,6 +83,11 @@ class GameHud {
 		this.healthbar.style.setProperty(
 			"--progress",
 			character.health * 100 + "%"
+		);
+
+		this.torchbar.style.setProperty(
+			"--progress",
+			character.gadget_torch.amount * 100 + "%"
 		);
 	}
 

@@ -5,6 +5,7 @@ import {
 } from "../app/scene_collisions";
 import { lerp, clamp } from "../core/math";
 import GadgetGrapplingHook from "./gadget_grapplig_hook";
+import GadgetTorch from "./gadget_torch";
 
 enum CharacterActionCode {
 	DEFAULT = 0,
@@ -79,6 +80,7 @@ class Character {
 	hook_drag_force: number;
 
 	gadget_grappling_hook: GadgetGrapplingHook;
+	gadget_torch: GadgetTorch;
 
 	// actions that should be executed next step
 	requested_actions: Array<CharacterAction>;
@@ -135,11 +137,13 @@ class Character {
 		this.damage_elapsed = 0;
 
 		this.gadget_grappling_hook = new GadgetGrapplingHook(this.scene_collisions);
+		this.gadget_torch = new GadgetTorch();
 	}
 
 	init(body: DynamicBody): Character {
 		this.body = body;
 		this.gadget_grappling_hook.init(body);
+		this.gadget_torch.init();
 
 		return this;
 	}
@@ -183,6 +187,7 @@ class Character {
 		this.requested_actions = actions_buff;
 
 		this.gadget_grappling_hook.step(dt);
+		this.gadget_torch.step(dt);
 		this._applyMovementForces(dt, perform_physics_actions);
 	}
 

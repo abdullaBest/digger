@@ -89,6 +89,7 @@ export interface AssetContentTypeFakeLight2d extends AssetContentTypeComponent {
 	shape: string;
 	color: string;
 	billboard: boolean;
+	z_index: number;
 }
 
 export interface AssetContentTypeAnimator extends AssetContentTypeComponent {
@@ -202,7 +203,8 @@ export function cunstructBaseExtensionsData(
 		size_y: 1,
 		shape: "circle",
 		color: "#ffffff",
-		billboard: true
+		billboard: true,
+		z_index: 0
 	};
 	const base_asset_extension_animator = {
 		type: "animator",

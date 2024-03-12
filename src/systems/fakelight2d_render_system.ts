@@ -59,8 +59,8 @@ export default class FakeLight2dRenderSystem extends MapSystem {
 		}
 		this.sprites[component.id] = sprite;
 		this.scene_render.fakelights_scene.add(sprite);
-		(sprite as any).position.x = owner.pos_x ?? 0;
-		(sprite as any).position.y = owner.pos_y ?? 0;
+		(sprite as any).position.x = (owner.pos_x ?? 0) + (component.pos_x ?? 0);
+		(sprite as any).position.y = (owner.pos_y ?? 0) + (component.pos_y ?? 0);
 		(sprite as any).scale.x = component.size_x;
 		(sprite as any).scale.y = component.size_y;
 
@@ -71,6 +71,10 @@ export default class FakeLight2dRenderSystem extends MapSystem {
 		// Could be a problem but fine for now
 		sprite.material.color.set(component.color);
 		sprite.material.transparent = true;
+		if (component.z_index) {
+			sprite.material.depthTest = false;
+			sprite.renderOrder = component.z_index;
+		}
 	}
 
 	remove(

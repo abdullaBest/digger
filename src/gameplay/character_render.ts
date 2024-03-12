@@ -312,5 +312,8 @@ export default class CharacterRender {
 			this.character_scene.position.x;
 		this.lights.position.y = this.fakelight.position.y =
 			this.character_scene.position.y;
+
+		const torch = this.character.gadget_torch.getStrength();
+		this.fakelight.scale.set(torch, torch, 1);
 	}
 }

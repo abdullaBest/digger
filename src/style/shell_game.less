@@ -81,15 +81,20 @@ container#gameui {
 	}
 
 	#gamehud {
-		#healthbar {
+		#healthbar, #torchbar {
 			width: 126px;
 			height: 16px;
 			border-radius: 2px;
-
-			&::after {
-				background: linear-gradient(0deg, rgba(255,0,0,1) 0%, rgba(217,0,0,1) 49%, rgba(255,0,0,1) 50%);
-			}
 		}
+
+		#healthbar::after {
+			background: linear-gradient(0deg, rgba(255,0,0,1) 0%, rgba(217,0,0,1) 49%, rgba(255,0,0,1) 50%);
+		}
+
+		#torchbar::after {
+			background: linear-gradient(0deg, rgba(255,0,0,1) 0%, rgba(217,0,0,1) 49%, rgba(255,0,0,1) 50%);
+		}
+
 	}
 
 	#gameloadingpage {
