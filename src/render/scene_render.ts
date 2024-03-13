@@ -241,6 +241,9 @@ void main() {
 		return this.addObject(id, object, parent);
 	}
 
+	/**
+	 * Unused
+	 */
 	async addTriggerElement(id: string, properties: any) {
 		const type = properties.type;
 		const spritenames = {

@@ -126,6 +126,7 @@ export default class SceneDiggerGame {
 	async play(entrance_id?: string | null) {
 		this.active = true;
 		this.stopPlay();
+		await this.system_objects_break.load();
 		this.system_objects_break.run();
 		this.system_objects_fall.run();
 		this.system_render_bodiespos.run();

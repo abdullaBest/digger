@@ -1,11 +1,14 @@
+import * as THREE from "../lib/three.module.js";
 import SceneCore from "../app/scene_core";
 import Character from "./character";
 import SceneRender from "../render/scene_render";
 import SceneCollisions from "../app/scene_collisions";
 import { BoxColliderC } from "../app/scene_collisions";
+import { clamp } from "../core/math";
 
 interface BreakObjectData {
-	elapsed: number;
+	max_durability: number;
+	sprite: THREE.Mesh;
 }
 
 export default class SystemObjectsBreak {
@@ -13,13 +16,48 @@ export default class SystemObjectsBreak {
 	breakable_objects: { [id: string]: BreakObjectData };
 	scene_render: SceneRender;
 	scene_collisions: SceneCollisions;
+
+	crack_meshes: Array<THREE.Mesh>;
+
 	constructor(scene_core: SceneCore, scene_render: SceneRender) {
 		this.scene_core = scene_core;
 		this.scene_render = scene_render;
 		this.scene_collisions = scene_core.scene_collisions;
+		this.crack_meshes = [];
+	}
+
+	async load() {
+		if (this.crack_meshes.length) {
+			return;
+		}
+
+		const load = async (name: string) => {
+			const sprite = await this.scene_render.makeSprite3d(name);
+			(sprite as any).position.z = 0.5;
+			sprite.material.transparent = true;
+			sprite.material.depthTest = false;
+
+			return sprite;
+		};
+
+		const crack1 = await load("masks/dig-cracks-lvl1");
+		const crack2 = await load("masks/dig-cracks-lvl2");
+		const crack3 = await load("masks/dig-cracks-lvl3");
+
+		this.crack_meshes.push(crack1, crack2, crack3);
 	}
 
 	run() {
+		this.dispose();
+	}
+
+	dispose() {
+		for (const k in this.breakable_objects) {
+			const b = this.breakable_objects[k];
+			if (b.sprite && b.sprite.parent) {
+				b.sprite.removeFromParent();
+			}
+		}
 		this.breakable_objects = {};
 	}
 
@@ -47,47 +85,47 @@ export default class SystemObjectsBreak {
 			component.gameprop
 		) as any;
 
-		let durability = gameprop_component.durability;
+		let durability = gameprop_component.durability as number;
 		let resistance = gameprop_component.resistance;
 
 		if (hit_strength < resistance) {
 			return false;
 		}
 
-		durability -= hit_damage;
+		let cached_info = this.breakable_objects[component.id];
+		if (!cached_info) {
+			cached_info = {
+				max_durability: durability,
+				sprite: this.crack_meshes[0].clone(),
+			};
+			const obj = this.scene_render.cache.objects[component.id];
+			if (obj) {
+				obj.add(cached_info.sprite);
+			}
+			this.breakable_objects[component.id] = cached_info;
+		}
 
-		gameprop_component.durability = Math.max(0, durability);
-		this.breakable_objects[component.id] = { elapsed: 0 };
+		durability = Math.max(0, durability - hit_damage);
+		gameprop_component.durability = durability;
+
+		if (durability > 0) {
+			const damage_factor = 1 - durability / cached_info.max_durability;
+			const sprite_index = clamp(
+				Math.floor(damage_factor * this.crack_meshes.length),
+				0,
+				this.crack_meshes.length - 1
+			);
+			cached_info.sprite.material = this.crack_meshes[sprite_index].material;
+		} else {
+			delete this.breakable_objects[component.id];
+			cached_info.sprite.removeFromParent();
+		}
+
 		return durability <= 0;
 	}
 
 	step(dt: number) {
 		const shaketime = 0.1;
-		for (const k in this.breakable_objects) {
-
-			const component = this.scene_core.components[k] as any;
-			const b = this.breakable_objects[k];
-			b.elapsed += dt;
-
-			const obj = this.scene_render.cache.objects[k];
-			if (obj && b.elapsed < shaketime) {
-				const refx = component.pos_x;
-				const refy = component.pos_y;
-				const x = refx + (Math.random() - 0.5) * 0.04;
-				const y = refy + (Math.random() - 0.5) * 0.04;
-
-				// no shake with new objects possible
-				//(obj as any).position.x = x;
-				//(obj as any).position.y = y;
-			} else {
-				delete this.breakable_objects[k];
-				if (!obj) {
-					continue;
-				}
-				(obj as any).position.x = component.pos_x;
-				(obj as any).position.y = component.pos_y;
-			}
-		}
 	}
 
 	_actionHitCollisionTest(
