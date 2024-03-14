@@ -192,6 +192,20 @@ export default class AssetsLibraryView {
 
 		// --
 		listenClick(
+			"#asset-property-add",
+			async (ev) => {
+				const fieldname = await Popup.instance.show().input("property key", "prop");
+				const matter = this.asset_selected.content as Matter;
+
+				this.scene_map.scene_core.cleanup();
+				matter.set(fieldname, "---");
+				this.viewAsset(matter.id);
+			},
+			this._listeners
+		);
+
+		// --
+		listenClick(
 			"#asset-component-add",
 			async (ev) => {
 				const link_id = await this._showSelectList("select", {}, "component");
@@ -199,9 +213,10 @@ export default class AssetsLibraryView {
 					return;
 				}
 				const extension = this.assets.get(link_id).info.extension;
+				const fieldname = await Popup.instance.show().input("field name", extension);
 				this.addComponentLink(
 					this.asset_selected.content as Matter,
-					extension,
+					fieldname || extension,
 					link_id
 				);
 			},

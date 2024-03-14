@@ -31,6 +31,7 @@ export default class SceneVfxRender {
 	scene_collisions: SceneCollisions;
 
 	sprite_star_ref: THREE.Sprite;
+	sprite_dollar_ref: THREE.Sprite;
 	particles_stars: { [id: string]: Particle };
 
 	constructor(scene_render: SceneRender, scene_collisions: SceneCollisions) {
@@ -41,6 +42,7 @@ export default class SceneVfxRender {
 
 	async load() {
 		this.sprite_star_ref = await this.scene_render.makeSprite("star");
+		this.sprite_dollar_ref = await this.scene_render.makeSprite("dollar");
 	}
 
 	spawnStarParticle_01(pos: THREE.Vector3, dir: THREE.Vector3, strength: number = 1) {
@@ -81,6 +83,42 @@ export default class SceneVfxRender {
 			particle.vy = Math.abs(r4) * 3e-2 * (dir.y || Math.sign(r4));
 			particle.vx *= pfactor * strength;
 			particle.vy *= pfactor * strength;
+
+			this.particles_stars[id] = particle;
+			this.scene_render.addObject(id, sprite);
+		}
+	}
+
+	spawnStarParticle_02(pos: THREE.Vector3) {
+		const star_lifetime = 1.2;
+		const star_scale = 0.3;
+
+		const amount = Math.random() * 4 + 4;
+
+		for (let i = 0; i < amount; i++) {
+			const sprite = this.sprite_dollar_ref.clone();
+			const id = "i" + sprite.id;
+			const rfactor = i / amount;
+
+			// ~[0.05,1.95]
+			const r1 = 1 - (Math.random() - 0.5) * 1.9;
+			// [0.1, 1]
+			const r2 = 1 - Math.random() * 0.9;
+			// [-0.5,0.5]
+			const r3 = (Math.random() - 0.5);
+			const r4 = (Math.random() - 0.5);
+
+			const lifitime = star_lifetime * r1;
+			const scale = (star_scale * r2);
+
+			const particle = new Particle(sprite, lifitime, scale);
+
+			sprite.position.copy(pos);
+			sprite.position.x += 0.5 * r3;
+			sprite.position.y += 0.5 * r4;
+			sprite.scale.set(0, 0, 0);
+			particle.vx = r3 * 1e-3;
+			particle.vy = 1e-3;
 
 			this.particles_stars[id] = particle;
 			this.scene_render.addObject(id, sprite);

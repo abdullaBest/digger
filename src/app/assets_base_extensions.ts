@@ -20,7 +20,7 @@ export interface AssetContentTypeComponent extends Matter {
 	 * Indicates that component should not be added into scene tree
 	 * probably should call it "static"
 	 */
-	abstract?: boolean | null;
+	abstract: boolean;
 
 	matrix?: Array<number> | null;
 	pos_x?: number | null;
@@ -49,17 +49,22 @@ export interface AssetContentTypeTimer extends AssetContentTypeComponent {
 export interface AssetContentTypeCollider extends AssetContentTypeComponent {
 	trigger: boolean;
 	autosize: boolean;
+	body: boolean;
 	width: number;
 	height: number;
 	x: number;
 	y: number;
 }
 
+/**
+ * Properties directly related with digger project
+ */
 export interface AssetContentTypeGameprop extends AssetContentTypeComponent {
 	durability: number;
 	resistance: number;
 	falling: boolean;
 	damage: number;
+	gemsource: boolean;
 }
 
 export interface AssetContentTypeSpace extends AssetContentTypeComponent {
@@ -147,7 +152,7 @@ export interface BaseContentExtensionsList {
 export function cunstructBaseExtensionsData(
 	matters: Matters
 ): BaseContentExtensionsList {
-	const base_asset_extension_component = { type: "component" };
+	const base_asset_extension_component = { type: "component", abstract: false };
 	const base_asset_extension_space = { type: "space", guids: 0 };
 	const base_asset_extension_trigger = {
 		type: "trigger",
@@ -173,6 +178,7 @@ export function cunstructBaseExtensionsData(
 		type: "collider",
 		autosize: true,
 		trigger: false,
+		body: false,
 		width: 0,
 		height: 0,
 		x: 0,
@@ -183,7 +189,8 @@ export function cunstructBaseExtensionsData(
 		durability: 1,
 		resistance: 999,
 		falling: false,
-		damage: 0
+		damage: 0,
+		gemsource: false
 	};
 	const base_asset_extension_gltf = {
 		type: "gltf",

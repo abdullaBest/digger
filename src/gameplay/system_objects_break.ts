@@ -3,7 +3,7 @@ import SceneCore from "../app/scene_core";
 import Character from "./character";
 import SceneRender from "../render/scene_render";
 import SceneCollisions from "../app/scene_collisions";
-import { BoxColliderC } from "../app/scene_collisions";
+import { ColliderType, BoxColliderC } from "../app/scene_collisions";
 import { clamp } from "../core/math";
 
 interface BreakObjectData {
@@ -169,6 +169,9 @@ export default class SystemObjectsBreak {
 		let distance = Infinity;
 		for (const k in colliders) {
 			const c = colliders[k];
+			if (c.type !== ColliderType.RIGID) {
+				continue;
+			}
 			const collides_x = test_l <= c._right && c._left <= test_r;
 			const collides_y = test_b <= c._top && c._bottom <= test_t;
 			if (collides_x && collides_y) {

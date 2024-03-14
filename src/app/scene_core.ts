@@ -133,6 +133,8 @@ class SceneCollidersSystem extends MapSystem {
 			? ColliderType.SIGNAL
 			: ColliderType.RIGID;
 
+		let collider: BoxColliderC | null = null;
+
 		if (component.autosize) {
 			const box = SceneMath.instance.genObject2dAABB(
 				this.scene_render.cache.objects[owner.id],
@@ -141,14 +143,14 @@ class SceneCollidersSystem extends MapSystem {
 			);
 
 			if (box) {
-				this.scene_collisions.createBoxCollider(
+				collider = this.scene_collisions.createBoxCollider(
 					component.id,
 					box,
 					collider_type
 				);
 			}
 		} else {
-			const collider = this.scene_collisions.createBoxColliderByPos(
+			collider = this.scene_collisions.createBoxColliderByPos(
 				component.id,
 				(owner.pos_x ?? 0) + component.x,
 				(owner.pos_y ?? 0) + component.y,
@@ -156,6 +158,10 @@ class SceneCollidersSystem extends MapSystem {
 				component.height,
 				collider_type
 			);
+		}
+
+		if (collider && component.body) {
+			this.scene_collisions.addBoxBody(component.id, collider);
 		}
 	}
 
@@ -230,14 +236,15 @@ class SceneCore {
 	add(
 		component: AssetContentTypeComponent,
 		owner?: AssetContentTypeComponent | null,
-		id?: string | null
+		id?: string | null,
+		content?: any
 	): AssetContentTypeComponent | null {
-		if (component.abstract) {
+		if ((content?.abstract ?? true) && component.abstract) {
 			return null;
 		}
 
 		const cinstace = this.matters.create(
-			{ owner: owner?.id ?? null },
+			{ ...content, owner: owner?.id ?? null },
 			component.id,
 			id
 		) as AssetContentTypeComponent;
@@ -280,6 +287,8 @@ class SceneCore {
 		}
 
 		this.components[cinstace.id] = cinstace;
+
+		// also used only by wireplugs
 		this.csources[cinstace.inherites as string] = cinstace;
 
 		return cinstace;

@@ -9,6 +9,7 @@ import MapDebugRenderCollidersSystem from "./map_debug_render_colliders_system";
 import { RenderTilesetSystem } from "./tileset_render_system";
 import TilepackRenderSystem from "./tilepack_render_system";
 import FakeLight2dRenderSystem from "./fakelight2d_render_system";
+import DiggerGemsourceGenerationSystem from "./digger_gemsource_generation_system";
 
 export {
 	MapSystem,
@@ -21,5 +22,6 @@ export {
 	MapDebugRenderCollidersSystem,
 	RenderTilesetSystem,
 	TilepackRenderSystem,
-	FakeLight2dRenderSystem
+	FakeLight2dRenderSystem,
+	DiggerGemsourceGenerationSystem
 };

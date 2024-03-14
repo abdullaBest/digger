@@ -24,6 +24,9 @@ class TilesetRender {
 	clip_w: number;
 	clip_h: number;
 
+	// Callback triggered on each tile instance created
+	oninstance: (instance: AssetContentTypeComponent) => void;
+
 	constructor(scene_core: SceneCore, map_tileset_system: MapTilesetSystem) {
 		this.scene_core = scene_core;
 		this.map_tileset_system = map_tileset_system;
@@ -158,6 +161,10 @@ class TilesetRender {
 					this.tiles[tileset] = [];
 				}
 				this.tiles[tileset].push(instance);
+
+				if (this.oninstance) {
+					this.oninstance(instance);
+				}
 			}
 			delete this.queue[k];
 			this.queued -= 1;
@@ -259,8 +266,8 @@ class RenderTilesetSystem extends MapSystem {
 			return;
 		}
 
-		this.tileset_render.update(0, 0);
 		this.tileset_render.resetThreshold();
+		this.tileset_render.update(0, 0);
 	}
 
 	remove(component: AssetContentTypeTileset) {

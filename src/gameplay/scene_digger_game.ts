@@ -1,5 +1,9 @@
 import Events from "../core/events";
-import { Character, CharacterActionCode, CharacterToolModes } from "./character";
+import {
+	Character,
+	CharacterActionCode,
+	CharacterToolModes,
+} from "./character";
 import { SceneCollisions } from "../app/scene_collisions";
 import { Box2, Vector2 } from "../lib/three.module";
 import {
@@ -104,6 +108,83 @@ export default class SceneDiggerGame {
 			attach_camera_z: 7,
 			attach_camera_y: 1,
 		};
+	}
+
+	/**
+	 * @param dt
+	 * @param dr
+	 * @returns
+	 */
+	step(dt: number, forced: boolean = false) {
+		if (!this.active) {
+			return;
+		}
+
+		if (!this.inplay) {
+			return;
+		}
+		if (!this.autostep && !forced) {
+			return;
+		}
+
+		for (const k in this.scene_collisions.bodies) {
+			const body = this.scene_collisions.bodies[k];
+			body.velocity_y +=
+				this.gravity_y * dt * this.scene_collisions.forces_scale;
+		}
+
+		if (!this.player_character.alive) {
+			this.stopPlay();
+			this.events.emit("gameover");
+		}
+
+		this.player_character.step(dt);
+		this.scene_collisions.step(dt);
+		this.player_character_render.step(dt);
+		this.scene_debug.step();
+		this.system_objects_fall.step(dt);
+		this.system_objects_break.step(dt);
+		this.system_render_bodiespos.step(dt);
+		this.scene_vfx_render.step(dt);
+
+		if (
+			this.attach_camera_to_player &&
+			this.player_character_render.character_scene
+		) {
+			const pos = this.scene_render.cache.vec3_0.copy(
+				(this.player_character_render.character_scene as any).position
+			);
+
+			pos.z = this.camera_config.attach_camera_z;
+			const lposx = (this.scene_render.camera as any).position.x;
+			const lposy = (this.scene_render.camera as any).position.y;
+			const shift_y = this.camera_config.attach_camera_y;
+			const targ_y = pos.y + shift_y;
+			pos.x = distlerp(lposx, pos.x, 0.4, 3);
+			pos.y = distlerp(lposy, targ_y, 0.4, 3);
+
+			//pos.y = lerp(pos.y, pos.y - this.player_character.look_direction_y * 2, 0.1);
+
+			const targ = this.scene_render.cache.vec3_1.set(
+				pos.x,
+				targ_y - shift_y,
+				pos.z - this.camera_config.attach_camera_z
+			);
+			this.scene_render.setCameraPos(pos, targ);
+		}
+
+		if (
+			this.player_character.performed_actions.find((e) => e.tag == "hit_made")
+		) {
+			this._actionHit();
+		}
+
+		this.scene_map.setViewpoint(
+			this.player_character.body.collider.x,
+			this.player_character.body.collider.y
+		);
+
+		this._stepCharacterInteractions(this.player_character);
 	}
 
 	async init(): Promise<SceneDiggerGame> {
@@ -250,82 +331,13 @@ export default class SceneDiggerGame {
 		removeEventListeners(this._listeners);
 	}
 
-	/**
-	 *
-	 * @param dt
-	 * @param dr
-	 * @returns
-	 */
-	step(dt: number, forced: boolean = false) {
-		if (!this.active) {
-			return;
-		}
-
-		if (!this.inplay) {
-			return;
-		}
-		if (!this.autostep && !forced) {
-			return;
-		}
-
-		for (const k in this.scene_collisions.bodies) {
-			const body = this.scene_collisions.bodies[k];
-			body.velocity_y +=
-				this.gravity_y * dt * this.scene_collisions.forces_scale;
-		}
-
-		if (!this.player_character.alive) {
-			this.stopPlay();
-			this.events.emit("gameover");
-		}
-
-		this.player_character.step(dt);
-		this.scene_collisions.step(dt);
-		this.player_character_render.step(dt);
-		this.scene_debug.step();
-		this.system_objects_fall.step(dt);
-		this.system_objects_break.step(dt);
-		this.system_render_bodiespos.step(dt);
-		this.scene_vfx_render.step(dt);
-
-		if (
-			this.attach_camera_to_player &&
-			this.player_character_render.character_scene
-		) {
-			const pos = this.scene_render.cache.vec3_0.copy(
-				(this.player_character_render.character_scene as any).position
-			);
-
-			pos.z = this.camera_config.attach_camera_z;
-			const lposx = (this.scene_render.camera as any).position.x;
-			const lposy = (this.scene_render.camera as any).position.y;
-			const shift_y = this.camera_config.attach_camera_y;
-			const targ_y = pos.y + shift_y;
-			pos.x = distlerp(lposx, pos.x, 0.4, 3);
-			pos.y = distlerp(lposy, targ_y, 0.4, 3);
-
-			//pos.y = lerp(pos.y, pos.y - this.player_character.look_direction_y * 2, 0.1);
-
-			const targ = this.scene_render.cache.vec3_1.set(
-				pos.x,
-				targ_y - shift_y,
-				pos.z - this.camera_config.attach_camera_z
-			);
-			this.scene_render.setCameraPos(pos, targ);
-		}
-
-		if (
-			this.player_character.performed_actions.find((e) => e.tag == "hit_made")
-		) {
-			this._actionHit();
-		}
-
-		this.scene_map.setViewpoint(
-			this.player_character.body.collider.x,
-			this.player_character.body.collider.y
-		);
-
-		this._stepCharacterInteractions(this.player_character);
+	requestMapSwitch(signal: string) {
+		// it gonna be handled in SceneMediator step
+		const args = signal.split(",");
+		const id = args[0];
+		const entrance_id = args[1] ?? null;
+		this.requested_map_switch = id;
+		this.requested_map_entrance = entrance_id;
 	}
 
 	updateCharacterDamageConditions() {
@@ -336,16 +348,18 @@ export default class SceneDiggerGame {
 		) {
 			const top_collider =
 				this.scene_core.components[this.player_character.collided_top];
-			const top_component = this.scene_core.components[top_collider.owner];
-			const gameprop_id = top_component.get("gameprop");
+			if (top_collider) {
+				const top_component = this.scene_core.components[top_collider.owner];
+				const gameprop_id = top_component.get("gameprop");
 
-			if (gameprop_id) {
-				const gameprop = this.scene_core.matters.get(
-					gameprop_id
-				) as AssetContentTypeGameprop;
+				if (gameprop_id) {
+					const gameprop = this.scene_core.matters.get(
+						gameprop_id
+					) as AssetContentTypeGameprop;
 
-				if (gameprop.falling) {
-					this.player_character.health = 0;
+					if (gameprop.falling) {
+						this.player_character.health = 0;
+					}
 				}
 			}
 		}
@@ -358,7 +372,13 @@ export default class SceneDiggerGame {
 				continue;
 			}
 			const collider = this.scene_core.components[cid];
+			if (collider) {
+				continue;
+			}
 			const component = this.scene_core.components[collider?.owner];
+			if (component) {
+				continue;
+			}
 
 			const gameprop =
 				component?.is_link("gameprop") &&
@@ -414,7 +434,6 @@ export default class SceneDiggerGame {
 				});
 			}
 
-
 			if (
 				action.code == CharacterActionCode.START &&
 				trigger.event.includes("mapexit")
@@ -439,6 +458,17 @@ export default class SceneDiggerGame {
 			// tmp. Should be handled by standalone system
 			if (trigger.event.includes("bonus-torch")) {
 				this.player_character.gadget_torch.amount = 1;
+				this.scene_core.remove(trigger.owner);
+				return;
+			}
+
+			if (trigger.event.includes("bonus-gem")) {
+				const owner = this.scene_core.matters.get(trigger.owner) as AssetContentTypeComponent;
+				const collider = this.scene_core.matters.get(owner.get("collider"));
+				const c = this.scene_collisions.colliders[collider.id];
+				const pos = this.scene_render.cache.vec3_0;
+				pos.set(c.x, c.y, 0);
+				this.scene_vfx_render.spawnStarParticle_02(pos);
 				this.scene_core.remove(trigger.owner);
 				return;
 			}
@@ -499,16 +529,8 @@ export default class SceneDiggerGame {
 		}
 	}
 
-	requestMapSwitch(signal: string) {
-		// it gonna be handled in SceneMediator step
-		const args = signal.split(",");
-		const id = args[0];
-		const entrance_id = args[1] ?? null;
-		this.requested_map_switch = id;
-		this.requested_map_entrance = entrance_id;
-	}
-
 	private _actionHit() {
+		const matters = this.scene_core.matters;
 		const hit_result = this.system_objects_break._actionHitCollisionTest(
 			this.player_character,
 			this.scene_collisions.colliders
@@ -517,7 +539,8 @@ export default class SceneDiggerGame {
 			return;
 		}
 
-		const damage = this.player_character.tool_mode == CharacterToolModes.SUPERAXE ? 999 : 1;
+		const damage =
+			this.player_character.tool_mode == CharacterToolModes.SUPERAXE ? 999 : 1;
 
 		// vfx
 		{
@@ -543,17 +566,33 @@ export default class SceneDiggerGame {
 		const broke = this.system_objects_break.hit(hit_result, damage);
 		if (broke) {
 			// component is collider. owner is actual block object
-			const component = this.scene_core.matters.get(
-				hit_result
-			) as AssetContentTypeComponent;
+			const component = matters.get(hit_result) as AssetContentTypeComponent;
 			if (!component?.owner) {
 				return;
 			}
 			// falling block activate
 			this.system_objects_fall.touchFallingBlock(component.id);
 
+			const owner = matters.get(component.owner) as AssetContentTypeComponent;
+
+			// spawn gem if required
+			const gemsource = matters.get(owner.get("gemsource"));
+			const spawns = gemsource?.get("spawns");
+			if (spawns) {
+				const root = matters.get(owner.owner) as AssetContentTypeComponent;
+				const instance = this.scene_core.add(
+					matters.get(spawns) as AssetContentTypeComponent,
+					root,
+					null,
+					{
+						abstract: false,
+						pos_x: owner.pos_x,
+						pos_y: owner.pos_y,
+					}
+				);
+			}
+
 			// remove breakable block
-			const owner = this.scene_core.matters.get(component.owner);
 			this.scene_core.remove(owner.id);
 
 			// #debt-tilerefs: tileset creates two tile data object - one is persist tile reference, second one is actual tile instance

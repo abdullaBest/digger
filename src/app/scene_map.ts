@@ -10,6 +10,7 @@ import {
 	RenderTilesetSystem,
 	TilepackRenderSystem,
 	FakeLight2dRenderSystem,
+	DiggerGemsourceGenerationSystem
 } from "../systems";
 import { printerror } from "../shell/infobox";
 import logger from "../core/logger";
@@ -29,6 +30,9 @@ export default class SceneMap {
 	}
 
 	init() {
+		// priority filters uses system keys and component.type.
+		// If priority sorting not required system may be called anyhow
+		
 		this.render_tileset_system = new RenderTilesetSystem(this.scene_core);
 		this.scene_core.addSystem("render_tileset", this.render_tileset_system);
 		this.scene_core.addSystem(
@@ -46,6 +50,10 @@ export default class SceneMap {
 		this.scene_core.addSystem(
 			"controllers",
 			new SceneControllersSystem(this.scene_core)
+		);
+		this.scene_core.addSystem(
+			"gemsource",
+			new DiggerGemsourceGenerationSystem(this.scene_core)
 		);
 		this.debugColliders(true);
 	}
