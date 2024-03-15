@@ -134,6 +134,9 @@ export default class ControlsPropertyDraw {
 			this.inputs_write[key] = input;
 
 			input.addEventListener("change", (ev) => {
+				input.blur();
+			});
+			input.addEventListener("input", (ev) => {
 				const target = ev.target as HTMLInputElement;
 				if (target) {
 					const _value = target.value;
