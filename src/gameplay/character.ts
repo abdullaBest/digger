@@ -36,11 +36,15 @@ class Character {
 
 	health: number;
 
+	body_mass: number;
+	body_drag: number;
+	ground_friction: number;
 	movement_speed: number;
+	movement_acceleration: number;
 	jump_force: number;
 	jump_threshold: number;
 	wallslide_speed: number;
-	air_control_factor: number; // unused
+	air_control_factor: number;
 	run_movement_scale: number;
 	run_vertical_jump_scale: number;
 	run_horisontal_jump_scale: number;
@@ -99,11 +103,15 @@ class Character {
 		this.scene_collisions = scene_collisions;
 		this.health = 1;
 
-		this.movement_speed = 2.7;
-		this.jump_force = 5;
+		this.body_mass = 42;
+		this.body_drag = 0.001;
+		this.ground_friction = 0.5;
+		this.movement_speed = 3;
+		this.movement_acceleration = 10;
+		this.jump_force = 230;
 		this.jump_threshold = 0.1;
 		this.wallslide_speed = 1;
-		this.air_control_factor = 0.4;
+		this.air_control_factor = 0.8;
 		this.run_vertical_jump_scale = 1.3;
 		this.run_horisontal_jump_scale = 1.2;
 		this.run_movement_scale = 1.5;
@@ -152,6 +160,8 @@ class Character {
 
 	init(body: DynamicBody): Character {
 		this.body = body;
+		this.body.mass = this.body_mass;
+		this.body.drag = this.body_drag;
 		this.gadget_grappling_hook.init(body);
 		this.gadget_torch.init();
 
@@ -235,9 +245,17 @@ class Character {
 
 		// movement direction & speed
 		movement_x -=
-			this.moving_left && !this.is_collided_left() ? this.movement_speed : 0;
+			this.moving_left && !this.is_collided_left()
+				? this.movement_acceleration
+				: 0;
 		movement_x +=
-			this.moving_right && !this.is_collided_right() ? this.movement_speed : 0;
+			this.moving_right && !this.is_collided_right()
+				? this.movement_acceleration
+				: 0;
+
+		if (!this.is_collided_bottom()) {
+			movement_x *= this.air_control_factor;
+		}
 
 		const jumping = this._updateJumpState(dt);
 		const running = this._updateRunState(dt, movement_x);
@@ -249,26 +267,28 @@ class Character {
 		// ---
 
 		// a. horisontal movement
+		const run_timing_scale_factor = 2.5;
+		const run_scale = lerp(
+			1,
+			this.run_movement_scale,
+			Math.min(1, this.run_elapsed * run_timing_scale_factor)
+		);
 		if (this.running) {
 			// full speed reached after (run_elapsed / factor) seconds
-			const factor = 1.5;
-			const run_scale = lerp(
-				1,
-				this.run_movement_scale,
-				Math.min(1, this.run_elapsed * factor)
-			);
 			movement_x *= run_scale;
 			movement_x *= jumping ? this.run_horisontal_jump_scale : 1;
 		}
 
+		/*
 		// smooth
 		movement_x = lerp(this.movement_x, movement_x, movement_x ? 0.6 : 0.95);
 		if (Math.abs(movement_x) < 1e-2) {
 			movement_x = 0;
 		}
+	 */
 
 		if (movement_x) {
-			acc_x += movement_x - this.body.velocity_x;
+			acc_x += movement_x;
 		}
 
 		// b. vertical movement (jump)
@@ -370,8 +390,13 @@ class Character {
 
 		// a. grapple. completele disable all velocities
 		if (this.gadget_grappling_hook.grapped) {
+			acc_x *= this.body.mass;
+			acc_y *= this.body.mass;
 			this.body.velocity_x = 0;
 			this.body.velocity_y = 0;
+			this.body.drag = 0;
+		} else {
+			this.body.drag = this.body_drag;
 		}
 
 		// b. wallslide. clamps negative y velocity
@@ -384,15 +409,30 @@ class Character {
 		}
 
 		// c. ground friction
-		if (!movement_x && this.is_collided_bottom()) {
-			this.body.velocity_x *= 0.3;
+		if (
+			(!movement_x ||
+				Math.sign(movement_x) !== Math.sign(this.body.velocity_x)) &&
+			this.is_collided_bottom()
+		) {
+			acc_x -= this.body.velocity_x * this.body.mass * this.ground_friction;
 		}
 
-		// apply forces
+		// d. apply forces
+		acc_x /= this.body.mass;
+		acc_y /= this.body.mass;
 
-		this.body.velocity_x = this.body.velocity_x + acc_x;
-		// not clamping min due gravity affection
-		this.body.velocity_y = this.body.velocity_y + acc_y;
+		this.body.velocity_x += acc_x;
+		this.body.velocity_y += acc_y;
+
+		// clamp
+		const hlimit =
+			this.movement_speed * run_scale;
+		this.body.velocity_x = clamp(this.body.velocity_x, -hlimit, hlimit);
+		this.body.velocity_y = clamp(
+			this.body.velocity_y,
+			-this.movement_speed * 2,
+			this.movement_speed * 2
+		);
 
 		// set flag variables
 		this.movement_x = movement_x;
@@ -415,10 +455,10 @@ class Character {
 		}
 	}
 
-	_updateRunState(dt: number, movemet_x: number): boolean {
+	_updateRunState(dt: number, movement_x: number): boolean {
 		const discard_runstate_case0 =
 			!this.prerunning ||
-			!movemet_x ||
+			!movement_x ||
 			this.performed_actions.find(
 				(e) => e.tag == "move_left" || e.tag == "move_right"
 			);

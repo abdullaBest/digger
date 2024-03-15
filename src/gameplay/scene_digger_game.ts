@@ -14,7 +14,7 @@ import {
 import CharacterRender from "./character_render";
 import SceneRender from "../render/scene_render";
 import SceneVfxRender from "../render/scene_vfx_render";
-import { distlerp } from "../core/math";
+import { lerp, distlerp } from "../core/math";
 import SceneDebug from "../shell/scene_debug";
 import { SceneCore } from "../app/scene_core";
 import SceneMap from "../app/scene_map";
@@ -129,8 +129,21 @@ export default class SceneDiggerGame {
 
 		for (const k in this.scene_collisions.bodies) {
 			const body = this.scene_collisions.bodies[k];
+
+			const vx = body.velocity_x;
+			const vy = body.velocity_y;
+
+			// apply gravity
 			body.velocity_y +=
 				this.gravity_y * dt * this.scene_collisions.forces_scale;
+
+			// apply drag
+			const speed = Math.sqrt(vx * vx + vy * vy) || 1;
+			const fdrag = speed * speed * body.drag;
+			const dragx = (-vx) / speed * fdrag;
+			const dragy = (-vy) / speed * fdrag;
+			body.velocity_x += dragx;
+			body.velocity_y += dragy;
 		}
 
 		if (!this.player_character.alive) {
@@ -160,8 +173,8 @@ export default class SceneDiggerGame {
 			const lposy = (this.scene_render.camera as any).position.y;
 			const shift_y = this.camera_config.attach_camera_y;
 			const targ_y = pos.y + shift_y;
-			pos.x = distlerp(lposx, pos.x, 0.4, 3);
-			pos.y = distlerp(lposy, targ_y, 0.4, 3);
+			pos.x = lerp(lposx, pos.x, 0.2);
+			pos.y = lerp(lposy, targ_y, 0.2);
 
 			//pos.y = lerp(pos.y, pos.y - this.player_character.look_direction_y * 2, 0.1);
 

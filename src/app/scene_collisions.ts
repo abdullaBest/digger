@@ -104,6 +104,9 @@ interface DynamicBody {
 	velocity_x: number;
 	velocity_y: number;
 
+	mass: number;
+	drag: number;
+
 	contacts: number;
 	contacts_list: Array<CollisionResult>;
 }
@@ -175,7 +178,7 @@ class SceneCollisions {
 		this.origin = new Vector3();
 		this.normal = new Vector3(0, 0, 1);
 
-		this.forces_scale = 1.7;
+		this.forces_scale = 1.3;
 
 		this.cache = new CollidersCache();
 
@@ -362,6 +365,8 @@ class SceneCollisions {
 			velocity_x: 0,
 			velocity_y: 0,
 			contacts: 0,
+			mass: 1,
+			drag: 0.001,
 			contacts_list: CollidersCache.constructContactsArray(4),
 		};
 		this.bodies[id] = body;

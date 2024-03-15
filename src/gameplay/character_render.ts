@@ -65,7 +65,9 @@ export default class CharacterRender {
 		};
 
 		register("idle", "idle");
-		register("run", "run");
+		register("run", "run", {
+			speed: 0.55,
+		});
 		register("hit", "hit", {
 			speed: 2,
 			playback_mode: AnimationPlaybackMode.at_start,

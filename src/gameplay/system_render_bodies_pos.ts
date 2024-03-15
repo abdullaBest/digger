@@ -1,5 +1,5 @@
 import SceneCore from "../app/scene_core";
-import SceneRender from "../scene_render";
+import SceneRender from "../render/scene_render";
 import { SceneCollisions, BoxColliderC } from "../app/scene_collisions";
 import { lerp, distlerp } from "../core/math";
 import { AssetContentTypeComponent } from "../app/assets";
