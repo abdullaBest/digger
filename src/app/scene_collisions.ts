@@ -178,7 +178,7 @@ class SceneCollisions {
 		this.origin = new Vector3();
 		this.normal = new Vector3(0, 0, 1);
 
-		this.forces_scale = 1.3;
+		this.forces_scale = 2;
 
 		this.cache = new CollidersCache();
 

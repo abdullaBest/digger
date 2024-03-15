@@ -135,7 +135,7 @@ export default class SceneDiggerGame {
 
 			// apply gravity
 			body.velocity_y +=
-				this.gravity_y * dt * this.scene_collisions.forces_scale;
+				this.gravity_y * dt;
 			if (body.velocity_y > 0) {
 				//body.velocity_y *= Math.log(body.velocity_y + 1) + 1;
 			}

@@ -106,9 +106,9 @@ class Character {
 		this.body_mass = 42;
 		this.body_drag = 0.001;
 		this.ground_friction = 0.5;
-		this.movement_speed = 3;
+		this.movement_speed = 2.4;
 		this.movement_acceleration = 10;
-		this.jump_force = 230;
+		this.jump_force = 160;
 		this.jump_threshold = 0.1;
 		this.wallslide_speed = 1;
 		this.air_control_factor = 0.8;
@@ -296,6 +296,7 @@ class Character {
 		movement_y *= running ? this.run_vertical_jump_scale : 1;
 
 		if (movement_y) {
+			console.log(this.body.velocity_y);
 			const add = this.jumping_air
 				? this.body.velocity_y
 				: Math.max(0, this.body.velocity_y);
@@ -431,7 +432,7 @@ class Character {
 		this.body.velocity_y = clamp(
 			this.body.velocity_y,
 			-Infinity,
-			this.movement_speed * 2
+			this.movement_speed * 1.5
 		);
 
 		// set flag variables
