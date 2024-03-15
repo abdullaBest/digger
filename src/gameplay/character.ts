@@ -430,7 +430,7 @@ class Character {
 		this.body.velocity_x = clamp(this.body.velocity_x, -hlimit, hlimit);
 		this.body.velocity_y = clamp(
 			this.body.velocity_y,
-			-this.movement_speed * 2,
+			-Infinity,
 			this.movement_speed * 2
 		);
 

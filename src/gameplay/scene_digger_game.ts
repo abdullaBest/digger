@@ -136,6 +136,9 @@ export default class SceneDiggerGame {
 			// apply gravity
 			body.velocity_y +=
 				this.gravity_y * dt * this.scene_collisions.forces_scale;
+			if (body.velocity_y > 0) {
+				//body.velocity_y *= Math.log(body.velocity_y + 1) + 1;
+			}
 
 			// apply drag
 			const speed = Math.sqrt(vx * vx + vy * vy) || 1;
