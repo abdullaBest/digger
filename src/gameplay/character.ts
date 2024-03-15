@@ -296,7 +296,6 @@ class Character {
 		movement_y *= running ? this.run_vertical_jump_scale : 1;
 
 		if (movement_y) {
-			console.log(this.body.velocity_y);
 			const add = this.jumping_air
 				? this.body.velocity_y
 				: Math.max(0, this.body.velocity_y);
