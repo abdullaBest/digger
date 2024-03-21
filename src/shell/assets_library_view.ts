@@ -164,6 +164,8 @@ export default class AssetsLibraryView {
 					model_corner_in_filter: "corner_in_%d",
 					model_corner_out_filter: "corner_out_%d",
 					model_decor_top_filter: "decor_%d",
+					// has to be uniq for each tile type
+					tilename: "tilename"
 				});
 			},
 			this._listeners

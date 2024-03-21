@@ -8,13 +8,29 @@ import { AssetContentTypeComponent, AssetContentTypeModel } from "../app/assets"
 import { sprintf } from "../lib/sprintf.js";
 import logger from "../core/logger";
 
+/*
+ * No AssetContentType for tilepack: it's experimental for now.
+ * todo: add it into asset's AssetContentTypes when it stable
+ */
+interface TilepackComponent extends AssetContentTypeModel{
+	tilename: string;
+	model_center_filter: string;
+	model_top_filter: string;
+	model_left_filter: string;
+	model_right_filter: string;
+	model_bottom_filter: string;
+	model_corner_in_filter: string;
+	model_corner_out_filter: string;
+	model_decor_top_filter: string;
+}
+
 /**
  * This system renders tilepack components wich holds batch of tile mesh pieces
  */
 export default class TilepackRenderSystem extends MapSystem {
 	private scene_render: SceneRender;
 	private scene_core: SceneCore;
-	private tiles: { [id: string] : AssetContentTypeComponent };
+	private tiles: { [id: string] : TilepackComponent };
 	private random: Random;
 
 	constructor(scene_render: SceneRender, scene_core: SceneCore) {
@@ -38,7 +54,7 @@ export default class TilepackRenderSystem extends MapSystem {
 	}
 
 	add(
-		component: AssetContentTypeModel,
+		component: TilepackComponent,
 		owner?: AssetContentTypeComponent
 	) {
 		if (!this.filter(component)) {
@@ -67,7 +83,7 @@ export default class TilepackRenderSystem extends MapSystem {
 	}
 
 	update(tileset: string, x: number, y: number) {
-		const component = this.tiles[this.getTileId(tileset, x, y)] as any;
+		const component = this.tiles[this.getTileId(tileset, x, y)] as TilepackComponent;
 		if (!component) {
 			return;
 		}
@@ -77,14 +93,26 @@ export default class TilepackRenderSystem extends MapSystem {
 
 		let filter = sprintf(center_filter, y_side, x_side);
 
-		const s_tl = this.tiles[this.getTileId(tileset, x - 1, y + 1)];
-		const s_t = this.tiles[this.getTileId(tileset, x, y + 1)];
-		const s_tr = this.tiles[this.getTileId(tileset, x + 1, y + 1)];
-		const s_bl = this.tiles[this.getTileId(tileset, x - 1, y - 1)];
-		const s_b = this.tiles[this.getTileId(tileset, x, y - 1)];
-		const s_br = this.tiles[this.getTileId(tileset, x + 1, y - 1)];
-		const s_l = this.tiles[this.getTileId(tileset, x - 1, y)];
-		const s_r = this.tiles[this.getTileId(tileset, x + 1, y)];
+
+		// get all surrounding tiles
+		let s_tl = this.tiles[this.getTileId(tileset, x - 1, y + 1)];
+		let s_t = this.tiles[this.getTileId(tileset, x, y + 1)];
+		let s_tr = this.tiles[this.getTileId(tileset, x + 1, y + 1)];
+		let s_bl = this.tiles[this.getTileId(tileset, x - 1, y - 1)];
+		let s_b = this.tiles[this.getTileId(tileset, x, y - 1)];
+		let s_br = this.tiles[this.getTileId(tileset, x + 1, y - 1)];
+		let s_l = this.tiles[this.getTileId(tileset, x - 1, y)];
+		let s_r = this.tiles[this.getTileId(tileset, x + 1, y)];
+
+		// it has to be same type to count
+		s_tl = s_tl?.tilename === component.tilename ? s_tl : null; 
+		s_t = s_t?.tilename === component.tilename ? s_t : null; 
+		s_tr = s_tr?.tilename === component.tilename ? s_tr : null; 
+		s_bl = s_bl?.tilename === component.tilename ? s_bl : null; 
+		s_b = s_b?.tilename === component.tilename ? s_b : null; 
+		s_br = s_br?.tilename === component.tilename ? s_br : null; 
+		s_l = s_l?.tilename === component.tilename ? s_l : null; 
+		s_r = s_r?.tilename === component.tilename ? s_r : null; 
 
 		// top-left corner
 		if (!s_tl && !s_t && !s_l) {
