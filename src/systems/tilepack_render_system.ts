@@ -1,6 +1,7 @@
 import * as THREE from "../lib/three.module.js";
 import SceneRender from "../render/scene_render";
 import SceneCore from "../app/scene_core";
+import Random from "../lib/alea.js";
 
 import { MapSystem } from ".";
 import { AssetContentTypeComponent, AssetContentTypeModel } from "../app/assets";
@@ -14,12 +15,14 @@ export default class TilepackRenderSystem extends MapSystem {
 	private scene_render: SceneRender;
 	private scene_core: SceneCore;
 	private tiles: { [id: string] : AssetContentTypeComponent };
+	private random: Random;
 
 	constructor(scene_render: SceneRender, scene_core: SceneCore) {
 		super();
 		this.priority = 0;
 		this.scene_render = scene_render;
 		this.tiles = {};
+		this.random = Random();
 	}
 
 	filter(component: AssetContentTypeModel): boolean {
@@ -134,12 +137,12 @@ export default class TilepackRenderSystem extends MapSystem {
 			filter += sprintf("," + component.model_right_filter, 2);
 		}
 
-		/*
-		if (!s_t && Math.random() > 0.5) {
-			const num = Math.floor(Math.random() * 3) + 1;
+		this.random.seed(x, y);
+		const rand = this.random();
+		if (!s_t && component.model_decor_top_filter?.length && this.random() > 0.5) {
+			const num = Math.floor(this.random() * 3) + 1;
 			filter += sprintf("," + component.model_decor_top_filter, num);
 		}
-	 */
 
 		if (component.filter === filter) {
 			return;
